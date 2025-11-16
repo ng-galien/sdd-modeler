@@ -42,7 +42,7 @@ io.statemodeler.cli           // ✅ ValidateCommand, SqlCommand (Picocli with f
 ./gradlew spotlessCheck          # Verify formatting
 
 # Testing with coverage
-./gradlew test                   # Run all tests (JUnit 5 + AssertJ)
+./gradlew test                   # Run all tests (JUnit 5 standard assertions)
 ./gradlew jacocoTestReport       # Generate coverage reports
 ./gradlew build                  # Full build (tests + formatting + JAR)
 
@@ -134,7 +134,7 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
 4. Explore advanced projection types (aggregations, custom queries)
 
 ## Testing Strategy
-- **Unit tests**: JUnit 5 + AssertJ for fluent assertions
+- **Unit tests**: JUnit 5 standard assertions ONLY (no AssertJ or other assertion libraries)
 - **Test structure**: Given-When-Then pattern (see `SddModelTest.java`)
 - **Validation testing**: Check both `isValid()` and `isInvalid()` on Vavr `Validation` results
 - **Example-driven**: `orders-sdd-model.yaml` in `src/test/resources/` drives integration tests
@@ -142,21 +142,24 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
 
 ### Test Examples
 ```java
-// Records with null validation
-assertThatThrownBy(() -> new SddModel(null, "test", db, entities))
-    .isInstanceOf(IllegalArgumentException.class)
-    .hasMessageContaining("version cannot be null");
+// Records with null validation using JUnit assertions
+IllegalArgumentException exception = assertThrows(
+    IllegalArgumentException.class,
+    () -> new SddModel(null, "test", db, entities)
+);
+assertTrue(exception.getMessage().contains("version cannot be null"));
 
-// Vavr Validation assertions
+// Vavr Validation assertions with JUnit
 var result = validator.validate(model);
-assertThat(result.isInvalid()).isTrue();
-assertThat(result.getError()).hasSize(1);
-assertThat(result.getError().get(0).code()).isEqualTo("ENTITY_NO_STATES");
+assertTrue(result.isInvalid());
+assertEquals(1, result.getError().size());
+assertEquals("ENTITY_NO_STATES", result.getError().get(0).code());
 
-// YAML parsing with Try<T>
+// YAML parsing with Try<T> using JUnit
 var result = yamlLoader.loadFromFile(path);
-assertThat(result.isSuccess()).isTrue();
+assertTrue(result.isSuccess());
 var model = result.get();
+assertNotNull(model);
 ```
 
 ## Key Files for Context

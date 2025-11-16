@@ -287,4 +287,4 @@ Built with:
 - [Jackson](https://github.com/FasterXML/jackson) for YAML/JSON parsing
 - [Vavr](https://www.vavr.io/) for functional validation
 - [Picocli](https://picocli.info/) for CLI framework
-- [AssertJ](https://assertj.github.io/doc/) for fluent test assertions
+- [JUnit 5](https://junit.org/junit5/) for unit testing

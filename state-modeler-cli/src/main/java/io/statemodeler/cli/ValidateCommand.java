@@ -1,5 +1,7 @@
 package io.statemodeler.cli;
 
+import io.statemodeler.loader.ModelLoaders;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
@@ -18,13 +20,42 @@ public class ValidateCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         System.out.println("Validating model file: " + modelFile);
 
-        // TODO: Implement model loading and validation
-        // 1. Detect file format (YAML/JSON)
-        // 2. Load model using appropriate ModelLoader
-        // 3. Run ModelValidator
-        // 4. Report results
+        try {
+            // Check if file exists
+            if (!Files.exists(modelFile)) {
+                System.err.println("Error: Model file does not exist: " + modelFile);
+                return 1;
+            }
 
-        System.out.println("✓ Model validation not yet implemented");
-        return 0;
+            // Load model using appropriate ModelLoader based on file extension
+            var loader = ModelLoaders.forFile(modelFile);
+            var model = loader.loadFromFile(modelFile);
+
+            // Basic validation checks
+            if (model.entities().isEmpty()) {
+                System.out.println("⚠️  Warning: Model contains no entities");
+            }
+
+            // Report success
+            System.out.println("✓ Model loaded successfully");
+            System.out.println("  - Version: " + model.version());
+            System.out.println("  - Name: " + model.name());
+            System.out.println("  - Dialect: " + model.database().dialect());
+            System.out.println("  - Entities: " + model.entities().size());
+
+            // TODO: Add comprehensive validation rules once ModelValidator is implemented
+            // For now, successful parsing means basic validation passed
+
+            return 0;
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            return 1;
+        } catch (Exception e) {
+            System.err.println("Error validating model: " + e.getMessage());
+            if (e.getCause() != null) {
+                System.err.println("Cause: " + e.getCause().getMessage());
+            }
+            return 1;
+        }
     }
 }

@@ -1,8 +1,10 @@
 package io.statemodeler.cli;
 
+import io.statemodeler.loader.ModelLoaders;
 import io.statemodeler.sql.DdlGenerators;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -30,9 +32,6 @@ public class SqlCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        System.out.println("Generating SQL for model file: " + modelFile);
-        System.out.println("Dialect: " + dialect);
-
         try {
             // Check if dialect is supported
             if (!DdlGenerators.isSupported(dialect)) {
@@ -47,24 +46,38 @@ public class SqlCommand implements Callable<Integer> {
                 return 1;
             }
 
-            // For now, generate a simple example DDL to show the integration
+            // Load model using appropriate ModelLoader
+            System.err.println("Loading model from: " + modelFile);
+            var loader = ModelLoaders.forFile(modelFile);
+            var model = loader.loadFromFile(modelFile);
+
+            System.err.println("✓ Model loaded successfully");
+            System.err.println("  - Name: " + model.name());
+            System.err.println("  - Entities: " + model.entities().size());
+
+            // Generate DDL
+            System.err.println("\nGenerating DDL for dialect: " + dialect);
             var generator = DdlGenerators.forDialect(dialect);
+            var ddl = generator.generateDdl(model);
 
-            // TODO: Implement model loading from YAML/JSON
-            // For now, show that the DDL generator works
-            System.out.println("DDL Generator initialized successfully for dialect: " + generator.getDialect());
-            System.out.println("✓ Model parsing from YAML/JSON not yet implemented");
-            System.out.println("✓ Once YAML loader is ready, full DDL generation will work");
-
+            // Output DDL
             if (outputFile != null) {
-                System.out.println("Will output to: " + outputFile);
+                Files.writeString(outputFile, ddl, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                System.err.println("✓ DDL written to: " + outputFile);
             } else {
-                System.out.println("Will output to: stdout");
+                // Output to stdout
+                System.out.println(ddl);
             }
 
             return 0;
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            return 1;
         } catch (Exception e) {
             System.err.println("Error generating SQL: " + e.getMessage());
+            if (e.getCause() != null) {
+                System.err.println("Cause: " + e.getCause().getMessage());
+            }
             return 1;
         }
     }

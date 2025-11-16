@@ -93,7 +93,48 @@
 
 # Delete without confirmation
 ./gradlew :state-modeler-app:run --args="delete 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4 --yes"
+
+# === DDL Comparison & Migration ===
+
+# Compare DDL between two SDR versions
+./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
+
+# Generate LLM-powered migration script
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0"
+
+# Generate migration with Ollama (requires Ollama server running)
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --llm ollama --model llama3.2"
+
+# Save migration to file
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 -o migration.sql"
+
+# Force regeneration (skip cached migration)
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --force"
 ```
+
+### Runtime Dependencies for Migration Commands
+
+**Important**: The `migrate` command requires LangChain4j dependencies at runtime:
+
+- `dev.langchain4j:langchain4j:0.36.2` (core)
+- `dev.langchain4j:langchain4j-jlama:0.36.2` (for `--llm jlama`)
+- `dev.langchain4j:langchain4j-ollama:0.36.2` (for `--llm ollama`)
+
+These dependencies are **already included** in the Gradle build, so `./gradlew run` will work.
+
+However, if you distribute the JAR independently, users must ensure these libraries are on the classpath. If missing, the CLI will show a clear error:
+
+```
+ERROR: LangChain4j dependencies not found
+  The 'migrate' command requires LangChain4j libraries.
+  Please ensure the following dependencies are available:
+    - dev.langchain4j:langchain4j:0.36.2
+    - dev.langchain4j:langchain4j-jlama:0.36.2 (for jlama provider)
+    - dev.langchain4j:langchain4j-ollama:0.36.2 (for ollama provider)
+  Missing class: dev/langchain4j/model/jlama/JlamaChatModel
+```
+
+Other commands (`validate`, `sql`, `diagram`, `register`, `list`, `show`, `delete`, `diff`) work without LangChain4j dependencies.
 
 ## Project Structure
 

@@ -2,8 +2,9 @@ package io.statemodeler.cli;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import io.statemodeler.comparison.DdlComparisonService;
+import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
-import io.statemodeler.migration.LangChainModelFactory;
+import io.statemodeler.migration.LangChainModelProvider;
 import io.statemodeler.migration.MigrationOrchestrationService;
 import io.statemodeler.sdr.SdrRecord;
 import io.vavr.control.Try;
@@ -122,7 +123,21 @@ public class MigrateCommand implements Callable<Integer> {
 
             // Create LLM-based migration service
             System.err.println("INFO: Generating migration using " + llmProvider + " LLM...");
-            var llmModel = createLlmModel();
+
+            ChatLanguageModel llmModel;
+            try {
+                llmModel = createLlmModel();
+            } catch (NoClassDefFoundError e) {
+                System.err.println("ERROR: LangChain4j dependencies not found");
+                System.err.println("  The 'migrate' command requires LangChain4j libraries.");
+                System.err.println("  Please ensure the following dependencies are available:");
+                System.err.println("    - dev.langchain4j:langchain4j:0.36.2");
+                System.err.println("    - dev.langchain4j:langchain4j-jlama:0.36.2 (for jlama provider)");
+                System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2 (for ollama provider)");
+                System.err.println("  Missing class: " + e.getMessage());
+                return 1;
+            }
+
             var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
             var comparisonService = new DdlComparisonService();
             var orchestrationService =
@@ -197,11 +212,11 @@ public class MigrateCommand implements Callable<Integer> {
      */
     private ChatLanguageModel createLlmModel() {
         String effectiveModelName = modelName != null ? modelName : getDefaultModelName();
+        ChatModelProvider provider = new LangChainModelProvider();
 
         return switch (llmProvider.toLowerCase()) {
-            case "jlama" -> LangChainModelFactory.createJlamaModel(effectiveModelName, 0.7f);
-            case "ollama" ->
-                LangChainModelFactory.createOllamaModel("http://localhost:11434", effectiveModelName, 0.7, 300);
+            case "jlama" -> provider.createModel("jlama", effectiveModelName, 0.7);
+            case "ollama" -> provider.createModel("ollama", effectiveModelName, 0.7, "http://localhost:11434", 300);
             default -> throw new IllegalArgumentException("Unsupported LLM provider: " + llmProvider);
         };
     }

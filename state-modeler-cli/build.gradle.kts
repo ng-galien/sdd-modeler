@@ -1,0 +1,28 @@
+plugins {
+    application
+}
+
+application {
+    mainClass = "io.statemodeler.cli.Main"
+}
+
+dependencies {
+    // Depend on core module
+    implementation(project(":state-modeler-core"))
+    
+    // Picocli for CLI
+    implementation("info.picocli:picocli:${rootProject.ext["picocliVersion"]}")
+    annotationProcessor("info.picocli:picocli-codegen:${rootProject.ext["picocliVersion"]}")
+
+    // Test dependencies specific to CLI
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.3")
+    testImplementation("org.assertj:assertj-core:3.26.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = application.mainClass.get()
+    }
+}

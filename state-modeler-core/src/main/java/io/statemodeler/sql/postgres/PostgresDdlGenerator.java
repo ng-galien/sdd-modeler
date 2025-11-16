@@ -46,34 +46,69 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             // Main entity table in entity schema
             tables.add(generateEntityTable(entity, entitySchema));
 
-            // State tables in state schema
+            // OR transition mapping tables in state schema (created WITHOUT FK to avoid circular dependency)
             for (var state : entity.states().values()) {
-                var stateTable = generateStateTable(entity, state, stateSchema);
+                if (state.hasOrTransitions()) {
+                    var orTable = generateOrTransitionTable(entity, state, entitySchema, stateSchema);
+                    tables.add(orTable);
+                    indexes.addAll(generateIndexesForTable(orTable));
+                    constraints.add(generateOrTransitionConstraint(entity, state, stateSchema));
+                }
+            }
+
+            // State tables in state schema (created WITHOUT FK to avoid circular dependencies)
+            for (var state : entity.states().values()) {
+                var stateTable = generateStateTable(entity, state, entitySchema, stateSchema);
                 tables.add(stateTable);
                 indexes.addAll(generateIndexesForTable(stateTable));
             }
 
-            // Extension tables in state schema
+            // Extension tables in state schema (created WITHOUT FK to avoid circular dependencies)
             for (var extension : entity.extensions().values()) {
-                var extensionTable = generateExtensionTable(entity, extension, stateSchema);
+                var extensionTable = generateExtensionTable(entity, extension, entitySchema, stateSchema);
                 tables.add(extensionTable);
                 indexes.addAll(generateIndexesForTable(extensionTable));
             }
 
-            // OR transition mapping tables in state schema
+            // Add ALL FK constraints at the end (after all tables are created)
+            // 1. FK from OR mapping tables to state tables
             for (var state : entity.states().values()) {
                 if (state.hasOrTransitions()) {
-                    var orTable = generateOrTransitionTable(entity, state, stateSchema);
-                    tables.add(orTable);
-                    indexes.addAll(generateIndexesForTable(orTable));
-                    constraints.add(generateOrTransitionConstraint(entity, state));
+                    var fkConstraints = generateOrTransitionForeignKeys(entity, state, stateSchema);
+                    constraints.addAll(fkConstraints);
+                    // Generate indexes for FK columns
+                    for (var fk : fkConstraints) {
+                        indexes.add(generateIndexForForeignKey(fk, entity, state.name() + "_source"));
+                    }
                 }
             }
-
-            // Projection views in state schema
-            for (var projection : entity.projections().values()) {
-                views.add(generateProjectionView(entity, projection, stateSchema));
+            // 2. FK from state tables to entity and previous states
+            for (var state : entity.states().values()) {
+                var fkConstraints = generateStateForeignKeys(entity, state, entitySchema, stateSchema);
+                constraints.addAll(fkConstraints);
+                // Generate indexes for FK columns
+                for (var fk : fkConstraints) {
+                    indexes.add(generateIndexForForeignKey(fk, entity, state.table()));
+                }
             }
+            // 3. FK from extension tables to state tables
+            for (var extension : entity.extensions().values()) {
+                var fk = generateExtensionForeignKey(entity, extension, stateSchema);
+                constraints.add(fk);
+                // Generate index for FK column
+                indexes.add(generateIndexForForeignKey(fk, entity, extension.table()));
+            }
+
+            // Projection views in state schema (intervals MUST be before current_state)
+            entity.projections().values().stream()
+                    .sorted((p1, p2) -> {
+                        // intervals before current_state
+                        if (p1.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS) return -1;
+                        if (p2.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS) return 1;
+                        return 0;
+                    })
+                    .forEach(projection ->
+                            views.add(generateProjectionView(entity, projection, entitySchema, stateSchema)));
         }
 
         return new SqlPlan(tables, views, constraints, indexes);
@@ -141,21 +176,15 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 entity.table(), schema, columns, List.of(entity.id().name()));
     }
 
-    private TableDefinition generateStateTable(EntityDef entity, StateDef state, String schema) {
+    private TableDefinition generateStateTable(
+            EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
         var columns = new ArrayList<ColumnDefinition>();
 
         // Primary key
         columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
 
-        // Entity reference
-        columns.add(new ColumnDefinition(
-                entity.name() + "_id",
-                "INTEGER",
-                false,
-                false,
-                null,
-                entity.table(),
-                entity.id().name()));
+        // Entity reference (FK added later as constraint)
+        columns.add(new ColumnDefinition(entity.name() + "_id", "INTEGER", false, false, null, null, null));
 
         // Timestamp
         columns.add(new ColumnDefinition("created_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
@@ -163,20 +192,13 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         // Previous state references (for transitions)
         if (!state.initial()) {
             if (state.hasOrTransitions()) {
-                // OR transitions use mapping table
-                columns.add(new ColumnDefinition(
-                        "previous_source_id", "INTEGER", false, false, null, state.name() + "_source", "id"));
+                // OR transitions use mapping table (FK added later as constraint)
+                columns.add(new ColumnDefinition("previous_source_id", "INTEGER", false, false, null, null, null));
             } else {
-                // Simple transitions
+                // Simple transitions (FK added later as constraint)
                 for (var fromState : state.from()) {
                     columns.add(new ColumnDefinition(
-                            "previous_" + fromState + "_id",
-                            "INTEGER",
-                            false,
-                            false,
-                            null,
-                            entity.name() + "_" + fromState,
-                            "id"));
+                            "previous_" + fromState + "_id", "INTEGER", false, false, null, null, null));
                 }
             }
         }
@@ -187,16 +209,15 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                     attr.name(), attr.type(), attr.nullable(), attr.primaryKey(), attr.defaultValue(), null, null));
         }
 
-        return new TableDefinition(state.table(), schema, columns, List.of("id"));
+        return new TableDefinition(state.table(), stateSchema, columns, List.of("id"));
     }
 
-    private TableDefinition generateExtensionTable(EntityDef entity, ExtensionDef extension, String schema) {
+    private TableDefinition generateExtensionTable(
+            EntityDef entity, ExtensionDef extension, String entitySchema, String stateSchema) {
         var columns = new ArrayList<ColumnDefinition>();
 
-        // Primary key references the state table
-        var targetState = entity.states().get(extension.targetState());
-        columns.add(new ColumnDefinition(
-                extension.targetState() + "_id", "INTEGER", false, true, null, targetState.table(), "id"));
+        // Primary key references the state table (FK added later as constraint)
+        columns.add(new ColumnDefinition(extension.targetState() + "_id", "INTEGER", false, true, null, null, null));
 
         // Extension attributes
         for (var attr : extension.attributes().values()) {
@@ -207,34 +228,52 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         // Updated timestamp for mutable extensions
         columns.add(new ColumnDefinition("updated_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
 
-        return new TableDefinition(extension.table(), schema, columns, List.of(extension.targetState() + "_id"));
+        return new TableDefinition(extension.table(), stateSchema, columns, List.of(extension.targetState() + "_id"));
     }
 
-    private TableDefinition generateOrTransitionTable(EntityDef entity, StateDef state, String schema) {
+    private TableDefinition generateOrTransitionTable(
+            EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
         var columns = new ArrayList<ColumnDefinition>();
 
         // Primary key
         columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
 
-        // References to possible source states
+        // References to possible source states (FK added separately to avoid circular dependency)
         for (var fromState : state.fromAnyOf()) {
-            var sourceState = entity.states().get(fromState);
             columns.add(new ColumnDefinition(
                     fromState + "_state_id",
                     "INTEGER",
                     true, // nullable - only one will be set
                     false,
                     null,
-                    sourceState.table(),
-                    "id"));
+                    null, // No FK here - added later as constraint
+                    null));
         }
 
-        return new TableDefinition(state.name() + "_source", schema, columns, List.of("id"));
+        return new TableDefinition(state.name() + "_source", stateSchema, columns, List.of("id"));
     }
 
-    private ConstraintDefinition generateOrTransitionConstraint(EntityDef entity, StateDef state) {
+    private List<ConstraintDefinition> generateOrTransitionForeignKeys(
+            EntityDef entity, StateDef state, String stateSchema) {
+        var constraints = new ArrayList<ConstraintDefinition>();
+        var tableName = stateSchema + "." + state.name() + "_source";
+
+        // Add FK constraints to source state tables
+        for (var fromState : state.fromAnyOf()) {
+            var sourceState = entity.states().get(fromState);
+            var constraintName = state.name() + "_source_" + fromState + "_fk";
+            var fkDefinition = "FOREIGN KEY (" + fromState + "_state_id) REFERENCES " + stateSchema + "."
+                    + sourceState.table() + "(id)";
+            constraints.add(new ConstraintDefinition(
+                    constraintName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDefinition));
+        }
+
+        return constraints;
+    }
+
+    private ConstraintDefinition generateOrTransitionConstraint(EntityDef entity, StateDef state, String stateSchema) {
         var constraintName = state.name() + "_source_check";
-        var tableName = state.name() + "_source";
+        var tableName = stateSchema + "." + state.name() + "_source";
 
         // Generate CHECK constraint ensuring exactly one source is set
         var conditions = state.fromAnyOf().stream()
@@ -257,6 +296,53 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 constraintName, tableName, ConstraintDefinition.ConstraintType.CHECK, definition);
     }
 
+    private List<ConstraintDefinition> generateStateForeignKeys(
+            EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
+        var constraints = new ArrayList<ConstraintDefinition>();
+        var tableName = stateSchema + "." + state.table();
+
+        // FK to entity table
+        var entityFkName = state.table() + "_" + entity.name() + "_id_fk";
+        var entityFkDef =
+                "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
+        constraints.add(new ConstraintDefinition(
+                entityFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, entityFkDef));
+
+        // FK to previous states
+        if (!state.initial()) {
+            if (state.hasOrTransitions()) {
+                // FK to OR mapping table
+                var orFkName = state.table() + "_previous_source_id_fk";
+                var orFkDef = "FOREIGN KEY (previous_source_id) REFERENCES " + stateSchema + "." + state.name()
+                        + "_source(id)";
+                constraints.add(new ConstraintDefinition(
+                        orFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, orFkDef));
+            } else {
+                // FK to previous state tables
+                for (var fromState : state.from()) {
+                    var fromStateTable = entity.states().get(fromState).table();
+                    var prevFkName = state.table() + "_previous_" + fromState + "_id_fk";
+                    var prevFkDef = "FOREIGN KEY (previous_" + fromState + "_id) REFERENCES " + stateSchema + "."
+                            + fromStateTable + "(id)";
+                    constraints.add(new ConstraintDefinition(
+                            prevFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, prevFkDef));
+                }
+            }
+        }
+
+        return constraints;
+    }
+
+    private ConstraintDefinition generateExtensionForeignKey(
+            EntityDef entity, ExtensionDef extension, String stateSchema) {
+        var tableName = stateSchema + "." + extension.table();
+        var targetState = entity.states().get(extension.targetState());
+        var fkName = extension.table() + "_" + extension.targetState() + "_id_fk";
+        var fkDef = "FOREIGN KEY (" + extension.targetState() + "_id) REFERENCES " + stateSchema + "."
+                + targetState.table() + "(id)";
+        return new ConstraintDefinition(fkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDef);
+    }
+
     /**
      * Generate indexes for all foreign key columns in a table.
      * Creates one index per FK column to optimize JOIN performance.
@@ -275,14 +361,30 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         return indexes;
     }
 
-    private ViewDefinition generateProjectionView(EntityDef entity, ProjectionDef projection, String schema) {
+    private IndexDefinition generateIndexForForeignKey(ConstraintDefinition fk, EntityDef entity, String tableName) {
+        // Extract column name from FK definition: "FOREIGN KEY (column_name) REFERENCES ..."
+        var fkDef = fk.definition();
+        var startIdx = fkDef.indexOf('(') + 1;
+        var endIdx = fkDef.indexOf(')');
+        var columnName = fkDef.substring(startIdx, endIdx).trim();
+
+        var indexName = "idx_" + tableName + "_" + columnName;
+        var schema =
+                fk.table().contains(".") ? fk.table().substring(0, fk.table().indexOf('.')) : "public";
+
+        return new IndexDefinition(indexName, tableName, schema, List.of(columnName), false);
+    }
+
+    private ViewDefinition generateProjectionView(
+            EntityDef entity, ProjectionDef projection, String entitySchema, String stateSchema) {
         return switch (projection.kind()) {
-            case INTERVALS -> generateIntervalsView(entity, projection, schema);
-            case CURRENT_STATE -> generateCurrentStateView(entity, projection, schema);
+            case INTERVALS -> generateIntervalsView(entity, projection, entitySchema, stateSchema);
+            case CURRENT_STATE -> generateCurrentStateView(entity, projection, stateSchema);
         };
     }
 
-    private ViewDefinition generateIntervalsView(EntityDef entity, ProjectionDef projection, String schema) {
+    private ViewDefinition generateIntervalsView(
+            EntityDef entity, ProjectionDef projection, String entitySchema, String stateSchema) {
         var sql = new StringBuilder();
         var entityIdColumn = entity.name() + "_id";
         var unionParts = new ArrayList<String>();
@@ -312,8 +414,8 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             for (var nextState : entity.states().values()) {
                 if (nextState.from().contains(stateName)) {
                     var minClause = String.format(
-                            "(SELECT MIN(created_at) FROM %s WHERE previous_%s_id = %s.id)",
-                            nextState.table(), stateName, stateAlias);
+                            "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
+                            stateSchema, nextState.table(), stateName, stateAlias);
                     endAtClauses.add(minClause);
                 }
             }
@@ -324,15 +426,15 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                     var sourceTable = nextState.name() + "_source";
                     var sourceColumn = stateName + "_state_id";
                     var minClause = String.format(
-                            "(SELECT MIN(ns.created_at) FROM %s ns JOIN %s src ON src.id = ns.previous_source_id WHERE src.%s = %s.id)",
-                            nextState.table(), sourceTable, sourceColumn, stateAlias);
+                            "(SELECT MIN(ns.created_at) FROM %s.%s ns JOIN %s.%s src ON src.id = ns.previous_source_id WHERE src.%s = %s.id)",
+                            stateSchema, nextState.table(), stateSchema, sourceTable, sourceColumn, stateAlias);
                     endAtClauses.add(minClause);
                 }
             }
 
             if (endAtClauses.isEmpty()) {
                 // Final state - no transitions out
-                part.append("    NULL AS end_at\n");
+                part.append("    NULL::TIMESTAMPTZ AS end_at\n");
             } else {
                 // Calculate minimum of all possible next states
                 part.append("    COALESCE(\n");
@@ -343,8 +445,14 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 part.append("    ) AS end_at\n");
             }
 
-            part.append("FROM ").append(entity.table()).append(" e\n");
+            part.append("FROM ")
+                    .append(entitySchema)
+                    .append(".")
+                    .append(entity.table())
+                    .append(" e\n");
             part.append("JOIN ")
+                    .append(stateSchema)
+                    .append(".")
                     .append(stateTable)
                     .append(" ")
                     .append(stateAlias)
@@ -360,7 +468,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
 
         sql.append(String.join("\n\nUNION ALL\n\n", unionParts));
 
-        return new ViewDefinition(projection.viewName(), schema, sql.toString());
+        return new ViewDefinition(projection.viewName(), stateSchema, sql.toString());
     }
 
     private ViewDefinition generateCurrentStateView(EntityDef entity, ProjectionDef projection, String schema) {
@@ -376,7 +484,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         sql.append("    ").append(entity.name()).append("_id,\n");
         sql.append("    state_type,\n");
         sql.append("    start_at\n");
-        sql.append("FROM ").append(intervalsViewName).append("\n");
+        sql.append("FROM ").append(schema).append(".").append(intervalsViewName).append("\n");
         sql.append("WHERE end_at IS NULL");
 
         return new ViewDefinition(projection.viewName(), schema, sql.toString());
@@ -409,6 +517,10 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     private String renderColumn(ColumnDefinition column) {
         var def = new StringBuilder();
         def.append(column.name()).append(" ").append(column.type());
+
+        if (column.primaryKey()) {
+            def.append(" PRIMARY KEY");
+        }
 
         if (!column.nullable()) {
             def.append(" NOT NULL");
@@ -445,8 +557,20 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     }
 
     private String renderConstraint(ConstraintDefinition constraint) {
-        return "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " CHECK "
-                + constraint.definition() + ";";
+        return switch (constraint.type()) {
+            case CHECK ->
+                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " CHECK ("
+                        + constraint.definition() + ");";
+            case FOREIGN_KEY ->
+                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " "
+                        + constraint.definition() + ";";
+            case UNIQUE ->
+                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " UNIQUE ("
+                        + constraint.definition() + ");";
+            case PRIMARY_KEY ->
+                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " PRIMARY KEY ("
+                        + constraint.definition() + ");";
+        };
     }
 
     private String renderView(ViewDefinition view) {

@@ -20,7 +20,7 @@ class PostgresDdlGeneratorIntegrationTest {
 
         // Entity table in entity schema (public)
         assertTrue(ddl.contains("CREATE TABLE public.orders"));
-        assertTrue(ddl.contains("id serial NOT NULL"));
+        assertTrue(ddl.contains("id serial PRIMARY KEY"));
         assertTrue(ddl.contains("customer_id int NOT NULL"));
 
         // State tables in state schema (public_states)
@@ -59,11 +59,13 @@ class PostgresDdlGeneratorIntegrationTest {
 
         // Verify OR transition mapping table in state schema
         assertTrue(ddl.contains("CREATE TABLE public_states.cancelled_source"));
-        assertTrue(ddl.contains("pending_state_id INTEGER REFERENCES order_pending(id)"));
-        assertTrue(ddl.contains("paid_state_id INTEGER REFERENCES order_paid(id)"));
+        // FK now added as ALTER TABLE constraints (not inline)
+        assertTrue(
+                ddl.contains("ALTER TABLE public_states.cancelled_source ADD CONSTRAINT cancelled_source_pending_fk"));
+        assertTrue(ddl.contains("ALTER TABLE public_states.cancelled_source ADD CONSTRAINT cancelled_source_paid_fk"));
 
         // Verify CHECK constraint for OR transitions
-        assertTrue(ddl.contains("ALTER TABLE cancelled_source ADD CONSTRAINT cancelled_source_check"));
+        assertTrue(ddl.contains("ALTER TABLE public_states.cancelled_source ADD CONSTRAINT cancelled_source_check"));
 
         // Verify extension tables in state schema
         assertTrue(ddl.contains("CREATE TABLE public_states.order_paid_extensions"));
@@ -81,7 +83,7 @@ class PostgresDdlGeneratorIntegrationTest {
 
         // Verify current state view in state schema
         assertTrue(ddl.contains("CREATE VIEW public_states.current_order_states AS"));
-        assertTrue(ddl.contains("FROM order_state_intervals"));
+        assertTrue(ddl.contains("FROM public_states.order_state_intervals"));
         assertTrue(ddl.contains("WHERE end_at IS NULL"));
     }
 

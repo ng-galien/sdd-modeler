@@ -1,0 +1,177 @@
+{
+  "$schema" : "https://json-schema.org/draft/2020-12/schema",
+  "$defs" : {
+    "AttributeDef" : {
+      "type" : "object",
+      "properties" : {
+        "defaultValue" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "nullable" : {
+          "type" : "boolean"
+        },
+        "primaryKey" : {
+          "type" : "boolean"
+        },
+        "type" : {
+          "type" : "string"
+        }
+      }
+    },
+    "DatabaseConfig" : {
+      "type" : "object",
+      "properties" : {
+        "dialect" : {
+          "type" : "string"
+        },
+        "schema" : {
+          "type" : "string"
+        }
+      }
+    },
+    "EntityDef" : {
+      "type" : "object",
+      "properties" : {
+        "attributes" : {
+          "$ref" : "#/$defs/Map(String,AttributeDef)"
+        },
+        "extensions" : {
+          "$ref" : "#/$defs/Map(String,ExtensionDef)"
+        },
+        "id" : {
+          "$ref" : "#/$defs/AttributeDef"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "projections" : {
+          "$ref" : "#/$defs/Map(String,ProjectionDef)"
+        },
+        "states" : {
+          "$ref" : "#/$defs/Map(String,StateDef)"
+        },
+        "table" : {
+          "type" : "string"
+        }
+      }
+    },
+    "ExtensionDef" : {
+      "type" : "object",
+      "properties" : {
+        "attributes" : {
+          "$ref" : "#/$defs/Map(String,AttributeDef)"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "table" : {
+          "type" : "string"
+        },
+        "targetState" : {
+          "type" : "string"
+        }
+      }
+    },
+    "Map(String,AttributeDef)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "$ref" : "#/$defs/AttributeDef"
+      }
+    },
+    "Map(String,EntityDef)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "$ref" : "#/$defs/EntityDef"
+      }
+    },
+    "Map(String,ExtensionDef)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "$ref" : "#/$defs/ExtensionDef"
+      }
+    },
+    "Map(String,ProjectionDef)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "$ref" : "#/$defs/ProjectionDef"
+      }
+    },
+    "Map(String,StateDef)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "$ref" : "#/$defs/StateDef"
+      }
+    },
+    "ProjectionDef" : {
+      "type" : "object",
+      "properties" : {
+        "kind" : {
+          "$ref" : "#/$defs/ProjectionKind"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "viewName" : {
+          "type" : "string"
+        }
+      }
+    },
+    "ProjectionKind" : {
+      "type" : "string",
+      "enum" : [ "INTERVALS", "CURRENT_STATE" ]
+    },
+    "StateDef" : {
+      "type" : "object",
+      "properties" : {
+        "attributes" : {
+          "$ref" : "#/$defs/Map(String,AttributeDef)"
+        },
+        "from" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "fromAnyOf" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "initial" : {
+          "type" : "boolean"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "table" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "type" : "object",
+  "properties" : {
+    "database" : {
+      "$ref" : "#/$defs/DatabaseConfig"
+    },
+    "entities" : {
+      "$ref" : "#/$defs/Map(String,EntityDef)"
+    },
+    "name" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    }
+  },
+  "$id" : "https://schemas.statemodeler.io/v1/sdd-model.json",
+  "title" : "SDD Model Schema",
+  "description" : "JSON Schema for State-Driven Design (SDD) YAML model files. Enables IDE autocompletion and validation for SDD entities, states, transitions, and database configurations."
+}

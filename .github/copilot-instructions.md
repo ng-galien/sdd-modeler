@@ -66,6 +66,16 @@ Since project structure isn't initialized yet:
 5. Generate SQL plans, then PostgreSQL-specific DDL
 6. CLI wraps core with Picocli for commands: `validate model.yaml`, `sql model.yaml --dialect postgres`
 
+## External Libraries Policy
+**CRITICAL:** When working with external libraries that you don't know well:
+1. **DO NOT** code manually based on assumptions
+2. **ALWAYS** ask where to find the official documentation first
+3. **READ** the documentation to understand the proper API usage
+4. **FOLLOW** the documented examples and patterns exactly
+5. Only then implement the feature using the documented approach
+
+Example: "I need to use victools/jsonschema-generator but I'm not familiar with the API. Where can I find the documentation?"
+
 ## Testing Strategy
 - **Core**: Unit tests for YAML parsing, validation rules, SQL generation
 - **Integration**: Given `orders-sdd-model.yaml`, generated DDL should be structurally equivalent to `orders-sdd-ddl.sql`

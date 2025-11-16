@@ -45,3 +45,18 @@ val picocliVersion = "4.7.6"
 
 ext["jacksonVersion"] = jacksonVersion
 ext["picocliVersion"] = picocliVersion
+
+// Task to copy schema from core resources to project root for GitHub distribution
+tasks.register<Copy>("distributeSchema") {
+    group = "distribution"
+    description = "Copies the generated JSON Schema from core module to project root for GitHub distribution"
+    
+    dependsOn(":state-modeler-core:generateJsonSchema")
+    from("state-modeler-core/src/main/resources/sdd-model-schema.json")
+    into(projectDir)
+    
+    doLast {
+        println("📋 Schema distributed to project root for GitHub")
+        println("🌍 Available at: https://github.com/user/repo/blob/main/sdd-model-schema.json")
+    }
+}

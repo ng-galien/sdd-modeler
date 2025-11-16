@@ -17,13 +17,12 @@ import org.slf4j.LoggerFactory;
  * <p>Usage example:
  * <pre>
  * // With Ollama
- * var model = LangChainModelFactory.createOllamaModel("llama3.2");
+ * ChatModelProvider provider = new LangChainModelProvider();
+ * var model = provider.createModel("ollama", "llama3.2", 0.7);
  * var service = new LangChainMigrationGenerationService(model);
  *
  * // With Jlama
- * var model = LangChainModelFactory.createJlamaModel(
- *     "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4", 0.2
- * );
+ * var model = provider.createModel("jlama", "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4", 0.2);
  * var service = new LangChainMigrationGenerationService(model);
  *
  * // Generate migration

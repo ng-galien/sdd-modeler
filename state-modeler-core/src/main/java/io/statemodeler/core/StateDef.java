@@ -2,19 +2,18 @@ package io.statemodeler.core;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Definition of a state in the SDD model.
  * Represents a business state with its attributes, transitions, and metadata.
  */
-public final class StateDef {
-    private final String name;
-    private final String table;
-    private final boolean initial;
-    private final List<String> from;
-    private final List<String> fromAnyOf;
-    private final Map<String, AttributeDef> attributes;
+public record StateDef(
+        String name,
+        String table,
+        boolean initial,
+        List<String> from,
+        List<String> fromAnyOf,
+        Map<String, AttributeDef> attributes) {
 
     public StateDef(
             String name,
@@ -23,36 +22,19 @@ public final class StateDef {
             List<String> from,
             List<String> fromAnyOf,
             Map<String, AttributeDef> attributes) {
-        this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.table = Objects.requireNonNull(table, "table cannot be null");
+
+        if (name == null) throw new IllegalArgumentException("name cannot be null");
+        if (table == null) throw new IllegalArgumentException("table cannot be null");
+        if (from == null) throw new IllegalArgumentException("from cannot be null");
+        if (fromAnyOf == null) throw new IllegalArgumentException("fromAnyOf cannot be null");
+        if (attributes == null) throw new IllegalArgumentException("attributes cannot be null");
+
+        this.name = name;
+        this.table = table;
         this.initial = initial;
-        this.from = List.copyOf(Objects.requireNonNull(from, "from cannot be null"));
-        this.fromAnyOf = List.copyOf(Objects.requireNonNull(fromAnyOf, "fromAnyOf cannot be null"));
-        this.attributes = Map.copyOf(Objects.requireNonNull(attributes, "attributes cannot be null"));
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String table() {
-        return table;
-    }
-
-    public boolean isInitial() {
-        return initial;
-    }
-
-    public List<String> from() {
-        return from;
-    }
-
-    public List<String> fromAnyOf() {
-        return fromAnyOf;
-    }
-
-    public Map<String, AttributeDef> attributes() {
-        return attributes;
+        this.from = List.copyOf(from);
+        this.fromAnyOf = List.copyOf(fromAnyOf);
+        this.attributes = Map.copyOf(attributes);
     }
 
     /**
@@ -67,34 +49,5 @@ public final class StateDef {
      */
     public boolean hasSimpleTransitions() {
         return !from.isEmpty();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        StateDef stateDef = (StateDef) obj;
-        return initial == stateDef.initial
-                && Objects.equals(name, stateDef.name)
-                && Objects.equals(table, stateDef.table)
-                && Objects.equals(from, stateDef.from)
-                && Objects.equals(fromAnyOf, stateDef.fromAnyOf)
-                && Objects.equals(attributes, stateDef.attributes);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, table, initial, from, fromAnyOf, attributes);
-    }
-
-    @Override
-    public String toString() {
-        return "StateDef{"
-                + "name='" + name + '\''
-                + ", table='" + table + '\''
-                + ", initial=" + initial
-                + ", from=" + from
-                + ", fromAnyOf=" + fromAnyOf
-                + '}';
     }
 }

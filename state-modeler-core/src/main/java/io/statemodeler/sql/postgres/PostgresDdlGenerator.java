@@ -144,7 +144,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         columns.add(new ColumnDefinition("created_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
 
         // Previous state references (for transitions)
-        if (!state.isInitial()) {
+        if (!state.initial()) {
             if (state.hasOrTransitions()) {
                 // OR transitions use mapping table
                 columns.add(new ColumnDefinition(

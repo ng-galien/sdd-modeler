@@ -22,7 +22,7 @@ class SddModelTest {
         assertThat(model.name()).isEqualTo("test-model");
         assertThat(model.database()).isEqualTo(database);
         assertThat(model.entities()).hasSize(1);
-        assertThat(model.getEntity("order")).isEqualTo(entityDef);
+        assertThat(model.entities().get("order")).isEqualTo(entityDef);
     }
 
     @Test
@@ -31,19 +31,19 @@ class SddModelTest {
         var entities = Map.<String, EntityDef>of();
 
         assertThatThrownBy(() -> new SddModel(null, "test", database, entities))
-                .isInstanceOf(NullPointerException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("version cannot be null");
 
         assertThatThrownBy(() -> new SddModel("0.1", null, database, entities))
-                .isInstanceOf(NullPointerException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("name cannot be null");
 
         assertThatThrownBy(() -> new SddModel("0.1", "test", null, entities))
-                .isInstanceOf(NullPointerException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("database cannot be null");
 
         assertThatThrownBy(() -> new SddModel("0.1", "test", database, null))
-                .isInstanceOf(NullPointerException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("entities cannot be null");
     }
 

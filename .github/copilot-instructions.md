@@ -85,3 +85,28 @@ When implementing validation, enforce SDD constraints:
 - All transition references point to existing states
 - `from_any_of` transitions are structurally valid
 - Extension target_state references exist
+
+## Code Style Guidelines
+**Immutability & Simplicity First:**
+- **Records**: Use Java records for simple immutable data classes (DTOs, value objects)
+- **Lombok**: Use `@Value` for complex immutable classes with validation/business logic
+- **No traditional POJOs**: Avoid manual getters/setters/equals/hashCode/toString
+- **Null Safety**: Required fields checked with `Objects.requireNonNull()` or `@NonNull`
+
+**Exception Handling (Modern Java):**
+- **Runtime exceptions**: Prefer `IllegalArgumentException`, `IllegalStateException` for validation/programming errors
+- **Avoid checked exceptions**: Don't create custom checked exceptions (e.g., `extends Exception`)
+- **Keep IOException**: Only for genuine I/O operations where recovery is possible
+- **Fail fast**: Validate inputs early with clear runtime exceptions
+
+**When to use what:**
+- **Records**: Simple data containers, API DTOs, test fixtures
+- **@Value classes**: Domain models with validation, computed properties, or Jackson annotations
+- **@Builder**: For classes with many optional parameters
+- **@Data**: Avoid - prefer immutable alternatives
+
+**Exception Guidelines:**
+- **IllegalArgumentException**: Invalid input parameters, malformed data, parsing errors
+- **IllegalStateException**: Object in wrong state for operation
+- **IOException**: File/network operations only
+- **RuntimeException**: Custom runtime exceptions if needed (rare)

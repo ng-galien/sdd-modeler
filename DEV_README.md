@@ -85,10 +85,15 @@ sdd-modeler/
 ## Development Guidelines
 
 ### Code Style
+- **Immutability**: Use Java records and Lombok `@Value` for immutable classes
+- **Simplicity**: Avoid traditional POJOs - prefer records or Lombok annotations
+- **Records**: For simple data containers, DTOs, value objects
+- **Lombok `@Value`**: For domain models with validation or business logic
+- **Lombok `@Builder`**: For classes with many optional parameters
 - **Formatting**: Auto-enforced by Spotless with Palantir Java Format
-- **Immutability**: All model classes are immutable with final fields
-- **Null Safety**: Required fields checked with `Objects.requireNonNull()`
-- **Validation**: Use AssertJ for test assertions
+- **Null Safety**: Required fields checked with `@NonNull` or `Objects.requireNonNull()`
+- **Modern Exceptions**: Prefer runtime exceptions (`IllegalArgumentException`, `IllegalStateException`) over checked exceptions
+- **Exception Strategy**: Use `IOException` only for genuine I/O operations, runtime exceptions for validation/parsing errors
 
 ### Testing Strategy
 - **Unit tests**: Core classes and parsing logic

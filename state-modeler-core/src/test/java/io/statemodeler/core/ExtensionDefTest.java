@@ -1,6 +1,6 @@
 package io.statemodeler.core;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -18,12 +18,12 @@ class ExtensionDefTest {
         var extension = new ExtensionDef("paid_extensions", "order_paid_extensions", "paid", attributes);
 
         // Then
-        assertThat(extension.name()).isEqualTo("paid_extensions");
-        assertThat(extension.table()).isEqualTo("order_paid_extensions");
-        assertThat(extension.targetState()).isEqualTo("paid");
-        assertThat(extension.attributes()).hasSize(2);
-        assertThat(extension.attributes()).containsKey("additional_notes");
-        assertThat(extension.attributes()).containsKey("updated_at");
+        assertEquals("paid_extensions", extension.name());
+        assertEquals("order_paid_extensions", extension.table());
+        assertEquals("paid", extension.targetState());
+        assertEquals(2, extension.attributes().size());
+        assertTrue(extension.attributes().containsKey("additional_notes"));
+        assertTrue(extension.attributes().containsKey("updated_at"));
     }
 
     @Test
@@ -32,38 +32,38 @@ class ExtensionDefTest {
         var extension = new ExtensionDef("minimal_ext", "minimal_table", "target", Map.of());
 
         // Then
-        assertThat(extension.attributes()).isEmpty();
-        assertThat(extension.name()).isEqualTo("minimal_ext");
-        assertThat(extension.table()).isEqualTo("minimal_table");
-        assertThat(extension.targetState()).isEqualTo("target");
+        assertTrue(extension.attributes().isEmpty());
+        assertEquals("minimal_ext", extension.name());
+        assertEquals("minimal_table", extension.table());
+        assertEquals("target", extension.targetState());
     }
 
     @Test
     void shouldRejectNullName() {
-        assertThatThrownBy(() -> new ExtensionDef(null, "table", "target", Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("name cannot be null");
+        var ex =
+                assertThrows(IllegalArgumentException.class, () -> new ExtensionDef(null, "table", "target", Map.of()));
+        assertTrue(ex.getMessage().contains("name cannot be null"));
     }
 
     @Test
     void shouldRejectNullTable() {
-        assertThatThrownBy(() -> new ExtensionDef("extension", null, "target", Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("table cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new ExtensionDef("extension", null, "target", Map.of()));
+        assertTrue(ex.getMessage().contains("table cannot be null"));
     }
 
     @Test
     void shouldRejectNullTargetState() {
-        assertThatThrownBy(() -> new ExtensionDef("extension", "table", null, Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("targetState cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new ExtensionDef("extension", "table", null, Map.of()));
+        assertTrue(ex.getMessage().contains("targetState cannot be null"));
     }
 
     @Test
     void shouldRejectNullAttributes() {
-        assertThatThrownBy(() -> new ExtensionDef("extension", "table", "target", null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("attributes cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new ExtensionDef("extension", "table", "target", null));
+        assertTrue(ex.getMessage().contains("attributes cannot be null"));
     }
 
     @Test
@@ -75,9 +75,9 @@ class ExtensionDefTest {
         var ext3 = new ExtensionDef("cancelled_ext", "order_paid_ext", "paid", attributes);
 
         // Then
-        assertThat(ext1).isEqualTo(ext2);
-        assertThat(ext1).isNotEqualTo(ext3);
-        assertThat(ext1.hashCode()).isEqualTo(ext2.hashCode());
+        assertEquals(ext2, ext1);
+        assertNotEquals(ext3, ext1);
+        assertEquals(ext2.hashCode(), ext1.hashCode());
     }
 
     @Test
@@ -89,11 +89,10 @@ class ExtensionDefTest {
         var result = extension.toString();
 
         // Then
-        assertThat(result)
-                .contains("ExtensionDef")
-                .contains("name=paid_ext")
-                .contains("table=order_paid_ext")
-                .contains("targetState=paid");
+        assertTrue(result.contains("ExtensionDef"));
+        assertTrue(result.contains("name=paid_ext"));
+        assertTrue(result.contains("table=order_paid_ext"));
+        assertTrue(result.contains("targetState=paid"));
     }
 
     @Test
@@ -105,8 +104,8 @@ class ExtensionDefTest {
         var extension = new ExtensionDef("ext", "table", "target", mutableAttributes);
 
         // Then - should be immutable copy
-        assertThat(extension.attributes()).isInstanceOf(Map.class);
-        assertThat(extension.attributes()).containsKey("attr");
+        assertInstanceOf(Map.class, extension.attributes());
+        assertTrue(extension.attributes().containsKey("attr"));
     }
 
     @Test
@@ -127,9 +126,9 @@ class ExtensionDefTest {
         var notesExt = new ExtensionDef("notes", "order_notes", "completed", notesAttributes);
 
         // Verification
-        assertThat(auditExt.attributes()).hasSize(3);
-        assertThat(notesExt.attributes()).hasSize(2);
-        assertThat(auditExt.targetState()).isEqualTo("paid");
-        assertThat(notesExt.targetState()).isEqualTo("completed");
+        assertEquals(3, auditExt.attributes().size());
+        assertEquals(2, notesExt.attributes().size());
+        assertEquals("paid", auditExt.targetState());
+        assertEquals("completed", notesExt.targetState());
     }
 }

@@ -1,6 +1,6 @@
 package io.statemodeler.sql;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.statemodeler.core.*;
 import java.util.List;
@@ -13,22 +13,21 @@ class DdlGeneratorsTest {
     void shouldCreatePostgresGenerator() {
         var generator = DdlGenerators.forDialect("postgres");
 
-        assertThat(generator).isNotNull();
-        assertThat(generator.getDialect()).isEqualTo("postgres");
+        assertNotNull(generator);
+        assertEquals("postgres", generator.getDialect());
     }
 
     @Test
     void shouldSupportPostgresDialects() {
-        assertThat(DdlGenerators.isSupported("postgres")).isTrue();
-        assertThat(DdlGenerators.isSupported("postgresql")).isTrue();
-        assertThat(DdlGenerators.isSupported("POSTGRES")).isTrue();
+        assertTrue(DdlGenerators.isSupported("postgres"));
+        assertTrue(DdlGenerators.isSupported("postgresql"));
+        assertTrue(DdlGenerators.isSupported("POSTGRES"));
     }
 
     @Test
     void shouldRejectUnsupportedDialect() {
-        assertThatThrownBy(() -> DdlGenerators.forDialect("mysql"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported SQL dialect: mysql");
+        var ex = assertThrows(IllegalArgumentException.class, () -> DdlGenerators.forDialect("mysql"));
+        assertTrue(ex.getMessage().contains("Unsupported SQL dialect: mysql"));
     }
 
     @Test
@@ -38,9 +37,9 @@ class DdlGeneratorsTest {
 
         var ddl = generator.generateDdl(model);
 
-        assertThat(ddl).isNotBlank();
-        assertThat(ddl).contains("CREATE TABLE");
-        assertThat(ddl).contains("orders");
+        assertFalse(ddl.isBlank());
+        assertTrue(ddl.contains("CREATE TABLE"));
+        assertTrue(ddl.contains("orders"));
     }
 
     private SddModel createSimpleModel() {

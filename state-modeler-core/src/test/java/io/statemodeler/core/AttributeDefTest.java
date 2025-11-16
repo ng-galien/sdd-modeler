@@ -1,6 +1,6 @@
 package io.statemodeler.core;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,12 +12,12 @@ class AttributeDefTest {
         var attr = new AttributeDef("id", "serial", false, true, "DEFAULT 1", "Primary key");
 
         // Then
-        assertThat(attr.name()).isEqualTo("id");
-        assertThat(attr.type()).isEqualTo("serial");
-        assertThat(attr.nullable()).isFalse();
-        assertThat(attr.primaryKey()).isTrue();
-        assertThat(attr.defaultValue()).isEqualTo("DEFAULT 1");
-        assertThat(attr.description()).isEqualTo("Primary key");
+        assertEquals("id", attr.name());
+        assertEquals("serial", attr.type());
+        assertFalse(attr.nullable());
+        assertTrue(attr.primaryKey());
+        assertEquals("DEFAULT 1", attr.defaultValue());
+        assertEquals("Primary key", attr.description());
     }
 
     @Test
@@ -26,26 +26,26 @@ class AttributeDefTest {
         var attr = new AttributeDef("customer_id", "int", true, false, null, null);
 
         // Then
-        assertThat(attr.name()).isEqualTo("customer_id");
-        assertThat(attr.type()).isEqualTo("int");
-        assertThat(attr.nullable()).isTrue();
-        assertThat(attr.primaryKey()).isFalse();
-        assertThat(attr.defaultValue()).isNull();
-        assertThat(attr.description()).isNull();
+        assertEquals("customer_id", attr.name());
+        assertEquals("int", attr.type());
+        assertTrue(attr.nullable());
+        assertFalse(attr.primaryKey());
+        assertNull(attr.defaultValue());
+        assertNull(attr.description());
     }
 
     @Test
     void shouldRejectNullName() {
-        assertThatThrownBy(() -> new AttributeDef(null, "int", false, false, null, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("name cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new AttributeDef(null, "int", false, false, null, null));
+        assertTrue(ex.getMessage().contains("name cannot be null"));
     }
 
     @Test
     void shouldRejectNullType() {
-        assertThatThrownBy(() -> new AttributeDef("id", null, false, false, null, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("type cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new AttributeDef("id", null, false, false, null, null));
+        assertTrue(ex.getMessage().contains("type cannot be null"));
     }
 
     @Test
@@ -56,9 +56,9 @@ class AttributeDefTest {
         var attr3 = new AttributeDef("other_id", "serial", false, true, "DEFAULT 1", "Primary key");
 
         // Then
-        assertThat(attr1).isEqualTo(attr2);
-        assertThat(attr1).isNotEqualTo(attr3);
-        assertThat(attr1.hashCode()).isEqualTo(attr2.hashCode());
+        assertEquals(attr2, attr1);
+        assertNotEquals(attr3, attr1);
+        assertEquals(attr2.hashCode(), attr1.hashCode());
     }
 
     @Test
@@ -70,12 +70,11 @@ class AttributeDefTest {
         var result = attr.toString();
 
         // Then
-        assertThat(result)
-                .contains("AttributeDef")
-                .contains("name=id")
-                .contains("type=serial")
-                .contains("nullable=false")
-                .contains("primaryKey=true");
+        assertTrue(result.contains("AttributeDef"));
+        assertTrue(result.contains("name=id"));
+        assertTrue(result.contains("type=serial"));
+        assertTrue(result.contains("nullable=false"));
+        assertTrue(result.contains("primaryKey=true"));
     }
 
     @Test
@@ -83,13 +82,13 @@ class AttributeDefTest {
         // Empty string values (allowed)
         var attrEmptyDefaults = new AttributeDef("test", "varchar", true, false, "", "");
 
-        assertThat(attrEmptyDefaults.defaultValue()).isEmpty();
-        assertThat(attrEmptyDefaults.description()).isEmpty();
+        assertTrue(attrEmptyDefaults.defaultValue().isEmpty());
+        assertTrue(attrEmptyDefaults.description().isEmpty());
 
         // Different boolean combinations
         var attrNullablePrimary = new AttributeDef("weird", "int", true, true, null, null);
-        assertThat(attrNullablePrimary.nullable()).isTrue();
-        assertThat(attrNullablePrimary.primaryKey()).isTrue();
+        assertTrue(attrNullablePrimary.nullable());
+        assertTrue(attrNullablePrimary.primaryKey());
     }
 
     @Test
@@ -100,9 +99,9 @@ class AttributeDefTest {
         var decimalAttr = new AttributeDef("price", "decimal(10,2)", false, false, "0.00", "Price in euros");
         var timestampAttr = new AttributeDef("created_at", "timestamptz", false, false, "NOW()", null);
 
-        assertThat(stringAttr.type()).isEqualTo("varchar(255)");
-        assertThat(intAttr.type()).isEqualTo("integer");
-        assertThat(decimalAttr.type()).isEqualTo("decimal(10,2)");
-        assertThat(timestampAttr.type()).isEqualTo("timestamptz");
+        assertEquals("varchar(255)", stringAttr.type());
+        assertEquals("integer", intAttr.type());
+        assertEquals("decimal(10,2)", decimalAttr.type());
+        assertEquals("timestamptz", timestampAttr.type());
     }
 }

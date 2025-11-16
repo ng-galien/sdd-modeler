@@ -1,6 +1,6 @@
 package io.statemodeler.core;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -18,11 +18,11 @@ class SddModelTest {
         var model = new SddModel("0.1", "test-model", database, entities);
 
         // Then
-        assertThat(model.version()).isEqualTo("0.1");
-        assertThat(model.name()).isEqualTo("test-model");
-        assertThat(model.database()).isEqualTo(database);
-        assertThat(model.entities()).hasSize(1);
-        assertThat(model.entities().get("order")).isEqualTo(entityDef);
+        assertEquals("0.1", model.version());
+        assertEquals("test-model", model.name());
+        assertEquals(database, model.database());
+        assertEquals(1, model.entities().size());
+        assertEquals(entityDef, model.entities().get("order"));
     }
 
     @Test
@@ -30,21 +30,17 @@ class SddModelTest {
         var database = new DatabaseConfig("postgres", "public", null);
         var entities = Map.<String, EntityDef>of();
 
-        assertThatThrownBy(() -> new SddModel(null, "test", database, entities))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("version cannot be null");
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> new SddModel(null, "test", database, entities));
+        assertTrue(ex1.getMessage().contains("version cannot be null"));
 
-        assertThatThrownBy(() -> new SddModel("0.1", null, database, entities))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("name cannot be null");
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> new SddModel("0.1", null, database, entities));
+        assertTrue(ex2.getMessage().contains("name cannot be null"));
 
-        assertThatThrownBy(() -> new SddModel("0.1", "test", null, entities))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("database cannot be null");
+        var ex3 = assertThrows(IllegalArgumentException.class, () -> new SddModel("0.1", "test", null, entities));
+        assertTrue(ex3.getMessage().contains("database cannot be null"));
 
-        assertThatThrownBy(() -> new SddModel("0.1", "test", database, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("entities cannot be null");
+        var ex4 = assertThrows(IllegalArgumentException.class, () -> new SddModel("0.1", "test", database, null));
+        assertTrue(ex4.getMessage().contains("entities cannot be null"));
     }
 
     private EntityDef createSampleEntityDef() {

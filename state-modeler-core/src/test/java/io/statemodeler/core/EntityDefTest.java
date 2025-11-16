@@ -1,6 +1,6 @@
 package io.statemodeler.core;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
@@ -24,13 +24,13 @@ class EntityDefTest {
         var entity = new EntityDef("order", "orders", idAttr, attributes, states, extensions, projections);
 
         // Then
-        assertThat(entity.name()).isEqualTo("order");
-        assertThat(entity.table()).isEqualTo("orders");
-        assertThat(entity.id()).isEqualTo(idAttr);
-        assertThat(entity.attributes()).hasSize(2);
-        assertThat(entity.states()).hasSize(1);
-        assertThat(entity.extensions()).isEmpty();
-        assertThat(entity.projections()).isEmpty();
+        assertEquals("order", entity.name());
+        assertEquals("orders", entity.table());
+        assertEquals(idAttr, entity.id());
+        assertEquals(2, entity.attributes().size());
+        assertEquals(1, entity.states().size());
+        assertTrue(entity.extensions().isEmpty());
+        assertTrue(entity.projections().isEmpty());
     }
 
     @Test
@@ -53,9 +53,9 @@ class EntityDefTest {
         var entity = new EntityDef("order", "orders", idAttr, attributes, states, extensions, projections);
 
         // Then
-        assertThat(entity.states()).hasSize(2);
-        assertThat(entity.extensions()).hasSize(1);
-        assertThat(entity.projections()).hasSize(1);
+        assertEquals(2, entity.states().size());
+        assertEquals(1, entity.extensions().size());
+        assertEquals(1, entity.projections().size());
     }
 
     @Test
@@ -71,8 +71,8 @@ class EntityDefTest {
         var initialState = entity.findInitialState();
 
         // Then
-        assertThat(initialState).isEqualTo(pendingState);
-        assertThat(initialState.initial()).isTrue();
+        assertEquals(pendingState, initialState);
+        assertTrue(initialState.initial());
     }
 
     @Test
@@ -87,68 +87,75 @@ class EntityDefTest {
         var initialState = entity.findInitialState();
 
         // Then
-        assertThat(initialState).isNull();
+        assertNull(initialState);
     }
 
     @Test
     void shouldRejectNullName() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
-        assertThatThrownBy(() -> new EntityDef(null, "orders", idAttr, Map.of(), Map.of(), Map.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("name cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef(null, "orders", idAttr, Map.of(), Map.of(), Map.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("name cannot be null"));
     }
 
     @Test
     void shouldRejectNullTable() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
-        assertThatThrownBy(() -> new EntityDef("order", null, idAttr, Map.of(), Map.of(), Map.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("table cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef("order", null, idAttr, Map.of(), Map.of(), Map.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("table cannot be null"));
     }
 
     @Test
     void shouldRejectNullId() {
-        assertThatThrownBy(() -> new EntityDef("order", "orders", null, Map.of(), Map.of(), Map.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("id cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef("order", "orders", null, Map.of(), Map.of(), Map.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("id cannot be null"));
     }
 
     @Test
     void shouldRejectNullAttributes() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
-        assertThatThrownBy(() -> new EntityDef("order", "orders", idAttr, null, Map.of(), Map.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("attributes cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef("order", "orders", idAttr, null, Map.of(), Map.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("attributes cannot be null"));
     }
 
     @Test
     void shouldRejectNullStates() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
-        assertThatThrownBy(() -> new EntityDef("order", "orders", idAttr, Map.of(), null, Map.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("states cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef("order", "orders", idAttr, Map.of(), null, Map.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("states cannot be null"));
     }
 
     @Test
     void shouldRejectNullExtensions() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
-        assertThatThrownBy(() -> new EntityDef("order", "orders", idAttr, Map.of(), Map.of(), null, Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("extensions cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef("order", "orders", idAttr, Map.of(), Map.of(), null, Map.of()));
+        assertTrue(ex.getMessage().contains("extensions cannot be null"));
     }
 
     @Test
     void shouldRejectNullProjections() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
-        assertThatThrownBy(() -> new EntityDef("order", "orders", idAttr, Map.of(), Map.of(), Map.of(), null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("projections cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new EntityDef("order", "orders", idAttr, Map.of(), Map.of(), Map.of(), null));
+        assertTrue(ex.getMessage().contains("projections cannot be null"));
     }
 
     @Test
@@ -160,9 +167,9 @@ class EntityDefTest {
         var entity3 = new EntityDef("customer", "orders", idAttr, Map.of(), Map.of(), Map.of(), Map.of());
 
         // Then
-        assertThat(entity1).isEqualTo(entity2);
-        assertThat(entity1).isNotEqualTo(entity3);
-        assertThat(entity1.hashCode()).isEqualTo(entity2.hashCode());
+        assertEquals(entity2, entity1);
+        assertNotEquals(entity3, entity1);
+        assertEquals(entity2.hashCode(), entity1.hashCode());
     }
 
     @Test
@@ -175,7 +182,9 @@ class EntityDefTest {
         var result = entity.toString();
 
         // Then
-        assertThat(result).contains("EntityDef").contains("name=order").contains("table=orders");
+        assertTrue(result.contains("EntityDef"));
+        assertTrue(result.contains("name=order"));
+        assertTrue(result.contains("table=orders"));
     }
 
     @Test
@@ -193,14 +202,14 @@ class EntityDefTest {
                 "order", "orders", idAttr, mutableAttributes, mutableStates, mutableExtensions, mutableProjections);
 
         // Then - all collections should be immutable copies
-        assertThat(entity.attributes()).isInstanceOf(Map.class);
-        assertThat(entity.states()).isInstanceOf(Map.class);
-        assertThat(entity.extensions()).isInstanceOf(Map.class);
-        assertThat(entity.projections()).isInstanceOf(Map.class);
+        assertInstanceOf(Map.class, entity.attributes());
+        assertInstanceOf(Map.class, entity.states());
+        assertInstanceOf(Map.class, entity.extensions());
+        assertInstanceOf(Map.class, entity.projections());
 
-        assertThat(entity.attributes()).hasSize(1);
-        assertThat(entity.states()).hasSize(1);
-        assertThat(entity.extensions()).hasSize(1);
-        assertThat(entity.projections()).hasSize(1);
+        assertEquals(1, entity.attributes().size());
+        assertEquals(1, entity.states().size());
+        assertEquals(1, entity.extensions().size());
+        assertEquals(1, entity.projections().size());
     }
 }

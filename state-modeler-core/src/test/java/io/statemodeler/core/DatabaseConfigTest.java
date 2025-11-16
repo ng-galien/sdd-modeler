@@ -1,6 +1,6 @@
 package io.statemodeler.core;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,10 +12,10 @@ class DatabaseConfigTest {
         var config = new DatabaseConfig("postgres", "public", null);
 
         // Then
-        assertThat(config.dialect()).isEqualTo("postgres");
-        assertThat(config.schema()).isEqualTo("public");
-        assertThat(config.stateSchema()).isNull();
-        assertThat(config.effectiveStateSchema()).isEqualTo("public_states");
+        assertEquals("postgres", config.dialect());
+        assertEquals("public", config.schema());
+        assertNull(config.stateSchema());
+        assertEquals("public_states", config.effectiveStateSchema());
     }
 
     @Test
@@ -24,17 +24,16 @@ class DatabaseConfigTest {
         var config = new DatabaseConfig("mysql", null, null);
 
         // Then
-        assertThat(config.dialect()).isEqualTo("mysql");
-        assertThat(config.schema()).isNull();
-        assertThat(config.stateSchema()).isNull();
-        assertThat(config.effectiveStateSchema()).isEqualTo("states");
+        assertEquals("mysql", config.dialect());
+        assertNull(config.schema());
+        assertNull(config.stateSchema());
+        assertEquals("states", config.effectiveStateSchema());
     }
 
     @Test
     void shouldRejectNullDialect() {
-        assertThatThrownBy(() -> new DatabaseConfig(null, "public", null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("dialect cannot be null");
+        var ex = assertThrows(IllegalArgumentException.class, () -> new DatabaseConfig(null, "public", null));
+        assertTrue(ex.getMessage().contains("dialect cannot be null"));
     }
 
     @Test
@@ -47,11 +46,11 @@ class DatabaseConfigTest {
         var config5 = new DatabaseConfig("postgres", "public", "custom_states");
 
         // Then
-        assertThat(config1).isEqualTo(config2);
-        assertThat(config1).isNotEqualTo(config3);
-        assertThat(config1).isNotEqualTo(config4);
-        assertThat(config1).isNotEqualTo(config5);
-        assertThat(config1.hashCode()).isEqualTo(config2.hashCode());
+        assertEquals(config2, config1);
+        assertNotEquals(config3, config1);
+        assertNotEquals(config4, config1);
+        assertNotEquals(config5, config1);
+        assertEquals(config2.hashCode(), config1.hashCode());
     }
 
     @Test
@@ -63,10 +62,9 @@ class DatabaseConfigTest {
         var result = config.toString();
 
         // Then
-        assertThat(result)
-                .contains("DatabaseConfig")
-                .contains("dialect=postgres")
-                .contains("schema=public");
+        assertTrue(result.contains("DatabaseConfig"));
+        assertTrue(result.contains("dialect=postgres"));
+        assertTrue(result.contains("schema=public"));
     }
 
     @Test
@@ -77,10 +75,10 @@ class DatabaseConfigTest {
         var sqlite = new DatabaseConfig("sqlite", null, null);
         var sqlserver = new DatabaseConfig("sqlserver", "dbo", null);
 
-        assertThat(postgres.dialect()).isEqualTo("postgres");
-        assertThat(mysql.dialect()).isEqualTo("mysql");
-        assertThat(sqlite.dialect()).isEqualTo("sqlite");
-        assertThat(sqlserver.dialect()).isEqualTo("sqlserver");
+        assertEquals("postgres", postgres.dialect());
+        assertEquals("mysql", mysql.dialect());
+        assertEquals("sqlite", sqlite.dialect());
+        assertEquals("sqlserver", sqlserver.dialect());
     }
 
     @Test
@@ -89,9 +87,9 @@ class DatabaseConfigTest {
         var config = new DatabaseConfig("postgres", "", null);
 
         // Then
-        assertThat(config.schema()).isEmpty();
-        assertThat(config.dialect()).isEqualTo("postgres");
-        assertThat(config.effectiveStateSchema()).isEqualTo("states"); // empty treated as null
+        assertTrue(config.schema().isEmpty());
+        assertEquals("postgres", config.dialect());
+        assertEquals("states", config.effectiveStateSchema()); // empty treated as null
     }
 
     @Test
@@ -101,8 +99,8 @@ class DatabaseConfigTest {
         var configWithoutSchema = new DatabaseConfig("postgres", "", "");
 
         // Then - empty stateSchema falls back to default
-        assertThat(configWithSchema.effectiveStateSchema()).isEqualTo("myapp_states");
-        assertThat(configWithoutSchema.effectiveStateSchema()).isEqualTo("states");
+        assertEquals("myapp_states", configWithSchema.effectiveStateSchema());
+        assertEquals("states", configWithoutSchema.effectiveStateSchema());
     }
 
     @Test
@@ -111,8 +109,8 @@ class DatabaseConfigTest {
         var config = new DatabaseConfig("postgres", "public", "custom_states");
 
         // Then
-        assertThat(config.stateSchema()).isEqualTo("custom_states");
-        assertThat(config.effectiveStateSchema()).isEqualTo("custom_states");
+        assertEquals("custom_states", config.stateSchema());
+        assertEquals("custom_states", config.effectiveStateSchema());
     }
 
     @Test
@@ -122,7 +120,7 @@ class DatabaseConfigTest {
         var configWithoutSchema = new DatabaseConfig("postgres", null, null);
 
         // Then
-        assertThat(configWithSchema.effectiveStateSchema()).isEqualTo("myapp_states");
-        assertThat(configWithoutSchema.effectiveStateSchema()).isEqualTo("states");
+        assertEquals("myapp_states", configWithSchema.effectiveStateSchema());
+        assertEquals("states", configWithoutSchema.effectiveStateSchema());
     }
 }

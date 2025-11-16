@@ -1,6 +1,6 @@
 package io.statemodeler.dsl;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
@@ -12,30 +12,29 @@ class YamlModelLoaderTest {
         // Given
         var yamlLoader = new YamlModelLoader();
         var ordersModelUrl = getClass().getClassLoader().getResource("orders-sdd-model.yaml");
-        assertThat(ordersModelUrl).isNotNull();
+        assertNotNull(ordersModelUrl);
         var ordersModelPath = Paths.get(ordersModelUrl.toURI());
 
         // When
         var result = yamlLoader.loadFromFile(ordersModelPath);
 
         // Then
-        assertThat(result.isSuccess())
-                .withFailMessage(
-                        "YAML parsing failed: %s",
-                        result.isFailure() ? result.getCause().getMessage() : "Unknown error")
-                .isTrue();
+        assertTrue(
+                result.isSuccess(),
+                "YAML parsing failed: "
+                        + (result.isFailure() ? result.getCause().getMessage() : "Unknown error"));
 
         var model = result.get();
 
-        assertThat(model).isNotNull();
-        assertThat(model.name()).isEqualTo("orders-sdd-example");
-        assertThat(model.entities()).containsKey("order");
+        assertNotNull(model);
+        assertEquals("orders-sdd-example", model.name());
+        assertTrue(model.entities().containsKey("order"));
 
         var orderEntity = model.entities().get("order");
-        assertThat(orderEntity.states()).containsKey("pending");
-        assertThat(orderEntity.states()).containsKey("paid");
-        assertThat(orderEntity.states()).containsKey("cancelled");
-        assertThat(orderEntity.states()).containsKey("refunded");
+        assertTrue(orderEntity.states().containsKey("pending"));
+        assertTrue(orderEntity.states().containsKey("paid"));
+        assertTrue(orderEntity.states().containsKey("cancelled"));
+        assertTrue(orderEntity.states().containsKey("refunded"));
     }
 
     @Test
@@ -51,13 +50,13 @@ class YamlModelLoaderTest {
 
         var result = yamlLoader.loadFromString(simpleYaml);
 
-        assertThat(result.isSuccess()).isTrue();
+        assertTrue(result.isSuccess());
         var model = result.get();
-        assertThat(model).isNotNull();
-        assertThat(model.version()).isEqualTo("0.1");
-        assertThat(model.name()).isEqualTo("test-model");
-        assertThat(model.database().dialect()).isEqualTo("postgres");
-        assertThat(model.entities()).isEmpty();
+        assertNotNull(model);
+        assertEquals("0.1", model.version());
+        assertEquals("test-model", model.name());
+        assertEquals("postgres", model.database().dialect());
+        assertTrue(model.entities().isEmpty());
     }
 
     @Test
@@ -65,24 +64,24 @@ class YamlModelLoaderTest {
         var yamlLoader = new YamlModelLoader();
 
         var result1 = yamlLoader.loadFromString("");
-        assertThat(result1.isFailure()).isTrue();
-        assertThat(result1.getCause()).isInstanceOf(IllegalArgumentException.class);
-        assertThat(result1.getCause().getMessage()).contains("Model content cannot be empty");
+        assertTrue(result1.isFailure());
+        assertInstanceOf(IllegalArgumentException.class, result1.getCause());
+        assertTrue(result1.getCause().getMessage().contains("Model content cannot be empty"));
 
         var result2 = yamlLoader.loadFromString(null);
-        assertThat(result2.isFailure()).isTrue();
-        assertThat(result2.getCause()).isInstanceOf(IllegalArgumentException.class);
-        assertThat(result2.getCause().getMessage()).contains("Model content cannot be empty");
+        assertTrue(result2.isFailure());
+        assertInstanceOf(IllegalArgumentException.class, result2.getCause());
+        assertTrue(result2.getCause().getMessage().contains("Model content cannot be empty"));
     }
 
     @Test
     void shouldSupportYamlExtensions() {
         var yamlLoader = new YamlModelLoader();
 
-        assertThat(yamlLoader.supports("yaml")).isTrue();
-        assertThat(yamlLoader.supports("yml")).isTrue();
-        assertThat(yamlLoader.supports("YAML")).isTrue();
-        assertThat(yamlLoader.supports("json")).isFalse();
-        assertThat(yamlLoader.supports(null)).isFalse();
+        assertTrue(yamlLoader.supports("yaml"));
+        assertTrue(yamlLoader.supports("yml"));
+        assertTrue(yamlLoader.supports("YAML"));
+        assertFalse(yamlLoader.supports("json"));
+        assertFalse(yamlLoader.supports(null));
     }
 }

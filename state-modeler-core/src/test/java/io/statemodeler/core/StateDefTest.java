@@ -1,6 +1,6 @@
 package io.statemodeler.core;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
@@ -17,14 +17,14 @@ class StateDefTest {
         var state = new StateDef("pending", "order_pending", true, List.of(), List.of(), attributes);
 
         // Then
-        assertThat(state.name()).isEqualTo("pending");
-        assertThat(state.table()).isEqualTo("order_pending");
-        assertThat(state.initial()).isTrue();
-        assertThat(state.from()).isEmpty();
-        assertThat(state.fromAnyOf()).isEmpty();
-        assertThat(state.attributes()).hasSize(1);
-        assertThat(state.hasSimpleTransitions()).isFalse();
-        assertThat(state.hasOrTransitions()).isFalse();
+        assertEquals("pending", state.name());
+        assertEquals("order_pending", state.table());
+        assertTrue(state.initial());
+        assertTrue(state.from().isEmpty());
+        assertTrue(state.fromAnyOf().isEmpty());
+        assertEquals(1, state.attributes().size());
+        assertFalse(state.hasSimpleTransitions());
+        assertFalse(state.hasOrTransitions());
     }
 
     @Test
@@ -37,12 +37,12 @@ class StateDefTest {
         var state = new StateDef("paid", "order_paid", false, List.of("pending"), List.of(), attributes);
 
         // Then
-        assertThat(state.name()).isEqualTo("paid");
-        assertThat(state.initial()).isFalse();
-        assertThat(state.from()).containsExactly("pending");
-        assertThat(state.fromAnyOf()).isEmpty();
-        assertThat(state.hasSimpleTransitions()).isTrue();
-        assertThat(state.hasOrTransitions()).isFalse();
+        assertEquals("paid", state.name());
+        assertFalse(state.initial());
+        assertEquals(List.of("pending"), state.from());
+        assertTrue(state.fromAnyOf().isEmpty());
+        assertTrue(state.hasSimpleTransitions());
+        assertFalse(state.hasOrTransitions());
     }
 
     @Test
@@ -55,12 +55,12 @@ class StateDefTest {
                 new StateDef("cancelled", "order_cancelled", false, List.of(), List.of("pending", "paid"), attributes);
 
         // Then
-        assertThat(state.name()).isEqualTo("cancelled");
-        assertThat(state.initial()).isFalse();
-        assertThat(state.from()).isEmpty();
-        assertThat(state.fromAnyOf()).containsExactly("pending", "paid");
-        assertThat(state.hasSimpleTransitions()).isFalse();
-        assertThat(state.hasOrTransitions()).isTrue();
+        assertEquals("cancelled", state.name());
+        assertFalse(state.initial());
+        assertTrue(state.from().isEmpty());
+        assertEquals(List.of("pending", "paid"), state.fromAnyOf());
+        assertFalse(state.hasSimpleTransitions());
+        assertTrue(state.hasOrTransitions());
     }
 
     @Test
@@ -73,44 +73,47 @@ class StateDefTest {
                 new StateDef("finalized", "order_finalized", false, List.of("paid", "refunded"), List.of(), attributes);
 
         // Then
-        assertThat(state.from()).containsExactly("paid", "refunded");
-        assertThat(state.hasSimpleTransitions()).isTrue();
-        assertThat(state.hasOrTransitions()).isFalse();
+        assertEquals(List.of("paid", "refunded"), state.from());
+        assertTrue(state.hasSimpleTransitions());
+        assertFalse(state.hasOrTransitions());
     }
 
     @Test
     void shouldRejectNullName() {
-        assertThatThrownBy(() -> new StateDef(null, "table", false, List.of(), List.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("name cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new StateDef(null, "table", false, List.of(), List.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("name cannot be null"));
     }
 
     @Test
     void shouldRejectNullTable() {
-        assertThatThrownBy(() -> new StateDef("state", null, false, List.of(), List.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("table cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new StateDef("state", null, false, List.of(), List.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("table cannot be null"));
     }
 
     @Test
     void shouldRejectNullFrom() {
-        assertThatThrownBy(() -> new StateDef("state", "table", false, null, List.of(), Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("from cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new StateDef("state", "table", false, null, List.of(), Map.of()));
+        assertTrue(ex.getMessage().contains("from cannot be null"));
     }
 
     @Test
     void shouldRejectNullFromAnyOf() {
-        assertThatThrownBy(() -> new StateDef("state", "table", false, List.of(), null, Map.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("fromAnyOf cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new StateDef("state", "table", false, List.of(), null, Map.of()));
+        assertTrue(ex.getMessage().contains("fromAnyOf cannot be null"));
     }
 
     @Test
     void shouldRejectNullAttributes() {
-        assertThatThrownBy(() -> new StateDef("state", "table", false, List.of(), List.of(), null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("attributes cannot be null");
+        var ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new StateDef("state", "table", false, List.of(), List.of(), null));
+        assertTrue(ex.getMessage().contains("attributes cannot be null"));
     }
 
     @Test
@@ -122,9 +125,9 @@ class StateDefTest {
         var state3 = new StateDef("paid", "order_pending", true, List.of(), List.of(), attributes);
 
         // Then
-        assertThat(state1).isEqualTo(state2);
-        assertThat(state1).isNotEqualTo(state3);
-        assertThat(state1.hashCode()).isEqualTo(state2.hashCode());
+        assertEquals(state2, state1);
+        assertNotEquals(state3, state1);
+        assertEquals(state2.hashCode(), state1.hashCode());
     }
 
     @Test
@@ -136,11 +139,10 @@ class StateDefTest {
         var result = state.toString();
 
         // Then
-        assertThat(result)
-                .contains("StateDef")
-                .contains("name=pending")
-                .contains("table=order_pending")
-                .contains("initial=true");
+        assertTrue(result.contains("StateDef"));
+        assertTrue(result.contains("name=pending"));
+        assertTrue(result.contains("table=order_pending"));
+        assertTrue(result.contains("initial=true"));
     }
 
     @Test
@@ -155,14 +157,14 @@ class StateDefTest {
                 new StateDef("cancelled", "order_cancelled", false, mutableFrom, mutableFromAnyOf, mutableAttributes);
 
         // Then - collections should be immutable copies
-        assertThat(state.from()).isInstanceOf(List.class);
-        assertThat(state.fromAnyOf()).isInstanceOf(List.class);
-        assertThat(state.attributes()).isInstanceOf(Map.class);
+        assertInstanceOf(List.class, state.from());
+        assertInstanceOf(List.class, state.fromAnyOf());
+        assertInstanceOf(Map.class, state.attributes());
 
         // Verify they contain the expected data
-        assertThat(state.from()).containsExactly("pending");
-        assertThat(state.fromAnyOf()).containsExactly("paid");
-        assertThat(state.attributes()).hasSize(1);
+        assertEquals(List.of("pending"), state.from());
+        assertEquals(List.of("paid"), state.fromAnyOf());
+        assertEquals(1, state.attributes().size());
     }
 
     @Test
@@ -171,10 +173,10 @@ class StateDefTest {
         var state = new StateDef("isolated", "isolated_table", true, List.of(), List.of(), Map.of());
 
         // Then
-        assertThat(state.from()).isEmpty();
-        assertThat(state.fromAnyOf()).isEmpty();
-        assertThat(state.attributes()).isEmpty();
-        assertThat(state.hasSimpleTransitions()).isFalse();
-        assertThat(state.hasOrTransitions()).isFalse();
+        assertTrue(state.from().isEmpty());
+        assertTrue(state.fromAnyOf().isEmpty());
+        assertTrue(state.attributes().isEmpty());
+        assertFalse(state.hasSimpleTransitions());
+        assertFalse(state.hasOrTransitions());
     }
 }

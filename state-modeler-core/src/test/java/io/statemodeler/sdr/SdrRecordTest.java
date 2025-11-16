@@ -12,17 +12,19 @@ class SdrRecordTest {
         String schema = "{\"version\":\"0.1\"}";
         String contentType = "application/yaml";
         String ddl = "CREATE TABLE test";
-        String hash = "abc123";
+        String schemaHash = "abc123";
+        String ddlHash = "def456";
         String version = "1.0.0";
 
         // When
-        var sdr = new SdrRecord(schema, contentType, ddl, hash, version);
+        var sdr = new SdrRecord(schema, contentType, ddl, schemaHash, ddlHash, version);
 
         // Then
         assertEquals(schema, sdr.schema());
         assertEquals(contentType, sdr.contentType());
         assertEquals(ddl, sdr.ddl());
-        assertEquals(hash, sdr.hash());
+        assertEquals(schemaHash, sdr.schemaHash());
+        assertEquals(ddlHash, sdr.ddlHash());
         assertEquals(version, sdr.version());
     }
 
@@ -31,7 +33,7 @@ class SdrRecordTest {
         // When/Then
         var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrRecord(null, "application/yaml", "CREATE TABLE", "hash", "1.0.0"));
+                () -> new SdrRecord(null, "application/yaml", "CREATE TABLE", "hash1", "hash2", "1.0.0"));
         assertTrue(exception.getMessage().contains("schema"));
     }
 
@@ -40,7 +42,7 @@ class SdrRecordTest {
         // When/Then
         var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrRecord("  ", "application/yaml", "CREATE TABLE", "hash", "1.0.0"));
+                () -> new SdrRecord("  ", "application/yaml", "CREATE TABLE", "hash1", "hash2", "1.0.0"));
         assertTrue(exception.getMessage().contains("schema"));
     }
 
@@ -48,7 +50,8 @@ class SdrRecordTest {
     void shouldRejectNullContentType() {
         // When/Then
         var exception = assertThrows(
-                IllegalArgumentException.class, () -> new SdrRecord("{}", null, "CREATE TABLE", "hash", "1.0.0"));
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", null, "CREATE TABLE", "hash1", "hash2", "1.0.0"));
         assertTrue(exception.getMessage().contains("contentType"));
     }
 
@@ -56,7 +59,8 @@ class SdrRecordTest {
     void shouldRejectNullDdl() {
         // When/Then
         var exception = assertThrows(
-                IllegalArgumentException.class, () -> new SdrRecord("{}", "application/yaml", null, "hash", "1.0.0"));
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "application/yaml", null, "hash1", "hash2", "1.0.0"));
         assertTrue(exception.getMessage().contains("ddl"));
     }
 
@@ -65,8 +69,8 @@ class SdrRecordTest {
         // When/Then
         var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", null, "1.0.0"));
-        assertTrue(exception.getMessage().contains("hash"));
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", null, "hash2", "1.0.0"));
+        assertTrue(exception.getMessage().contains("schemaHash"));
     }
 
     @Test
@@ -74,7 +78,7 @@ class SdrRecordTest {
         // When/Then
         var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", null));
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "hash2", null));
         assertTrue(exception.getMessage().contains("version"));
     }
 
@@ -82,7 +86,8 @@ class SdrRecordTest {
     void shouldRejectBlankContentType() {
         // When/Then
         var exception = assertThrows(
-                IllegalArgumentException.class, () -> new SdrRecord("{}", "  ", "CREATE TABLE", "hash", "1.0.0"));
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "  ", "CREATE TABLE", "hash1", "hash2", "1.0.0"));
         assertTrue(exception.getMessage().contains("contentType"));
     }
 
@@ -90,7 +95,8 @@ class SdrRecordTest {
     void shouldRejectBlankDdl() {
         // When/Then
         var exception = assertThrows(
-                IllegalArgumentException.class, () -> new SdrRecord("{}", "application/yaml", "  ", "hash", "1.0.0"));
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "application/yaml", "  ", "hash1", "hash2", "1.0.0"));
         assertTrue(exception.getMessage().contains("ddl"));
     }
 
@@ -99,8 +105,8 @@ class SdrRecordTest {
         // When/Then
         var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "  ", "1.0.0"));
-        assertTrue(exception.getMessage().contains("hash"));
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "  ", "hash2", "1.0.0"));
+        assertTrue(exception.getMessage().contains("schemaHash"));
     }
 
     @Test
@@ -108,7 +114,7 @@ class SdrRecordTest {
         // When/Then
         var exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", "  "));
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "hash2", "  "));
         assertTrue(exception.getMessage().contains("version"));
     }
 
@@ -116,10 +122,11 @@ class SdrRecordTest {
     void shouldComputeBuildFingerprint() {
         // Given
         String ddl = "CREATE TABLE test (id INT)";
-        String modelHash = "model123";
+        String schemaHash = "schema123";
+        String ddlHash = "ddl456";
         String version = "1.0.0";
 
-        var sdr = new SdrRecord("{}", "application/yaml", ddl, modelHash, version);
+        var sdr = new SdrRecord("{}", "application/yaml", ddl, schemaHash, ddlHash, version);
 
         // When
         String fingerprint = sdr.buildFingerprint();
@@ -133,8 +140,8 @@ class SdrRecordTest {
     @Test
     void shouldProduceDeterministicFingerprints() {
         // Given
-        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", "1.0.0");
-        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", "1.0.0");
+        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "hash2", "1.0.0");
+        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "hash2", "1.0.0");
 
         // When
         String fp1 = sdr1.buildFingerprint();
@@ -147,8 +154,8 @@ class SdrRecordTest {
     @Test
     void shouldProduceDifferentFingerprintsForDifferentDdl() {
         // Given
-        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE t1", "hash", "1.0.0");
-        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE t2", "hash", "1.0.0");
+        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE t1", "hash1", "ddlhash1", "1.0.0");
+        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE t2", "hash1", "ddlhash2", "1.0.0");
 
         // When
         String fp1 = sdr1.buildFingerprint();
@@ -161,8 +168,8 @@ class SdrRecordTest {
     @Test
     void shouldProduceDifferentFingerprintsForDifferentVersion() {
         // Given
-        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", "1.0.0");
-        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", "2.0.0");
+        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "hash2", "1.0.0");
+        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "hash2", "2.0.0");
 
         // When
         String fp1 = sdr1.buildFingerprint();
@@ -170,5 +177,55 @@ class SdrRecordTest {
 
         // Then
         assertNotEquals(fp1, fp2);
+    }
+
+    @Test
+    void shouldAvoidHashCollisionWithDelimiter() {
+        // Given - potential collision scenario without delimiter
+        var sdr1 = new SdrRecord("{}", "application/yaml", "CREATE TABLE t1", "abc", "hash1", "1");
+        var sdr2 = new SdrRecord("{}", "application/yaml", "CREATE TABLE t123", "ab", "hash2", "c1");
+        // Without delimiter: "abc" + "hash1" + "1"
+        //                vs: "ab"  + "hash2" + "c1"
+        // Could collide if hash results align
+
+        // When
+        String fp1 = sdr1.buildFingerprint();
+        String fp2 = sdr2.buildFingerprint();
+
+        // Then - should produce different fingerprints due to delimiter
+        assertNotEquals(fp1, fp2, "Delimiter should prevent hash collision");
+    }
+
+    @Test
+    void shouldComputeCombinedHash() {
+        // Given
+        String schemaHash = "abc123";
+        String ddlHash = "def456";
+        var sdr = new SdrRecord("{}", "application/yaml", "CREATE TABLE", schemaHash, ddlHash, "1.0.0");
+
+        // When
+        String combined = sdr.combinedHash();
+
+        // Then
+        assertEquals("abc123def456", combined);
+        assertEquals(schemaHash + ddlHash, combined);
+    }
+
+    @Test
+    void shouldRejectNullDdlHash() {
+        // When/Then
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", null, "1.0.0"));
+        assertTrue(exception.getMessage().contains("ddlHash"));
+    }
+
+    @Test
+    void shouldRejectBlankDdlHash() {
+        // When/Then
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash1", "  ", "1.0.0"));
+        assertTrue(exception.getMessage().contains("ddlHash"));
     }
 }

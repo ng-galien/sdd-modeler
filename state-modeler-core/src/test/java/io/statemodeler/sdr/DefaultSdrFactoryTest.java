@@ -80,7 +80,8 @@ class DefaultSdrFactoryTest {
         assertEquals("application/yaml", sdr.contentType());
         assertNotNull(sdr.schema());
         assertNotNull(sdr.ddl());
-        assertNotNull(sdr.hash());
+        assertNotNull(sdr.schemaHash());
+        assertNotNull(sdr.ddlHash());
         assertEquals("1.0.0", sdr.version());
 
         // Verify DDL contains expected elements
@@ -99,7 +100,8 @@ class DefaultSdrFactoryTest {
         assertEquals("application/json", sdr.contentType());
         assertNotNull(sdr.schema());
         assertNotNull(sdr.ddl());
-        assertNotNull(sdr.hash());
+        assertNotNull(sdr.schemaHash());
+        assertNotNull(sdr.ddlHash());
         assertEquals("1.0.0", sdr.version());
     }
 
@@ -110,7 +112,7 @@ class DefaultSdrFactoryTest {
         var jsonSdr = factory.create(JSON_MODEL, "application/json", "postgres");
 
         // Then - hashes should be identical (format-independent)
-        assertEquals(yamlSdr.hash(), jsonSdr.hash());
+        assertEquals(yamlSdr.schemaHash(), jsonSdr.schemaHash());
         assertEquals(yamlSdr.schema(), jsonSdr.schema()); // Canonical JSON should match
     }
 
@@ -121,7 +123,7 @@ class DefaultSdrFactoryTest {
         var sdr2 = factory.create(YAML_MODEL, "application/yaml", "postgres");
 
         // Then
-        assertEquals(sdr1.hash(), sdr2.hash());
+        assertEquals(sdr1.schemaHash(), sdr2.schemaHash());
         assertEquals(sdr1.schema(), sdr2.schema());
     }
 
@@ -198,7 +200,7 @@ class DefaultSdrFactoryTest {
         // Then
         assertNotNull(sdr1);
         assertNotNull(sdr2);
-        assertEquals(sdr1.hash(), sdr2.hash());
+        assertEquals(sdr1.schemaHash(), sdr2.schemaHash());
     }
 
     @Test
@@ -260,6 +262,6 @@ class DefaultSdrFactoryTest {
         var sdr2 = factory.create(yaml2, "application/yaml", "postgres");
 
         // Then - should produce same canonical representation
-        assertEquals(sdr1.hash(), sdr2.hash());
+        assertEquals(sdr1.schemaHash(), sdr2.schemaHash());
     }
 }

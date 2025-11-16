@@ -63,14 +63,17 @@ public class DefaultSdrFactory implements SdrFactory {
         String canonicalJson = serializeToCanonicalJson(model);
 
         // Compute stable hash of canonical representation
-        String modelHash = SdrHasher.computeHash(canonicalJson);
+        String schemaHash = SdrHasher.computeHash(canonicalJson);
 
         // Generate DDL
         String ddl = generateDdl(model, sqlDialect);
 
-        logger.debug("SDR created: hash={}, ddlLength={}", modelHash, ddl.length());
+        // Compute DDL hash
+        String ddlHash = SdrHasher.computeHash(ddl);
 
-        return new SdrRecord(canonicalJson, contentType, ddl, modelHash, VERSION);
+        logger.debug("SDR created: schemaHash={}, ddlHash={}, ddlLength={}", schemaHash, ddlHash, ddl.length());
+
+        return new SdrRecord(canonicalJson, contentType, ddl, schemaHash, ddlHash, VERSION);
     }
 
     @Override

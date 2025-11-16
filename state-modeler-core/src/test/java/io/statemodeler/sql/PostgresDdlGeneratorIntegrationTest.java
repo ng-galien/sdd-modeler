@@ -235,6 +235,49 @@ class PostgresDdlGeneratorIntegrationTest {
         assertThat(ddl).doesNotContain("CREATE TABLE .resource_active"); // No invalid SQL
     }
 
+    @Test
+    void shouldGenerateIndexesOnForeignKeys() throws Exception {
+        // Given - model with state transitions (which create FK relationships)
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+
+        var paidState = new StateDef(
+                "paid",
+                "order_paid",
+                false,
+                List.of("pending"), // transition from pending
+                List.of(),
+                Map.of("payment_method", new AttributeDef("payment_method", "text", false, false, null, null)));
+
+        var entity = new EntityDef(
+                "order",
+                "orders",
+                idAttr,
+                Map.of(),
+                Map.of("pending", pendingState, "paid", paidState),
+                Map.of(),
+                Map.of());
+
+        var model = new SddModel("0.1", "test-indexes", database, Map.of("order", entity));
+
+        // When
+        var generator = DdlGenerators.forDialect("postgres");
+        var ddl = generator.generateDdl(model);
+
+        // Then - verify indexes are created for FK columns
+        // Index on order_paid.order_id (FK to orders)
+        assertThat(ddl).contains("CREATE INDEX idx_order_paid_order_id ON public_states.order_paid (order_id);");
+
+        // Index on order_paid.previous_pending_id (FK to order_pending)
+        assertThat(ddl)
+                .contains("CREATE INDEX idx_order_paid_previous_pending_id ON public_states.order_paid (previous_pending_id);");
+
+        // Index on order_pending.order_id (FK to orders)
+        assertThat(ddl).contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);");
+    }
+
     private SddModel createSimpleOrderModel() {
         var database = new DatabaseConfig("postgres", "public", null);
 

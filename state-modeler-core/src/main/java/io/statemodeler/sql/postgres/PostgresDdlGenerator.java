@@ -36,6 +36,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         var tables = new ArrayList<TableDefinition>();
         var views = new ArrayList<ViewDefinition>();
         var constraints = new ArrayList<ConstraintDefinition>();
+        var indexes = new ArrayList<IndexDefinition>();
 
         var entitySchema = model.database().schema();
         var stateSchema = model.database().effectiveStateSchema();
@@ -47,18 +48,24 @@ public final class PostgresDdlGenerator implements DdlGenerator {
 
             // State tables in state schema
             for (var state : entity.states().values()) {
-                tables.add(generateStateTable(entity, state, stateSchema));
+                var stateTable = generateStateTable(entity, state, stateSchema);
+                tables.add(stateTable);
+                indexes.addAll(generateIndexesForTable(stateTable));
             }
 
             // Extension tables in state schema
             for (var extension : entity.extensions().values()) {
-                tables.add(generateExtensionTable(entity, extension, stateSchema));
+                var extensionTable = generateExtensionTable(entity, extension, stateSchema);
+                tables.add(extensionTable);
+                indexes.addAll(generateIndexesForTable(extensionTable));
             }
 
             // OR transition mapping tables in state schema
             for (var state : entity.states().values()) {
                 if (state.hasOrTransitions()) {
-                    tables.add(generateOrTransitionTable(entity, state, stateSchema));
+                    var orTable = generateOrTransitionTable(entity, state, stateSchema);
+                    tables.add(orTable);
+                    indexes.addAll(generateIndexesForTable(orTable));
                     constraints.add(generateOrTransitionConstraint(entity, state));
                 }
             }
@@ -69,7 +76,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             }
         }
 
-        return new SqlPlan(tables, views, constraints);
+        return new SqlPlan(tables, views, constraints, indexes);
     }
 
     /**
@@ -96,6 +103,11 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         // Constraints
         for (var constraint : plan.constraints()) {
             ddl.append(renderConstraint(constraint)).append("\n\n");
+        }
+
+        // Indexes
+        for (var index : plan.indexes()) {
+            ddl.append(renderIndex(index)).append("\n\n");
         }
 
         // Views
@@ -243,6 +255,24 @@ public final class PostgresDdlGenerator implements DdlGenerator {
 
         return new ConstraintDefinition(
                 constraintName, tableName, ConstraintDefinition.ConstraintType.CHECK, definition);
+    }
+
+    /**
+     * Generate indexes for all foreign key columns in a table.
+     * Creates one index per FK column to optimize JOIN performance.
+     */
+    private List<IndexDefinition> generateIndexesForTable(TableDefinition table) {
+        var indexes = new ArrayList<IndexDefinition>();
+
+        for (var column : table.columns()) {
+            if (column.hasForeignKey()) {
+                var indexName = "idx_" + table.name() + "_" + column.name();
+                indexes.add(
+                        new IndexDefinition(indexName, table.name(), table.schema(), List.of(column.name()), false));
+            }
+        }
+
+        return indexes;
     }
 
     private ViewDefinition generateProjectionView(EntityDef entity, ProjectionDef projection, String schema) {
@@ -397,6 +427,21 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         }
 
         return def.toString();
+    }
+
+    private String renderIndex(IndexDefinition index) {
+        var ddl = new StringBuilder();
+        ddl.append("CREATE ");
+
+        if (index.unique()) {
+            ddl.append("UNIQUE ");
+        }
+
+        ddl.append("INDEX ").append(index.name());
+        ddl.append(" ON ").append(index.fullTableName());
+        ddl.append(" (").append(String.join(", ", index.columns())).append(");");
+
+        return ddl.toString();
     }
 
     private String renderConstraint(ConstraintDefinition constraint) {

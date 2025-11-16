@@ -233,6 +233,103 @@ class DefaultModelValidatorTest {
         assertThat(validator.isValid(invalidModel)).isFalse();
     }
 
+    @Test
+    void shouldRejectInvalidAttributeTypes() {
+        // Given - model with invalid PostgreSQL type
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        // Invalid type "string" instead of "TEXT"
+        var invalidAttr = new AttributeDef("name", "string", false, false, null, null);
+        var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var states = Map.of("pending", pendingState);
+        var entity = new EntityDef("order", "orders", idAttr, Map.of("name", invalidAttr), states, Map.of(), Map.of());
+        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+
+        // When
+        var result = validator.validate(model);
+
+        // Then
+        assertThat(result.isInvalid()).isTrue();
+        var errors = result.getError();
+        assertThat(errors).hasSizeGreaterThanOrEqualTo(1);
+        assertThat(errors).anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE"));
+        assertThat(errors).anyMatch(e -> e.message().contains("string"));
+    }
+
+    @Test
+    void shouldAcceptValidPostgresTypes() {
+        // Given - model with valid PostgreSQL types
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+        var nameAttr = new AttributeDef("name", "TEXT", false, false, null, null);
+        var priceAttr = new AttributeDef("price", "NUMERIC(10,2)", false, false, null, null);
+        var createdAtAttr = new AttributeDef("created_at", "TIMESTAMPTZ", false, false, null, null);
+        var metadataAttr = new AttributeDef("metadata", "JSONB", true, false, null, null);
+
+        var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var states = Map.of("pending", pendingState);
+        var attributes =
+                Map.of("name", nameAttr, "price", priceAttr, "created_at", createdAtAttr, "metadata", metadataAttr);
+        var entity = new EntityDef("order", "orders", idAttr, attributes, states, Map.of(), Map.of());
+        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+
+        // When
+        var result = validator.validate(model);
+
+        // Then
+        assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    void shouldValidateStateAttributeTypes() {
+        // Given - model with invalid type in state attributes
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        // Invalid type in state attributes
+        var invalidStateAttr = new AttributeDef("reason", "varchar", false, false, null, null); // missing length
+        var pendingState = new StateDef(
+                "pending", "order_pending", true, List.of(), List.of(), Map.of("reason", invalidStateAttr));
+        var states = Map.of("pending", pendingState);
+        var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
+        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+
+        // When
+        var result = validator.validate(model);
+
+        // Then - should accept bare VARCHAR (it's in CHARACTER_TYPES)
+        assertThat(result.isValid()).isTrue();
+    }
+
+    @Test
+    void shouldValidateExtensionAttributeTypes() {
+        // Given - model with invalid type in extension attributes
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var states = Map.of("pending", pendingState);
+
+        // Invalid type in extension attributes
+        var invalidExtAttr = new AttributeDef("notes", "longtext", false, false, null, null); // MySQL type
+        var extension =
+                new ExtensionDef("pending_ext", "order_pending_ext", "pending", Map.of("notes", invalidExtAttr));
+        var extensions = Map.of("pending_ext", extension);
+
+        var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, extensions, Map.of());
+        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+
+        // When
+        var result = validator.validate(model);
+
+        // Then
+        assertThat(result.isInvalid()).isTrue();
+        var errors = result.getError();
+        assertThat(errors).anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE"));
+        assertThat(errors).anyMatch(e -> e.message().contains("longtext"));
+    }
+
     private SddModel createValidModel() {
         var database = new DatabaseConfig("postgres", "public", null);
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);

@@ -3,6 +3,7 @@ package io.statemodeler.validation;
 import io.statemodeler.core.EntityDef;
 import io.statemodeler.core.SddModel;
 import io.statemodeler.core.StateDef;
+import io.statemodeler.sql.postgres.PostgresTypeValidator;
 import io.vavr.control.Validation;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -25,7 +26,7 @@ public final class DefaultModelValidator {
         for (var entry : model.entities().entrySet()) {
             var entityName = entry.getKey();
             var entity = entry.getValue();
-            validateEntity(entityName, entity, errors);
+            validateEntity(model, entityName, entity, errors);
         }
 
         // Return validation result
@@ -50,7 +51,7 @@ public final class DefaultModelValidator {
         }
     }
 
-    private void validateEntity(String entityName, EntityDef entity, List<ValidationError> errors) {
+    private void validateEntity(SddModel model, String entityName, EntityDef entity, List<ValidationError> errors) {
         // Validate entity has at least one state
         if (entity.states().isEmpty()) {
             errors.add(ValidationError.entity("ENTITY_NO_STATES", "Entity must have at least one state", entityName));
@@ -70,11 +71,64 @@ public final class DefaultModelValidator {
         // Validate state transitions are valid
         validateStateTransitions(entityName, entity, errors);
 
+        // Validate attribute types (PostgreSQL only for now)
+        if ("postgres".equalsIgnoreCase(model.database().dialect())) {
+            validateAttributeTypes(entityName, entity, errors);
+        }
+
         // Validate extensions reference valid states
         validateExtensions(entityName, entity, errors);
 
         // Validate projections reference valid states
         validateProjections(entityName, entity, errors);
+    }
+
+    private void validateAttributeTypes(String entityName, EntityDef entity, List<ValidationError> errors) {
+        // Validate entity attributes
+        for (var entry : entity.attributes().entrySet()) {
+            var attrName = entry.getKey();
+            var attr = entry.getValue();
+            if (!PostgresTypeValidator.isValidType(attr.type())) {
+                errors.add(ValidationError.field(
+                        "INVALID_ATTRIBUTE_TYPE",
+                        PostgresTypeValidator.getErrorMessage(attr.type()),
+                        entityName,
+                        null,
+                        attrName));
+            }
+        }
+
+        // Validate state attributes
+        for (var state : entity.states().values()) {
+            for (var entry : state.attributes().entrySet()) {
+                var attrName = entry.getKey();
+                var attr = entry.getValue();
+                if (!PostgresTypeValidator.isValidType(attr.type())) {
+                    errors.add(ValidationError.field(
+                            "INVALID_ATTRIBUTE_TYPE",
+                            PostgresTypeValidator.getErrorMessage(attr.type()),
+                            entityName,
+                            state.name(),
+                            attrName));
+                }
+            }
+        }
+
+        // Validate extension attributes
+        for (var extension : entity.extensions().values()) {
+            for (var entry : extension.attributes().entrySet()) {
+                var attrName = entry.getKey();
+                var attr = entry.getValue();
+                if (!PostgresTypeValidator.isValidType(attr.type())) {
+                    errors.add(ValidationError.field(
+                            "INVALID_ATTRIBUTE_TYPE",
+                            PostgresTypeValidator.getErrorMessage(attr.type()),
+                            entityName,
+                            extension.targetState(),
+                            attrName));
+                }
+            }
+        }
     }
 
     private void validateInitialState(String entityName, EntityDef entity, List<ValidationError> errors) {

@@ -185,9 +185,13 @@ Si `state_schema` est omis, la valeur par défaut est `<schema>_states` :
 
 - `io.statemodeler.validation`
   - Validation fonctionnelle du modèle :
-    - `ModelValidator` — point d’entrée de la validation (prend un `SddModel`,
-      renvoie une liste d’erreurs ou lève une exception type
+    - `ModelValidator` — point d'entrée de la validation (prend un `SddModel`,
+      renvoie une liste d'erreurs ou lève une exception type
       `ModelValidationException`).
+    - **Validation des types d'attributs** : pour le dialecte PostgreSQL,
+      vérifie que tous les types d'attributs (entité, états, extensions) sont
+      des types PostgreSQL valides. Rejette les modèles avec types invalides
+      (ex: "string" au lieu de "TEXT").
     - Règles possibles :
       - chaque entité possède au moins un état (`states` non vide) ;
       - au moins un état `initial: true` par entité ;
@@ -196,8 +200,9 @@ Si `state_schema` est omis, la valeur par défaut est `<schema>_states` :
       - projections correspondantes à des états existants.
 
 - `io.statemodeler.sql`
-  - Représentation abstraite d’un schéma SQL SDD :
-    - `SqlPlan` — agrégat contenant les tables, vues, contraintes.
+  - Représentation abstraite d'un schéma SQL SDD :
+    - `SqlPlan` — agrégat contenant les tables, vues, contraintes, et index.
+    - `IndexDefinition` — représentation abstraite d'un index SQL (nom, table, colonnes, unique).
     - `TableDef`, `ColumnDef`, `ForeignKeyDef`, `CheckConstraintDef`, `ViewDef`.
   - Génération de plan à partir d’un `SddModel` :
     - `SqlPlanGenerator` — transforme `SddModel` → `SqlPlan`.
@@ -209,6 +214,12 @@ Si `state_schema` est omis, la valeur par défaut est `<schema>_states` :
       schéma entité (`schema`), tables d'états/extensions/OR transitions/projections
       dans le schéma d'états (`stateSchema` ou `<schema>_states` par défaut).
     - Génère automatiquement `CREATE SCHEMA IF NOT EXISTS` pour les schémas nécessaires.
+    - **Génération automatique d'index** : crée un index pour chaque colonne de 
+      foreign key (nommage : `idx_<table>_<column>`). Améliore les performances 
+      des JOINs sur les tables d'états, extensions et transitions OR.
+    - `PostgresTypeValidator` — valide que les types d'attributs sont des types
+      PostgreSQL valides (TEXT, INTEGER, BIGINT, NUMERIC(p,s), TIMESTAMPTZ, JSONB, etc.).
+      Supporte les types paramétrés et arrays. Validation case-insensitive.
   - Possibles helpers : formatage, indentation, gestion de types PostgreSQL.
 
 **Tests (core)** :

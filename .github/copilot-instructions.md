@@ -3,7 +3,7 @@
 ## Project Overview
 **sdd-modeler** is a Java 21 library + CLI for implementing State-Driven Design (SDD). It generates PostgreSQL DDL from declarative YAML/JSON models describing entities, states, transitions, extensions, and projections.
 
-**Current Implementation Status**: Core model classes (✅), YAML/JSON parsing (✅), model validation with Vavr (✅), SQL plan framework (✅), PostgreSQL DDL generation (✅ complete with views + automatic FK indexing). CLI fully integrated with validation and SQL generation (✅). JSON Schema generation (✅).
+**Current Implementation Status**: Core model classes (✅), YAML/JSON parsing (✅), model validation with Vavr (✅), SQL plan framework (✅), PostgreSQL DDL generation (✅ complete with views + automatic FK indexing). CLI fully integrated with validation and SQL generation (✅). JSON Schema generation (✅). **SDR Repository (✅), DDL comparison service (✅), AI-powered migration generation with LangChain4j (✅)**.
 
 ## Core SDD Principles (Critical Context)
 - **Entities vs States**: Separate stable entity data (`orders` table) from mutable state facts (`order_pending`, `order_paid` tables)
@@ -16,7 +16,7 @@
 ## Architecture & Module Structure
 Multi-module Gradle 8.11.1 project with Java 21 toolchain:
 - `state-modeler-core`: Model classes, YAML/JSON parsing (Jackson), validation (Vavr), SQL plan, PostgreSQL DDL
-- `state-modeler-cli`: Picocli-based CLI (`validate`, `sql` commands) - fully integrated with core validation and DDL generation
+- `state-modeler-app`: Picocli-based CLI (validate, sql, register, list, show, delete, diff, migrate) + SDR repository + migration services
 - `state-modeler-spring`: Future Java/Spring code generation
 
 ### Core Package Structure (Current Implementation)
@@ -28,14 +28,23 @@ io.statemodeler.validation    // ✅ DefaultModelValidator (Vavr Validation<List
 io.statemodeler.sql           // ✅ SqlPlan, TableDefinition, ViewDefinition, DdlGenerator interface
 io.statemodeler.sql.postgres  // ✅ PostgresDdlGenerator (complete: tables, views, constraints, indexes)
 io.statemodeler.schema        // ✅ JSON schema generation (victools/jsonschema-generator)
-io.statemodeler.cli           // ✅ ValidateCommand, SqlCommand (Picocli with full integration)
+io.statemodeler.cli           // ✅ ValidateCommand, SqlCommand, DiffCommand, MigrateCommand (Picocli with full integration)
+io.statemodeler.repository    // ✅ SdrRepository, H2SdrRepository, SdrMigration (SDR + migration persistence)
+io.statemodeler.comparison    // ✅ DdlComparisonService (DDL diff analysis)
+io.statemodeler.migration     // ✅ MigrationGenerationService, LangChainMigrationGenerationService (LLM-based migrations)
 ```
 
 ### Build & Development Commands
 ```bash
 # Run CLI (validates YAML, generates SQL)
-./gradlew :state-modeler-cli:run --args="validate instructions/examples/orders-sdd-model.yaml"
-./gradlew :state-modeler-cli:run --args="sql instructions/examples/orders-sdd-model.yaml -o output.sql"
+./gradlew :state-modeler-app:run --args="validate instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="sql instructions/examples/orders-sdd-model.yaml -o output.sql"
+
+# Compare DDL between versions
+./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
+
+# Generate migration with Jlama
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 -o migration.sql"
 
 # Code formatting (REQUIRED before commit - CI enforces this)
 ./gradlew spotlessApply          # Auto-format with Palantir Java Format
@@ -123,15 +132,19 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
 - Validation: `DefaultModelValidator` returns `Validation<List<ValidationError>, SddModel>`
 - SQL plan: `SqlPlan` abstraction (tables, views, constraints)
 - PostgreSQL DDL generation: Complete implementation including entity, state, extension, OR transition tables, and projection views (intervals, current_state)
-- CLI integration: `ValidateCommand` and `SqlCommand` fully integrated with YamlModelLoader + DefaultModelValidator
-- CLI testing: Comprehensive tests for both commands (valid/invalid models, file I/O, error handling)
+- CLI integration: `ValidateCommand`, `SqlCommand`, `DiffCommand`, `MigrateCommand` fully integrated
+- CLI testing: Comprehensive tests for all commands (valid/invalid models, file I/O, error handling)
 - JSON Schema generation: Using victools/jsonschema-generator (auto-generated during build)
+- **SDR Repository**: H2-based persistence with in-memory test optimization (~3x faster)
+- **DDL Comparison**: Structural diff analysis with DdlComparisonService
+- **Migration Generation**: LangChain4j integration (Jlama, Ollama) with intelligent prompting
+- **Migration Persistence**: Cache layer for LLM-generated migrations
 
 **⏳ TODO Priority:**
-1. Document validation error codes in `ValidationError` javadoc
-2. Add CLI usage examples to README.md
-3. Consider adding support for JSON input (currently only YAML tested in CLI)
-4. Explore advanced projection types (aggregations, custom queries)
+1. Multi-dialect migration support (MySQL, SQL Server)
+2. Migration execution tracking (apply/rollback history)
+3. Custom LLM endpoints (OpenAI, Anthropic, Azure)
+4. Advanced projection types (aggregations, custom queries)
 
 ## Testing Strategy
 - **Unit tests**: JUnit 5 standard assertions ONLY (no AssertJ or other assertion libraries)

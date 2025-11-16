@@ -79,6 +79,40 @@ class SdrRecordTest {
     }
 
     @Test
+    void shouldRejectBlankContentType() {
+        // When/Then
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> new SdrRecord("{}", "  ", "CREATE TABLE", "hash", "1.0.0"));
+        assertTrue(exception.getMessage().contains("contentType"));
+    }
+
+    @Test
+    void shouldRejectBlankDdl() {
+        // When/Then
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> new SdrRecord("{}", "application/yaml", "  ", "hash", "1.0.0"));
+        assertTrue(exception.getMessage().contains("ddl"));
+    }
+
+    @Test
+    void shouldRejectBlankHash() {
+        // When/Then
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "  ", "1.0.0"));
+        assertTrue(exception.getMessage().contains("hash"));
+    }
+
+    @Test
+    void shouldRejectBlankVersion() {
+        // When/Then
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SdrRecord("{}", "application/yaml", "CREATE TABLE", "hash", "  "));
+        assertTrue(exception.getMessage().contains("version"));
+    }
+
+    @Test
     void shouldComputeBuildFingerprint() {
         // Given
         String ddl = "CREATE TABLE test (id INT)";

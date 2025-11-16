@@ -174,6 +174,7 @@ class DefaultSdrFactoryTest {
         var exception = assertThrows(
                 IllegalArgumentException.class, () -> factory.create(invalidYaml, "application/yaml", "postgres"));
         assertTrue(exception.getMessage().contains("Failed to parse model"));
+        assertNotNull(exception.getCause()); // Should have wrapped exception
     }
 
     @Test
@@ -185,6 +186,7 @@ class DefaultSdrFactoryTest {
         var exception = assertThrows(
                 IllegalArgumentException.class, () -> factory.create(invalidJson, "application/json", "postgres"));
         assertTrue(exception.getMessage().contains("Failed to parse model"));
+        assertNotNull(exception.getCause()); // Should have wrapped exception
     }
 
     @Test

@@ -98,4 +98,19 @@ class SdrHasherTest {
         assertEquals(hash.toLowerCase(), hash);
         assertTrue(hash.matches("^[0-9a-f]{64}$")); // Only lowercase hex chars
     }
+
+    @Test
+    void shouldNotAllowInstantiation() {
+        // When/Then
+        var exception = assertThrows(Exception.class, () -> {
+            var constructor = SdrHasher.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            constructor.newInstance();
+        });
+        // The UnsupportedOperationException is wrapped in InvocationTargetException
+        assertTrue(
+                exception.getCause() instanceof UnsupportedOperationException,
+                "Expected UnsupportedOperationException as cause");
+        assertTrue(exception.getCause().getMessage().contains("Utility class"));
+    }
 }

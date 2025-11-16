@@ -14,8 +14,10 @@ import java.util.Optional;
  * <p>Implementation note: The schema hash serves as the primary key, ensuring each unique
  * model structure is stored only once. Multiple versions of a model (with different names/versions
  * but identical structure) will share the same schema hash.
+ *
+ * <p>Implementations should be {@link AutoCloseable} to support try-with-resources.
  */
-public interface SdrRepository {
+public interface SdrRepository extends AutoCloseable {
 
     /**
      * Persists an SDR in the repository.

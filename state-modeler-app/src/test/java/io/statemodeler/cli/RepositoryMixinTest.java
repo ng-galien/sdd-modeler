@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class RepositoryMixinTest {
 
     @Test
-    void shouldCreateRepositoryWithDefaultPath() {
+    void shouldCreateRepositoryWithDefaultPath() throws Exception {
         // Given
         var mixin = new RepositoryMixin();
 
@@ -23,7 +23,7 @@ class RepositoryMixinTest {
     }
 
     @Test
-    void shouldCreateRepositoryWithCustomPath() {
+    void shouldCreateRepositoryWithCustomPath() throws Exception {
         // Given
         var mixin = new RepositoryMixin();
         mixin.repositoryPath = "/tmp/test-custom-repo";

@@ -20,6 +20,10 @@ dependencies {
     // Picocli for CLI
     implementation("info.picocli:picocli:${rootProject.ext["picocliVersion"]}")
     annotationProcessor("info.picocli:picocli-codegen:${rootProject.ext["picocliVersion"]}")
+    
+    // SLF4J for logging
+    implementation("org.slf4j:slf4j-api:2.0.16")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.12")
 
     // Test dependencies specific to CLI
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")

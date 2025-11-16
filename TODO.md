@@ -2,9 +2,9 @@
 
 ## Prochaines étapes prioritaires
 
-### 1. ✅ Amélioration de la génération SQL PostgreSQL (EN COURS)
-- [ ] Génération d'index sur les foreign keys
-- [ ] Support des types PostgreSQL standards pour validation
+### 1. ✅ Amélioration de la génération SQL PostgreSQL (TERMINÉ)
+- [x] Génération d'index sur les foreign keys
+- [x] Support des types PostgreSQL standards pour validation
 - [ ] Génération de triggers pour automatiser les transitions (future)
 - [ ] Génération de fonctions PL/pgSQL pour validations métier (future)
 

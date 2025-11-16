@@ -4,9 +4,6 @@
     "AttributeDef" : {
       "type" : "object",
       "properties" : {
-        "defaultValue" : {
-          "type" : "string"
-        },
         "description" : {
           "type" : "string"
         },
@@ -14,9 +11,6 @@
           "type" : "string"
         },
         "nullable" : {
-          "type" : "boolean"
-        },
-        "primaryKey" : {
           "type" : "boolean"
         },
         "type" : {
@@ -72,9 +66,6 @@
         },
         "table" : {
           "type" : "string"
-        },
-        "targetState" : {
-          "type" : "string"
         }
       }
     },
@@ -116,9 +107,6 @@
         },
         "name" : {
           "type" : "string"
-        },
-        "viewName" : {
-          "type" : "string"
         }
       }
     },
@@ -133,12 +121,6 @@
           "$ref" : "#/$defs/Map(String,AttributeDef)"
         },
         "from" : {
-          "type" : "array",
-          "items" : {
-            "type" : "string"
-          }
-        },
-        "fromAnyOf" : {
           "type" : "array",
           "items" : {
             "type" : "string"

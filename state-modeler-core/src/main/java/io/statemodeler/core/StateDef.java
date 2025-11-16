@@ -1,5 +1,6 @@
 package io.statemodeler.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,7 @@ public record StateDef(
         String table,
         boolean initial,
         List<String> from,
-        List<String> fromAnyOf,
+        @JsonProperty("from_any_of") List<String> fromAnyOf,
         Map<String, AttributeDef> attributes) {
 
     public StateDef(

@@ -1,6 +1,7 @@
 package io.statemodeler.core;
 
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Definition of an entity in the SDD model.
@@ -45,7 +46,7 @@ public record EntityDef(
      * Find the initial state for this entity.
      * @return the initial state, or null if none is marked as initial
      */
-    public StateDef findInitialState() {
+    public @Nullable StateDef findInitialState() {
         return states.values().stream().filter(StateDef::initial).findFirst().orElse(null);
     }
 }

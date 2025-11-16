@@ -1,9 +1,11 @@
 package io.statemodeler.sql;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Abstract representation of a SQL view definition.
  */
-public record ViewDefinition(String name, String schema, String query) {
+public record ViewDefinition(String name, @Nullable String schema, String query) {
 
     public ViewDefinition {
         if (name == null) throw new IllegalArgumentException("name cannot be null");

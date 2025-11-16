@@ -1,4 +1,7 @@
 dependencies {
+    // JSpecify for null-safety annotations
+    compileOnly("org.jspecify:jspecify:${rootProject.ext["jspecifyVersion"]}")
+    
     // Jackson for YAML/JSON parsing
     api("com.fasterxml.jackson.core:jackson-core:${rootProject.ext["jacksonVersion"]}")
     api("com.fasterxml.jackson.core:jackson-databind:${rootProject.ext["jacksonVersion"]}")

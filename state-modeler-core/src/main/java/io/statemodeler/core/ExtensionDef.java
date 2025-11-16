@@ -1,11 +1,16 @@
 package io.statemodeler.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 /**
  * Definition of an extension table for optional, mutable, non-decisional data.
  */
-public record ExtensionDef(String name, String table, String targetState, Map<String, AttributeDef> attributes) {
+public record ExtensionDef(
+        String name,
+        String table,
+        @JsonProperty("target_state") String targetState,
+        Map<String, AttributeDef> attributes) {
 
     public ExtensionDef {
         if (name == null) throw new IllegalArgumentException("name cannot be null");

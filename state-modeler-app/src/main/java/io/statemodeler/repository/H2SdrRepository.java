@@ -112,7 +112,9 @@ public class H2SdrRepository implements SdrRepository, AutoCloseable {
                     throw new SQLException("Failed to insert SDR");
                 }
 
-                logger.info("Saved SDR: {} ({}:{})", sdr.schemaHash().substring(0, 8), modelName, modelVersion);
+                String hashPreview =
+                        sdr.schemaHash().length() > 8 ? sdr.schemaHash().substring(0, 8) : sdr.schemaHash();
+                logger.info("Saved SDR: {} ({}:{})", hashPreview, modelName, modelVersion);
                 return (Void) null;
             } catch (SQLException e) {
                 String msg = e.getMessage();
@@ -268,7 +270,8 @@ public class H2SdrRepository implements SdrRepository, AutoCloseable {
                 boolean deleted = rows > 0;
 
                 if (deleted) {
-                    logger.info("Deleted SDR: {}", schemaHash.substring(0, 8));
+                    String hashPreview = schemaHash.length() > 8 ? schemaHash.substring(0, 8) : schemaHash;
+                    logger.info("Deleted SDR: {}", hashPreview);
                 }
                 return deleted;
             }

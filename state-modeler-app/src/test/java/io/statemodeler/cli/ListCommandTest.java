@@ -8,44 +8,28 @@ import io.statemodeler.sdr.SdrFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests for {@link ListCommand}.
  */
 class ListCommandTest {
 
-    @TempDir
-    Path tempDir;
-
-    private Path repositoryPath;
+    private H2SdrRepository repository;
     private SdrFactory sdrFactory;
 
     @BeforeEach
     void setUp() {
-        repositoryPath = tempDir.resolve("test-repo");
+        repository = H2SdrRepository.createInMemory("test-list-" + System.nanoTime());
         sdrFactory = new DefaultSdrFactory();
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        // Clean up repository
-        if (Files.exists(repositoryPath.getParent())) {
-            Files.walk(repositoryPath.getParent())
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.deleteIfExists(path);
-                        } catch (IOException e) {
-                            // Ignore cleanup errors
-                        }
-                    });
+        if (repository != null) {
+            repository.close();
         }
     }
 
@@ -295,7 +279,7 @@ class ListCommandTest {
 
         var sdr = sdrFactory.create(modelSource, "application/yaml", "postgres");
 
-        try (var repository = new H2SdrRepository(repositoryPath)) {
+        try {
             repository.save(sdr, modelName, modelVersion);
         } catch (Exception e) {
             throw new RuntimeException("Failed to register test SDR", e);
@@ -304,7 +288,7 @@ class ListCommandTest {
 
     private RepositoryMixin createMixin() {
         var mixin = new RepositoryMixin();
-        mixin.repositoryPath = repositoryPath.toString();
+        mixin.testRepository = repository;
         return mixin;
     }
 }

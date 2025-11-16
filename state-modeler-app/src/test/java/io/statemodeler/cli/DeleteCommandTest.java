@@ -8,25 +8,19 @@ import io.statemodeler.sdr.SdrRecord;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class DeleteCommandTest {
 
-    @TempDir
-    Path tempDir;
-
-    Path repoPath;
     H2SdrRepository repository;
     SdrRecord testSdr;
 
     @BeforeEach
     void setUp() throws IOException {
-        repoPath = tempDir.resolve("test.h2");
-        repository = new H2SdrRepository(repoPath);
+        // Use in-memory database for faster tests
+        repository = H2SdrRepository.createInMemory("test-delete-" + System.nanoTime());
 
         // Create a test SDR
         testSdr = createTestSdr("test-hash-12345", "test-schema", "test-ddl");
@@ -49,7 +43,7 @@ class DeleteCommandTest {
 
     private RepositoryMixin createMixin() {
         var mixin = new RepositoryMixin();
-        mixin.repositoryPath = repoPath.toString();
+        mixin.testRepository = repository;
         return mixin;
     }
 

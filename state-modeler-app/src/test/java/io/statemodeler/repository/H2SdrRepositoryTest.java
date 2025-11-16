@@ -3,46 +3,28 @@ package io.statemodeler.repository;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.statemodeler.sdr.SdrRecord;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
 import org.junit.jupiter.api.*;
 
 /**
  * Integration tests for {@link H2SdrRepository}.
  *
- * <p>Uses a temporary H2 database that is cleaned up after each test.
+ * <p>Uses an in-memory H2 database for fast test execution.
  */
 class H2SdrRepositoryTest {
 
-    private Path tempDbPath;
     private H2SdrRepository repository;
 
     @BeforeEach
-    void setUp() throws IOException {
-        // Create temporary directory for test database
-        Path tempDir = Files.createTempDirectory("sdr-test");
-        tempDbPath = tempDir.resolve("test-repository");
-        repository = new H2SdrRepository(tempDbPath);
+    void setUp() {
+        // Use in-memory database for faster tests
+        repository = H2SdrRepository.createInMemory("test-repo-" + System.nanoTime());
     }
 
     @AfterEach
-    void tearDown() throws IOException {
+    void tearDown() {
         // Close repository
         if (repository != null) {
             repository.close();
-        }
-
-        // Delete H2 database files
-        if (tempDbPath != null && tempDbPath.getParent() != null) {
-            Files.walk(tempDbPath.getParent()).sorted(Comparator.reverseOrder()).forEach(path -> {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    // Ignore cleanup errors
-                }
-            });
         }
     }
 

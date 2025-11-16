@@ -39,6 +39,19 @@ public class H2SdrRepository implements SdrRepository, AutoCloseable {
             CREATE INDEX IF NOT EXISTS idx_model_name ON sdr_records(model_name);
             CREATE INDEX IF NOT EXISTS idx_model_version ON sdr_records(model_name, model_version);
             CREATE INDEX IF NOT EXISTS idx_created_at ON sdr_records(created_at);
+
+            CREATE TABLE IF NOT EXISTS sdr_migrations (
+                from_hash VARCHAR(64) NOT NULL,
+                to_hash VARCHAR(64) NOT NULL,
+                migration_script CLOB NOT NULL,
+                dialect VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (from_hash, to_hash),
+                FOREIGN KEY (from_hash) REFERENCES sdr_records(schema_hash) ON DELETE CASCADE,
+                FOREIGN KEY (to_hash) REFERENCES sdr_records(schema_hash) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_migration_from ON sdr_migrations(from_hash);
+            CREATE INDEX IF NOT EXISTS idx_migration_to ON sdr_migrations(to_hash);
             """;
 
     private final String jdbcUrl;
@@ -54,6 +67,37 @@ public class H2SdrRepository implements SdrRepository, AutoCloseable {
         }
         this.jdbcUrl = "jdbc:h2:file:" + dbPath.toAbsolutePath() + ";AUTO_SERVER=TRUE";
         initializeSchema();
+    }
+
+    /**
+     * Creates a new H2 SDR repository with a custom JDBC URL.
+     *
+     * <p>This constructor is useful for testing with in-memory databases or custom configurations.
+     *
+     * @param jdbcUrl custom JDBC URL (e.g., "jdbc:h2:mem:testdb" for in-memory)
+     */
+    public H2SdrRepository(String jdbcUrl) {
+        if (jdbcUrl == null || jdbcUrl.isBlank()) {
+            throw new IllegalArgumentException("jdbcUrl cannot be null or blank");
+        }
+        this.jdbcUrl = jdbcUrl;
+        initializeSchema();
+    }
+
+    /**
+     * Creates an in-memory H2 repository for testing purposes.
+     *
+     * <p>The database is ephemeral and will be lost when the connection is closed.
+     * This is much faster than file-based databases and ideal for unit tests.
+     *
+     * @param dbName name of the in-memory database (used to isolate test databases)
+     * @return a new H2SdrRepository backed by an in-memory database
+     */
+    public static H2SdrRepository createInMemory(String dbName) {
+        if (dbName == null || dbName.isBlank()) {
+            throw new IllegalArgumentException("dbName cannot be null or blank");
+        }
+        return new H2SdrRepository("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1");
     }
 
     /**
@@ -328,6 +372,162 @@ public class H2SdrRepository implements SdrRepository, AutoCloseable {
                         rs.getString("build_fingerprint"),
                         rs.getTimestamp("created_at").toInstant());
                 results.add(metadata);
+            }
+        }
+
+        return results;
+    }
+
+    // ========== Migration Management ==========
+
+    @Override
+    public Try<Void> saveMigration(SdrMigration migration) {
+        if (migration == null) {
+            return Try.failure(new IllegalArgumentException("migration cannot be null"));
+        }
+
+        return Try.withResources(this::getConnection).of(conn -> {
+            String sql = """
+                    INSERT INTO sdr_migrations (from_hash, to_hash, migration_script, dialect, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    """;
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, migration.fromHash());
+                stmt.setString(2, migration.toHash());
+                stmt.setString(3, migration.migrationScript());
+                stmt.setString(4, migration.dialect());
+                stmt.setTimestamp(5, Timestamp.from(migration.createdAt()));
+
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new SQLException("Failed to insert migration");
+                }
+                logger.debug("Saved migration from {} to {}", migration.fromHash(), migration.toHash());
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public Try<Optional<SdrMigration>> findMigration(String fromHash, String toHash) {
+        if (fromHash == null || fromHash.isBlank()) {
+            return Try.failure(new IllegalArgumentException("fromHash cannot be null or blank"));
+        }
+        if (toHash == null || toHash.isBlank()) {
+            return Try.failure(new IllegalArgumentException("toHash cannot be null or blank"));
+        }
+
+        return Try.withResources(this::getConnection).of(conn -> {
+            String sql = """
+                    SELECT from_hash, to_hash, migration_script, dialect, created_at
+                    FROM sdr_migrations
+                    WHERE from_hash = ? AND to_hash = ?
+                    """;
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, fromHash);
+                stmt.setString(2, toHash);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(extractMigration(rs));
+                    }
+                    return Optional.empty();
+                }
+            }
+        });
+    }
+
+    @Override
+    public Try<List<SdrMigration>> findMigrationsFrom(String fromHash) {
+        if (fromHash == null || fromHash.isBlank()) {
+            return Try.failure(new IllegalArgumentException("fromHash cannot be null or blank"));
+        }
+
+        return Try.withResources(this::getConnection).of(conn -> {
+            String sql = """
+                    SELECT from_hash, to_hash, migration_script, dialect, created_at
+                    FROM sdr_migrations
+                    WHERE from_hash = ?
+                    ORDER BY created_at DESC
+                    """;
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, fromHash);
+                return extractMigrationList(stmt);
+            }
+        });
+    }
+
+    @Override
+    public Try<List<SdrMigration>> findMigrationsTo(String toHash) {
+        if (toHash == null || toHash.isBlank()) {
+            return Try.failure(new IllegalArgumentException("toHash cannot be null or blank"));
+        }
+
+        return Try.withResources(this::getConnection).of(conn -> {
+            String sql = """
+                    SELECT from_hash, to_hash, migration_script, dialect, created_at
+                    FROM sdr_migrations
+                    WHERE to_hash = ?
+                    ORDER BY created_at DESC
+                    """;
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, toHash);
+                return extractMigrationList(stmt);
+            }
+        });
+    }
+
+    @Override
+    public Try<Boolean> deleteMigration(String fromHash, String toHash) {
+        if (fromHash == null || fromHash.isBlank()) {
+            return Try.failure(new IllegalArgumentException("fromHash cannot be null or blank"));
+        }
+        if (toHash == null || toHash.isBlank()) {
+            return Try.failure(new IllegalArgumentException("toHash cannot be null or blank"));
+        }
+
+        return Try.withResources(this::getConnection).of(conn -> {
+            String sql = "DELETE FROM sdr_migrations WHERE from_hash = ? AND to_hash = ?";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, fromHash);
+                stmt.setString(2, toHash);
+
+                int rowsAffected = stmt.executeUpdate();
+                boolean deleted = rowsAffected > 0;
+                if (deleted) {
+                    logger.debug("Deleted migration from {} to {}", fromHash, toHash);
+                }
+                return deleted;
+            }
+        });
+    }
+
+    /**
+     * Extracts a single SdrMigration from a ResultSet (current row).
+     */
+    private SdrMigration extractMigration(ResultSet rs) throws SQLException {
+        return new SdrMigration(
+                rs.getString("from_hash"),
+                rs.getString("to_hash"),
+                rs.getString("migration_script"),
+                rs.getString("dialect"),
+                rs.getTimestamp("created_at").toInstant());
+    }
+
+    /**
+     * Extracts migration list from a prepared statement.
+     */
+    private List<SdrMigration> extractMigrationList(PreparedStatement stmt) throws SQLException {
+        var results = new ArrayList<SdrMigration>();
+
+        try (ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                results.add(extractMigration(rs));
             }
         }
 

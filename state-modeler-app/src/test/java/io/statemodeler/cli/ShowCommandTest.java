@@ -8,29 +8,22 @@ import io.statemodeler.sdr.SdrFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests for {@link ShowCommand}.
  */
 class ShowCommandTest {
 
-    @TempDir
-    Path tempDir;
-
-    private Path repositoryPath;
+    private H2SdrRepository repository;
     private SdrFactory sdrFactory;
     private String testHash;
 
     @BeforeEach
     void setUp() {
-        repositoryPath = tempDir.resolve("test-repo");
+        repository = H2SdrRepository.createInMemory("test-show-" + System.nanoTime());
         sdrFactory = new DefaultSdrFactory();
 
         // Register a test SDR
@@ -39,17 +32,8 @@ class ShowCommandTest {
 
     @AfterEach
     void tearDown() throws IOException {
-        // Clean up repository
-        if (Files.exists(repositoryPath.getParent())) {
-            Files.walk(repositoryPath.getParent())
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.deleteIfExists(path);
-                        } catch (IOException e) {
-                            // Ignore cleanup errors
-                        }
-                    });
+        if (repository != null) {
+            repository.close();
         }
     }
 
@@ -327,7 +311,7 @@ class ShowCommandTest {
 
         var sdr = sdrFactory.create(modelSource, "application/yaml", "postgres");
 
-        try (var repository = new H2SdrRepository(repositoryPath)) {
+        try {
             repository.save(sdr, modelName, modelVersion);
         } catch (Exception e) {
             throw new RuntimeException("Failed to register test SDR", e);
@@ -338,7 +322,7 @@ class ShowCommandTest {
 
     private RepositoryMixin createMixin() {
         var mixin = new RepositoryMixin();
-        mixin.repositoryPath = repositoryPath.toString();
+        mixin.testRepository = repository;
         return mixin;
     }
 }

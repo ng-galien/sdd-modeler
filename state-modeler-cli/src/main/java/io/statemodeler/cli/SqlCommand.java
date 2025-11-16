@@ -1,5 +1,7 @@
 package io.statemodeler.cli;
 
+import io.statemodeler.sql.DdlGenerators;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
@@ -30,19 +32,40 @@ public class SqlCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         System.out.println("Generating SQL for model file: " + modelFile);
         System.out.println("Dialect: " + dialect);
-        if (outputFile != null) {
-            System.out.println("Output: " + outputFile);
-        } else {
-            System.out.println("Output: stdout");
+
+        try {
+            // Check if dialect is supported
+            if (!DdlGenerators.isSupported(dialect)) {
+                System.err.println("Error: Unsupported SQL dialect '" + dialect + "'");
+                System.err.println("Supported dialects: " + String.join(", ", DdlGenerators.getSupportedDialects()));
+                return 1;
+            }
+
+            // Check if model file exists
+            if (!Files.exists(modelFile)) {
+                System.err.println("Error: Model file does not exist: " + modelFile);
+                return 1;
+            }
+
+            // For now, generate a simple example DDL to show the integration
+            var generator = DdlGenerators.forDialect(dialect);
+
+            // TODO: Implement model loading from YAML/JSON
+            // For now, show that the DDL generator works
+            System.out.println("DDL Generator initialized successfully for dialect: " + generator.getDialect());
+            System.out.println("✓ Model parsing from YAML/JSON not yet implemented");
+            System.out.println("✓ Once YAML loader is ready, full DDL generation will work");
+
+            if (outputFile != null) {
+                System.out.println("Will output to: " + outputFile);
+            } else {
+                System.out.println("Will output to: stdout");
+            }
+
+            return 0;
+        } catch (Exception e) {
+            System.err.println("Error generating SQL: " + e.getMessage());
+            return 1;
         }
-
-        // TODO: Implement SQL generation
-        // 1. Load and validate model
-        // 2. Generate SqlPlan
-        // 3. Render DDL using appropriate dialect renderer
-        // 4. Output to file or stdout
-
-        System.out.println("✓ SQL generation not yet implemented");
-        return 0;
     }
 }

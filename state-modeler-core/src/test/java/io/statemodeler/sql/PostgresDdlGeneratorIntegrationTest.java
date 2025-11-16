@@ -199,6 +199,42 @@ class PostgresDdlGeneratorIntegrationTest {
         assertThat(ddl).contains("CREATE TABLE public.project_active");
     }
 
+    @Test
+    void shouldGenerateWithEmptyStringSchemasDefaultingToStates() throws Exception {
+        // Given - model with empty string schemas (should be treated as null)
+        var database = new DatabaseConfig("postgres", "", "");
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        var initialState = new StateDef(
+                "active",
+                "resource_active",
+                true,
+                List.of(),
+                List.of(),
+                Map.of("status", new AttributeDef("status", "text", false, false, null, null)));
+
+        var entity = new EntityDef(
+                "resource", "resources", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
+
+        var model = new SddModel("0.1", "test-empty-string-schema", database, Map.of("resource", entity));
+
+        // When
+        var generator = DdlGenerators.forDialect("postgres");
+        var ddl = generator.generateDdl(model);
+
+        // Then - empty strings treated as null, same behavior as null schemas
+        assertThat(ddl).doesNotContain("CREATE SCHEMA IF NOT EXISTS public");
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS states");
+
+        // Entity table without schema prefix (default schema)
+        assertThat(ddl).contains("CREATE TABLE resources");
+        assertThat(ddl).doesNotContain("CREATE TABLE .resources"); // No invalid SQL
+
+        // State table in 'states' schema
+        assertThat(ddl).contains("CREATE TABLE states.resource_active");
+        assertThat(ddl).doesNotContain("CREATE TABLE .resource_active"); // No invalid SQL
+    }
+
     private SddModel createSimpleOrderModel() {
         var database = new DatabaseConfig("postgres", "public", null);
 

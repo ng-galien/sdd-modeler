@@ -78,13 +78,13 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     private String renderDdl(SqlPlan plan, String entitySchema, String stateSchema) {
         var ddl = new StringBuilder();
 
-        // Schema creation for entity schema if specified
-        if (entitySchema != null && !entitySchema.equals("public")) {
+        // Schema creation for entity schema if specified (non-null, non-empty, non-public)
+        if (entitySchema != null && !entitySchema.isEmpty() && !entitySchema.equals("public")) {
             ddl.append("CREATE SCHEMA IF NOT EXISTS ").append(entitySchema).append(";\n\n");
         }
 
         // Schema creation for state schema (always create if different from public)
-        if (stateSchema != null && !stateSchema.equals("public")) {
+        if (stateSchema != null && !stateSchema.isEmpty() && !stateSchema.equals("public")) {
             ddl.append("CREATE SCHEMA IF NOT EXISTS ").append(stateSchema).append(";\n\n");
         }
 

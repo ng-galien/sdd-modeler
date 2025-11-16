@@ -85,13 +85,24 @@ class DatabaseConfigTest {
 
     @Test
     void shouldHandleEmptyStringSchema() {
-        // Given & When
+        // Given & When - empty string schema should be treated as null
         var config = new DatabaseConfig("postgres", "", null);
 
         // Then
         assertThat(config.schema()).isEmpty();
         assertThat(config.dialect()).isEqualTo("postgres");
-        assertThat(config.effectiveStateSchema()).isEqualTo("_states");
+        assertThat(config.effectiveStateSchema()).isEqualTo("states"); // empty treated as null
+    }
+
+    @Test
+    void shouldHandleEmptyStringStateSchema() {
+        // Given & When - empty string stateSchema should be treated as null
+        var configWithSchema = new DatabaseConfig("postgres", "myapp", "");
+        var configWithoutSchema = new DatabaseConfig("postgres", "", "");
+
+        // Then - empty stateSchema falls back to default
+        assertThat(configWithSchema.effectiveStateSchema()).isEqualTo("myapp_states");
+        assertThat(configWithoutSchema.effectiveStateSchema()).isEqualTo("states");
     }
 
     @Test

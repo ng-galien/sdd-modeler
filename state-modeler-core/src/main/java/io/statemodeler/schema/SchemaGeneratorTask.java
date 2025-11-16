@@ -3,11 +3,13 @@ package io.statemodeler.schema;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Utility class to generate and save JSON Schema to resources directory.
  * Used by Gradle build tasks to automatically generate schema files.
  */
+@Slf4j
 public final class SchemaGeneratorTask {
 
     private SchemaGeneratorTask() {
@@ -29,10 +31,10 @@ public final class SchemaGeneratorTask {
         Path schemaFile = resourcesDir.resolve("sdd-model-schema.json");
         Files.writeString(schemaFile, schema);
 
-        System.out.println("✅ JSON Schema generated successfully:");
-        System.out.println("📁 Location: " + schemaFile.toAbsolutePath());
-        System.out.println("🔗 Schema ID: https://schemas.statemodeler.io/v1/sdd-model.json");
-        System.out.println("🎯 Ready for IDE integration and GitHub distribution");
+        log.info("✅ JSON Schema generated successfully:");
+        log.info("📁 Location: {}", schemaFile.toAbsolutePath());
+        log.info("🔗 Schema ID: https://schemas.statemodeler.io/v1/sdd-model.json");
+        log.info("🎯 Ready for IDE integration and GitHub distribution");
     }
 
     /**

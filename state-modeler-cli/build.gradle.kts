@@ -10,6 +10,14 @@ dependencies {
     // Depend on core module
     implementation(project(":state-modeler-core"))
     
+    // Lombok
+    compileOnly("org.projectlombok:lombok:1.18.36")
+    annotationProcessor("org.projectlombok:lombok:1.18.36")
+    
+    // SLF4J for logging
+    implementation("org.slf4j:slf4j-api:${rootProject.ext["slf4jVersion"]}")
+    runtimeOnly("org.slf4j:slf4j-simple:${rootProject.ext["slf4jVersion"]}")
+    
     // Picocli for CLI
     implementation("info.picocli:picocli:${rootProject.ext["picocliVersion"]}")
     annotationProcessor("info.picocli:picocli-codegen:${rootProject.ext["picocliVersion"]}")

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.statemodeler.core.SddModel;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -18,12 +17,8 @@ import java.util.Set;
 public final class YamlModelLoader implements ModelLoader {
 
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("yaml", "yml");
-    private static final Set<String> SUPPORTED_CONTENT_TYPES = Set.of(
-            "application/x-yaml",
-            "application/yaml",
-            "text/x-yaml",
-            "text/yaml"
-    );
+    private static final Set<String> SUPPORTED_CONTENT_TYPES =
+            Set.of("application/x-yaml", "application/yaml", "text/x-yaml", "text/yaml");
 
     private final ObjectMapper mapper;
 

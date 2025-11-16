@@ -4,12 +4,14 @@ import io.statemodeler.loader.ModelLoaders;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 /**
  * Command to validate an SDD model file.
  */
+@Slf4j
 @Command(name = "validate", description = "Validate an SDD model file for syntax and semantic correctness")
 public class ValidateCommand implements Callable<Integer> {
 
@@ -18,12 +20,12 @@ public class ValidateCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        System.out.println("Validating model file: " + modelFile);
+        log.info("Validating model file: {}", modelFile);
 
         try {
             // Check if file exists
             if (!Files.exists(modelFile)) {
-                System.err.println("Error: Model file does not exist: " + modelFile);
+                log.error("Model file does not exist: {}", modelFile);
                 return 1;
             }
 
@@ -33,27 +35,27 @@ public class ValidateCommand implements Callable<Integer> {
 
             // Basic validation checks
             if (model.entities().isEmpty()) {
-                System.out.println("⚠️  Warning: Model contains no entities");
+                log.warn("Model contains no entities");
             }
 
             // Report success
-            System.out.println("✓ Model loaded successfully");
-            System.out.println("  - Version: " + model.version());
-            System.out.println("  - Name: " + model.name());
-            System.out.println("  - Dialect: " + model.database().dialect());
-            System.out.println("  - Entities: " + model.entities().size());
+            log.info("✓ Model loaded successfully");
+            log.info("  - Version: {}", model.version());
+            log.info("  - Name: {}", model.name());
+            log.info("  - Dialect: {}", model.database().dialect());
+            log.info("  - Entities: {}", model.entities().size());
 
             // TODO: Add comprehensive validation rules once ModelValidator is implemented
             // For now, successful parsing means basic validation passed
 
             return 0;
         } catch (IllegalArgumentException e) {
-            System.err.println("Error: " + e.getMessage());
+            log.error("Validation error: {}", e.getMessage());
             return 1;
         } catch (Exception e) {
-            System.err.println("Error validating model: " + e.getMessage());
+            log.error("Error validating model: {}", e.getMessage());
             if (e.getCause() != null) {
-                System.err.println("Cause: " + e.getCause().getMessage());
+                log.error("Cause: {}", e.getCause().getMessage());
             }
             return 1;
         }

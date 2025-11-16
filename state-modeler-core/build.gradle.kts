@@ -2,6 +2,16 @@ dependencies {
     // JSpecify for null-safety annotations
     compileOnly("org.jspecify:jspecify:${rootProject.ext["jspecifyVersion"]}")
     
+    // Lombok
+    compileOnly("org.projectlombok:lombok:1.18.36")
+    annotationProcessor("org.projectlombok:lombok:1.18.36")
+    testCompileOnly("org.projectlombok:lombok:1.18.36")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
+    
+    // SLF4J for logging
+    api("org.slf4j:slf4j-api:${rootProject.ext["slf4jVersion"]}")
+    testRuntimeOnly("org.slf4j:slf4j-simple:${rootProject.ext["slf4jVersion"]}")
+    
     // Jackson for YAML/JSON parsing
     api("com.fasterxml.jackson.core:jackson-core:${rootProject.ext["jacksonVersion"]}")
     api("com.fasterxml.jackson.core:jackson-databind:${rootProject.ext["jacksonVersion"]}")

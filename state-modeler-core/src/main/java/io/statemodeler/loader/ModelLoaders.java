@@ -19,8 +19,7 @@ public final class ModelLoaders {
     }
 
     private static Stream<ModelLoader> loadAll() {
-        return ServiceLoader.load(ModelLoader.class).stream()
-                .map(ServiceLoader.Provider::get);
+        return ServiceLoader.load(ModelLoader.class).stream().map(ServiceLoader.Provider::get);
     }
 
     /**
@@ -34,8 +33,7 @@ public final class ModelLoaders {
         return loadAll()
                 .filter(loader -> loader.supportedExtensions().contains(normalized))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "No ModelLoader found for extension: " + extension));
+                .orElseThrow(() -> new IllegalArgumentException("No ModelLoader found for extension: " + extension));
     }
 
     /**

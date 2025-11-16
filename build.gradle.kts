@@ -73,10 +73,12 @@ subprojects {
 val jacksonVersion = "2.18.0"
 val picocliVersion = "4.7.6"
 val jspecifyVersion = "1.0.0"
+val slf4jVersion = "2.0.16"
 
 ext["jacksonVersion"] = jacksonVersion
 ext["picocliVersion"] = picocliVersion
 ext["jspecifyVersion"] = jspecifyVersion
+ext["slf4jVersion"] = slf4jVersion
 
 // Task to copy schema from core resources to project root for GitHub distribution
 tasks.register<Copy>("distributeSchema") {

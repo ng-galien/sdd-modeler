@@ -2,7 +2,6 @@ package io.statemodeler.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.statemodeler.core.SddModel;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -15,10 +14,7 @@ import java.util.Set;
 public final class JsonModelLoader implements ModelLoader {
 
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("json");
-    private static final Set<String> SUPPORTED_CONTENT_TYPES = Set.of(
-            "application/json",
-            "text/json"
-    );
+    private static final Set<String> SUPPORTED_CONTENT_TYPES = Set.of("application/json", "text/json");
 
     private final ObjectMapper mapper;
 

@@ -1,0 +1,53 @@
+version: 0.1
+name: orders-sdd-example
+
+database:
+  dialect: postgres
+  schema: public
+
+entities:
+  order:
+    table: orders
+    id:
+      name: id
+      type: serial
+      primary_key: true
+    attributes:
+      customer_id:
+        type: int
+        nullable: false
+        description: "Référence vers le client"
+      total_amount:
+        type: numeric(12,2)  # Changed from numeric(10,2)
+        nullable: false
+      created_at:
+        type: timestamptz
+        default: now()
+
+    states:
+      pending:
+        initial: true
+        table: order_pending
+        attributes:
+          pending_reason:
+            type: text
+            nullable: false
+
+      paid:
+        from: [pending]
+        table: order_paid
+        attributes:
+          payment_method:
+            type: text
+            nullable: false
+          paid_amount:
+            type: numeric(12,2)  # Changed from numeric(10,2)
+            nullable: false
+
+      cancelled:
+        from_any_of: [pending, paid]
+        table: order_cancelled
+        attributes:
+          cancel_reason:
+            type: text
+            nullable: false

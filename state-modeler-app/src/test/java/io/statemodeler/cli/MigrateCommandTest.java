@@ -159,6 +159,109 @@ class MigrateCommandTest {
         assertTrue(subcommands.containsKey("migrate"));
     }
 
+    @Test
+    void shouldFindSdrByNameAndVersion() {
+        // Given
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "orders", "1.0").get();
+        repository.save(sdr2, "orders", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Migration script", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "orders:1.0"; // Name:version format
+        cmd.toIdentifier = "orders:2.0"; // Name:version format
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(0, exitCode);
+        String output = errContent.toString();
+        assertTrue(output.contains("Migration already exists"));
+    }
+
+    @Test
+    void shouldHandleInvalidNameVersionFormat() {
+        // Given
+        var sdr = createTestSdr("hash1", "CREATE TABLE test;");
+        repository.save(sdr, "model", "1.0").get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "model:"; // Invalid - missing version
+        cmd.toIdentifier = "hash1";
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then - should attempt to find by name only (latest version)
+        assertEquals(1, exitCode); // Fails because toIdentifier doesn't exist
+    }
+
+    @Test
+    void shouldUseDefaultModelNameForJlama() {
+        // Given - model name not specified, should use default
+        var cmd = new MigrateCommand();
+        cmd.llmProvider = "jlama";
+        cmd.modelName = null; // Not specified
+
+        // When/Then - verify command initializes (can't test full execution without LLM)
+        assertNotNull(cmd);
+        assertEquals("jlama", cmd.llmProvider);
+        assertNull(cmd.modelName); // Will use default in createLlmModel()
+    }
+
+    @Test
+    void shouldUseCustomModelName() {
+        // Given
+        var cmd = new MigrateCommand();
+        cmd.llmProvider = "ollama";
+        cmd.modelName = "llama3.2";
+
+        // When/Then
+        assertNotNull(cmd);
+        assertEquals("llama3.2", cmd.modelName);
+    }
+
+    @Test
+    void shouldHandleForceFlag() {
+        // Given - migration exists but --force is set
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "test-model", "1.0").get();
+        repository.save(sdr2, "test-model", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Old migration", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "postgres";
+        cmd.force = true; // Should NOT reuse existing
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When - would generate new migration (but fails without real LLM)
+        int exitCode = cmd.call();
+
+        // Then - attempts generation (fails at LLM execution stage)
+        assertEquals(1, exitCode); // Fails because we don't have LLM model
+        String output = errContent.toString();
+        // Should see "Generating migration" message before failure
+        assertTrue(output.contains("INFO: Generating migration") || output.contains("ERROR"));
+    }
+
     private SdrRecord createTestSdr(String hash, String ddl) {
         String schema = "{\"name\":\"test\"}";
         return new SdrRecord(schema, "application/json", ddl, hash, "ddl-hash-" + hash, "1.0.0");

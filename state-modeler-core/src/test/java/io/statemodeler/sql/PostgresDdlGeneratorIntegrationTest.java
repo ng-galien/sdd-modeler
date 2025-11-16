@@ -30,7 +30,9 @@ class PostgresDdlGeneratorIntegrationTest {
         // Load model from test resources
         var yamlLoader = new YamlModelLoader();
         var modelUrl = getClass().getClassLoader().getResource("orders-sdd-model.yaml");
-        assertThat(modelUrl).as("orders-sdd-model.yaml should exist in test resources").isNotNull();
+        assertThat(modelUrl)
+                .as("orders-sdd-model.yaml should exist in test resources")
+                .isNotNull();
 
         var modelPath = Paths.get(modelUrl.getPath());
         var result = yamlLoader.loadFromFile(modelPath);

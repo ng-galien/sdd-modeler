@@ -51,7 +51,6 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 if (state.hasOrTransitions()) {
                     var orTable = generateOrTransitionTable(entity, state, entitySchema, stateSchema);
                     tables.add(orTable);
-                    indexes.addAll(generateIndexesForTable(orTable));
                     constraints.add(generateOrTransitionConstraint(entity, state, stateSchema));
                 }
             }
@@ -60,14 +59,12 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             for (var state : entity.states().values()) {
                 var stateTable = generateStateTable(entity, state, entitySchema, stateSchema);
                 tables.add(stateTable);
-                indexes.addAll(generateIndexesForTable(stateTable));
             }
 
             // Extension tables in state schema (created WITHOUT FK to avoid circular dependencies)
             for (var extension : entity.extensions().values()) {
                 var extensionTable = generateExtensionTable(entity, extension, entitySchema, stateSchema);
                 tables.add(extensionTable);
-                indexes.addAll(generateIndexesForTable(extensionTable));
             }
 
             // Add ALL FK constraints at the end (after all tables are created)
@@ -102,10 +99,14 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             // Projection views in state schema (intervals MUST be before current_state)
             entity.projections().values().stream()
                     .sorted((p1, p2) -> {
-                        // intervals before current_state
-                        if (p1.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS) return -1;
-                        if (p2.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS) return 1;
-                        return 0;
+                        // intervals before current_state (current_state depends on intervals view)
+                        boolean p1IsIntervals =
+                                p1.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS;
+                        boolean p2IsIntervals =
+                                p2.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS;
+                        if (p1IsIntervals && !p2IsIntervals) return -1;
+                        if (!p1IsIntervals && p2IsIntervals) return 1;
+                        return p1.name().compareTo(p2.name()); // stable sort for same kind
                     })
                     .forEach(projection ->
                             views.add(generateProjectionView(entity, projection, entitySchema, stateSchema)));
@@ -343,24 +344,6 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         return new ConstraintDefinition(fkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDef);
     }
 
-    /**
-     * Generate indexes for all foreign key columns in a table.
-     * Creates one index per FK column to optimize JOIN performance.
-     */
-    private List<IndexDefinition> generateIndexesForTable(TableDefinition table) {
-        var indexes = new ArrayList<IndexDefinition>();
-
-        for (var column : table.columns()) {
-            if (column.hasForeignKey()) {
-                var indexName = "idx_" + table.name() + "_" + column.name();
-                indexes.add(
-                        new IndexDefinition(indexName, table.name(), table.schema(), List.of(column.name()), false));
-            }
-        }
-
-        return indexes;
-    }
-
     private IndexDefinition generateIndexForForeignKey(ConstraintDefinition fk, EntityDef entity, String tableName) {
         // Extract column name from FK definition: "FOREIGN KEY (column_name) REFERENCES ..."
         var fkDef = fk.definition();
@@ -530,26 +513,12 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             def.append(" DEFAULT ").append(column.defaultValue());
         }
 
-        if (column.hasForeignKey()) {
-            def.append(" REFERENCES ")
-                    .append(column.foreignKeyTable())
-                    .append("(")
-                    .append(column.foreignKeyColumn())
-                    .append(")");
-        }
-
         return def.toString();
     }
 
     private String renderIndex(IndexDefinition index) {
         var ddl = new StringBuilder();
-        ddl.append("CREATE ");
-
-        if (index.unique()) {
-            ddl.append("UNIQUE ");
-        }
-
-        ddl.append("INDEX ").append(index.name());
+        ddl.append("CREATE INDEX ").append(index.name());
         ddl.append(" ON ").append(index.fullTableName());
         ddl.append(" (").append(String.join(", ", index.columns())).append(");");
 
@@ -564,12 +533,9 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             case FOREIGN_KEY ->
                 "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " "
                         + constraint.definition() + ";";
-            case UNIQUE ->
-                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " UNIQUE ("
-                        + constraint.definition() + ");";
-            case PRIMARY_KEY ->
-                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " PRIMARY KEY ("
-                        + constraint.definition() + ");";
+            case UNIQUE, PRIMARY_KEY ->
+                throw new IllegalStateException(
+                        "UNIQUE and PRIMARY_KEY constraints should be defined inline in CREATE TABLE, not via ALTER TABLE");
         };
     }
 

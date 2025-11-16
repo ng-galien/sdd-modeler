@@ -1,6 +1,6 @@
 package io.statemodeler.cli;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -76,13 +76,13 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(0);
+        assertEquals(0, exitCode);
         var output = outContent.toString();
-        assertThat(output).contains("✓ Model parsed successfully");
-        assertThat(output).contains("✓ Model validation passed");
-        assertThat(output).contains("stateDiagram-v2");
-        assertThat(output).contains("[*] --> pending");
-        assertThat(output).contains("pending --> paid");
+        assertTrue(output.contains("✓ Model parsed successfully"));
+        assertTrue(output.contains("✓ Model validation passed"));
+        assertTrue(output.contains("stateDiagram-v2"));
+        assertTrue(output.contains("[*] --> pending"));
+        assertTrue(output.contains("pending --> paid"));
     }
 
     @Test
@@ -121,12 +121,12 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(modelFile.toString(), "-o", outputFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(0);
-        assertThat(outputFile).exists();
+        assertEquals(0, exitCode);
+        assertTrue(Files.exists(outputFile));
         var diagramContent = Files.readString(outputFile);
-        assertThat(diagramContent).contains("stateDiagram-v2");
-        assertThat(diagramContent).contains("[*] --> pending");
-        assertThat(outContent.toString()).contains("✓ Diagram written to");
+        assertTrue(diagramContent.contains("stateDiagram-v2"));
+        assertTrue(diagramContent.contains("[*] --> pending"));
+        assertTrue(outContent.toString().contains("✓ Diagram written to"));
     }
 
     @Test
@@ -170,11 +170,11 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(modelFile.toString(), "-e", "order");
 
         // Then
-        assertThat(exitCode).isEqualTo(0);
+        assertEquals(0, exitCode);
         var output = outContent.toString();
-        assertThat(output).contains("stateDiagram-v2");
-        assertThat(output).contains("order State Diagram");
-        assertThat(output).doesNotContain("shipment");
+        assertTrue(output.contains("stateDiagram-v2"));
+        assertTrue(output.contains("order State Diagram"));
+        assertFalse(output.contains("shipment"));
     }
 
     @Test
@@ -189,8 +189,8 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(nonExistentFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("Error: Model file does not exist");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("Error: Model file does not exist"));
     }
 
     @Test
@@ -224,9 +224,9 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(modelFile.toString(), "-f", "plantuml");
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("Error: Unsupported diagram format");
-        assertThat(errContent.toString()).contains("Supported formats: mermaid");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("Error: Unsupported diagram format"));
+        assertTrue(errContent.toString().contains("Supported formats: mermaid"));
     }
 
     @Test
@@ -260,8 +260,8 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(modelFile.toString(), "-e", "shipment");
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("Error: Entity not found");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("Error: Entity not found"));
     }
 
     @Test
@@ -295,7 +295,7 @@ class DiagramCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("✗ Model validation failed");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("✗ Model validation failed"));
     }
 }

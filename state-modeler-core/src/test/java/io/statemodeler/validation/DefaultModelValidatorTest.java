@@ -1,6 +1,6 @@
 package io.statemodeler.validation;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.statemodeler.core.*;
 import java.util.List;
@@ -26,8 +26,8 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isValid()).isTrue();
-        assertThat(result.get()).isEqualTo(model);
+        assertTrue(result.isValid());
+        assertEquals(model, result.get());
     }
 
     @Test
@@ -40,10 +40,10 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).hasSize(1);
-        assertThat(errors.get(0).code()).isEqualTo("MODEL_NO_ENTITIES");
+        assertEquals(1, errors.size());
+        assertEquals("MODEL_NO_ENTITIES", errors.get(0).code());
     }
 
     @Test
@@ -58,11 +58,11 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).hasSize(1);
-        assertThat(errors.get(0).code()).isEqualTo("ENTITY_NO_STATES");
-        assertThat(errors.get(0).entityName()).isEqualTo("order");
+        assertEquals(1, errors.size());
+        assertEquals("ENTITY_NO_STATES", errors.get(0).code());
+        assertEquals("order", errors.get(0).entityName());
     }
 
     @Test
@@ -78,12 +78,11 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).anySatisfy(error -> {
-            assertThat(error.code()).isEqualTo("ENTITY_NO_INITIAL_STATE");
-            assertThat(error.entityName()).isEqualTo("order");
-        });
+        assertTrue(errors.stream()
+                .anyMatch(
+                        error -> "ENTITY_NO_INITIAL_STATE".equals(error.code()) && "order".equals(error.entityName())));
     }
 
     @Test
@@ -101,12 +100,11 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).anySatisfy(error -> {
-            assertThat(error.code()).isEqualTo("ENTITY_MULTIPLE_INITIAL_STATES");
-            assertThat(error.entityName()).isEqualTo("order");
-        });
+        assertTrue(errors.stream()
+                .anyMatch(error ->
+                        "ENTITY_MULTIPLE_INITIAL_STATES".equals(error.code()) && "order".equals(error.entityName())));
     }
 
     @Test
@@ -124,13 +122,12 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).anySatisfy(error -> {
-            assertThat(error.code()).isEqualTo("STATE_INVALID_FROM_TRANSITION");
-            assertThat(error.entityName()).isEqualTo("order");
-            assertThat(error.stateName()).isEqualTo("paid");
-        });
+        assertTrue(errors.stream()
+                .anyMatch(error -> "STATE_INVALID_FROM_TRANSITION".equals(error.code())
+                        && "order".equals(error.entityName())
+                        && "paid".equals(error.stateName())));
     }
 
     @Test
@@ -147,13 +144,12 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).anySatisfy(error -> {
-            assertThat(error.code()).isEqualTo("STATE_INITIAL_WITH_TRANSITIONS");
-            assertThat(error.entityName()).isEqualTo("order");
-            assertThat(error.stateName()).isEqualTo("pending");
-        });
+        assertTrue(errors.stream()
+                .anyMatch(error -> "STATE_INITIAL_WITH_TRANSITIONS".equals(error.code())
+                        && "order".equals(error.entityName())
+                        && "pending".equals(error.stateName())));
     }
 
     @Test
@@ -171,13 +167,12 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).anySatisfy(error -> {
-            assertThat(error.code()).isEqualTo("STATE_CONFLICTING_TRANSITIONS");
-            assertThat(error.entityName()).isEqualTo("order");
-            assertThat(error.stateName()).isEqualTo("paid");
-        });
+        assertTrue(errors.stream()
+                .anyMatch(error -> "STATE_CONFLICTING_TRANSITIONS".equals(error.code())
+                        && "order".equals(error.entityName())
+                        && "paid".equals(error.stateName())));
     }
 
     @Test
@@ -197,7 +192,7 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isValid()).isTrue();
+        assertTrue(result.isValid());
     }
 
     @Test
@@ -206,7 +201,7 @@ class DefaultModelValidatorTest {
         var model = createValidModel();
 
         // When & Then
-        assertThatCode(() -> validator.validateOrThrow(model)).doesNotThrowAnyException();
+        assertDoesNotThrow(() -> validator.validateOrThrow(model));
     }
 
     @Test
@@ -216,9 +211,8 @@ class DefaultModelValidatorTest {
         var model = new SddModel("1.0", "test", database, Map.of());
 
         // When & Then
-        assertThatThrownBy(() -> validator.validateOrThrow(model))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Model validation failed");
+        var exception = assertThrows(IllegalArgumentException.class, () -> validator.validateOrThrow(model));
+        assertTrue(exception.getMessage().contains("Model validation failed"));
     }
 
     @Test
@@ -229,8 +223,8 @@ class DefaultModelValidatorTest {
         var invalidModel = new SddModel("1.0", "test", database, Map.of());
 
         // When & Then
-        assertThat(validator.isValid(validModel)).isTrue();
-        assertThat(validator.isValid(invalidModel)).isFalse();
+        assertTrue(validator.isValid(validModel));
+        assertFalse(validator.isValid(invalidModel));
     }
 
     @Test
@@ -250,11 +244,11 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).hasSizeGreaterThanOrEqualTo(1);
-        assertThat(errors).anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE"));
-        assertThat(errors).anyMatch(e -> e.message().contains("string"));
+        assertTrue(errors.size() >= 1);
+        assertTrue(errors.stream().anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE")));
+        assertTrue(errors.stream().anyMatch(e -> e.message().contains("string")));
     }
 
     @Test
@@ -278,7 +272,7 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isValid()).isTrue();
+        assertTrue(result.isValid());
     }
 
     @Test
@@ -299,7 +293,7 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then - should accept bare VARCHAR (it's in CHARACTER_TYPES)
-        assertThat(result.isValid()).isTrue();
+        assertTrue(result.isValid());
     }
 
     @Test
@@ -324,10 +318,10 @@ class DefaultModelValidatorTest {
         var result = validator.validate(model);
 
         // Then
-        assertThat(result.isInvalid()).isTrue();
+        assertTrue(result.isInvalid());
         var errors = result.getError();
-        assertThat(errors).anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE"));
-        assertThat(errors).anyMatch(e -> e.message().contains("longtext"));
+        assertTrue(errors.stream().anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE")));
+        assertTrue(errors.stream().anyMatch(e -> e.message().contains("longtext")));
     }
 
     private SddModel createValidModel() {

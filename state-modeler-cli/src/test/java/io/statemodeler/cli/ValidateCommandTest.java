@@ -1,6 +1,6 @@
 package io.statemodeler.cli;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -69,9 +69,9 @@ class ValidateCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(0);
-        assertThat(outContent.toString()).contains("✓ Model parsed successfully");
-        assertThat(outContent.toString()).contains("✓ Model validation passed");
+        assertEquals(0, exitCode);
+        assertTrue(outContent.toString().contains("✓ Model parsed successfully"));
+        assertTrue(outContent.toString().contains("✓ Model validation passed"));
     }
 
     @Test
@@ -105,9 +105,9 @@ class ValidateCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("✗ Model validation failed");
-        assertThat(errContent.toString()).contains("Entity must have exactly one initial state");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("✗ Model validation failed"));
+        assertTrue(errContent.toString().contains("Entity must have exactly one initial state"));
     }
 
     @Test
@@ -129,8 +129,8 @@ class ValidateCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("✗ Failed to parse model file");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("✗ Failed to parse model file"));
     }
 
     @Test
@@ -145,7 +145,7 @@ class ValidateCommandTest {
         var exitCode = cmd.execute(nonExistentFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("Error: Model file does not exist");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("Error: Model file does not exist"));
     }
 }

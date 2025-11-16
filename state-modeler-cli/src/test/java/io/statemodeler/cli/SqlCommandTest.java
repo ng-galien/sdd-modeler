@@ -1,6 +1,6 @@
 package io.statemodeler.cli;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -74,12 +74,12 @@ class SqlCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(0);
+        assertEquals(0, exitCode);
         var output = outContent.toString();
-        assertThat(output).contains("✓ Model parsed successfully");
-        assertThat(output).contains("-- Generated DDL for test-model");
-        assertThat(output).contains("CREATE TABLE public.orders");
-        assertThat(output).contains("CREATE TABLE public_states.order_pending");
+        assertTrue(output.contains("✓ Model parsed successfully"));
+        assertTrue(output.contains("-- Generated DDL for test-model"));
+        assertTrue(output.contains("CREATE TABLE public.orders"));
+        assertTrue(output.contains("CREATE TABLE public_states.order_pending"));
     }
 
     @Test
@@ -115,13 +115,13 @@ class SqlCommandTest {
         var exitCode = cmd.execute(modelFile.toString(), "-o", outputFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(0);
-        assertThat(outContent.toString()).contains("✓ DDL written to");
+        assertEquals(0, exitCode);
+        assertTrue(outContent.toString().contains("✓ DDL written to"));
 
         var generatedSql = Files.readString(outputFile);
-        assertThat(generatedSql).contains("CREATE TABLE");
-        assertThat(generatedSql).contains("orders");
-        assertThat(generatedSql).contains("order_pending");
+        assertTrue(generatedSql.contains("CREATE TABLE"));
+        assertTrue(generatedSql.contains("orders"));
+        assertTrue(generatedSql.contains("order_pending"));
     }
 
     @Test
@@ -155,8 +155,8 @@ class SqlCommandTest {
         var exitCode = cmd.execute(modelFile.toString(), "--dialect", "mysql");
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("Error: Unsupported SQL dialect 'mysql'");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("Error: Unsupported SQL dialect 'mysql'"));
     }
 
     @Test
@@ -193,8 +193,8 @@ class SqlCommandTest {
         var exitCode = cmd.execute(modelFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("✗ Model validation failed");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("✗ Model validation failed"));
     }
 
     @Test
@@ -209,7 +209,7 @@ class SqlCommandTest {
         var exitCode = cmd.execute(nonExistentFile.toString());
 
         // Then
-        assertThat(exitCode).isEqualTo(1);
-        assertThat(errContent.toString()).contains("Error: Model file does not exist");
+        assertEquals(1, exitCode);
+        assertTrue(errContent.toString().contains("Error: Model file does not exist"));
     }
 }

@@ -1,7 +1,6 @@
 package io.statemodeler.diagram.mermaid;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.statemodeler.core.*;
 import java.util.List;
@@ -50,11 +49,11 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).isNotEmpty();
-        assertThat(diagram).contains("stateDiagram-v2");
-        assertThat(diagram).contains("[*] --> pending");
-        assertThat(diagram).contains("pending --> paid");
-        assertThat(diagram).contains("title: order State Diagram");
+        assertFalse(diagram.isEmpty());
+        assertTrue(diagram.contains("stateDiagram-v2"));
+        assertTrue(diagram.contains("[*] --> pending"));
+        assertTrue(diagram.contains("pending --> paid"));
+        assertTrue(diagram.contains("title: order State Diagram"));
     }
 
     @Test
@@ -102,8 +101,8 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).contains("pending --> cancelled : OR");
-        assertThat(diagram).contains("paid --> cancelled : OR");
+        assertTrue(diagram.contains("pending --> cancelled : OR"));
+        assertTrue(diagram.contains("paid --> cancelled : OR"));
     }
 
     @Test
@@ -140,8 +139,8 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model, "entity1");
 
         // Then
-        assertThat(diagram).contains("title: entity1 State Diagram");
-        assertThat(diagram).doesNotContain("entity2");
+        assertTrue(diagram.contains("title: entity1 State Diagram"));
+        assertFalse(diagram.contains("entity2"));
     }
 
     @Test
@@ -163,9 +162,9 @@ class MermaidDiagramGeneratorTest {
         var generator = new MermaidDiagramGenerator();
 
         // When/Then
-        assertThatThrownBy(() -> generator.generateDiagram(model, "nonexistent"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Entity not found");
+        var exception =
+                assertThrows(IllegalArgumentException.class, () -> generator.generateDiagram(model, "nonexistent"));
+        assertTrue(exception.getMessage().contains("Entity not found"));
     }
 
     @Test
@@ -200,8 +199,8 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).contains("pending :");
-        assertThat(diagram).containsAnyOf("reason", "timestamp", "user_id");
+        assertTrue(diagram.contains("pending :"));
+        assertTrue(diagram.contains("reason") || diagram.contains("timestamp") || diagram.contains("user_id"));
     }
 
     @Test
@@ -233,9 +232,9 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).contains("note right of paid");
-        assertThat(diagram).contains("Extensions:");
-        assertThat(diagram).contains("paid_ext");
+        assertTrue(diagram.contains("note right of paid"));
+        assertTrue(diagram.contains("Extensions:"));
+        assertTrue(diagram.contains("paid_ext"));
     }
 
     @Test
@@ -280,11 +279,11 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).contains("note right of pending");
-        assertThat(diagram).contains("note right of paid");
-        assertThat(diagram).contains("pending_ext");
-        assertThat(diagram).contains("paid_ext1");
-        assertThat(diagram).contains("paid_ext2");
+        assertTrue(diagram.contains("note right of pending"));
+        assertTrue(diagram.contains("note right of paid"));
+        assertTrue(diagram.contains("pending_ext"));
+        assertTrue(diagram.contains("paid_ext1"));
+        assertTrue(diagram.contains("paid_ext2"));
     }
 
     @Test
@@ -310,8 +309,8 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).doesNotContain("note right of");
-        assertThat(diagram).doesNotContain("Extensions:");
+        assertFalse(diagram.contains("note right of"));
+        assertFalse(diagram.contains("Extensions:"));
     }
 
     @Test
@@ -337,9 +336,9 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).contains("stateDiagram-v2");
-        assertThat(diagram).contains("[*] --> pending");
-        assertThat(diagram).doesNotContain("pending :");
+        assertTrue(diagram.contains("stateDiagram-v2"));
+        assertTrue(diagram.contains("[*] --> pending"));
+        assertFalse(diagram.contains("pending :"));
     }
 
     @Test
@@ -348,9 +347,9 @@ class MermaidDiagramGeneratorTest {
         var generator = new MermaidDiagramGenerator();
 
         // When/Then
-        assertThat(generator.getFormat()).isEqualTo("mermaid");
-        assertThat(generator.supports("mermaid")).isTrue();
-        assertThat(generator.supports("MERMAID")).isTrue();
-        assertThat(generator.supports("plantuml")).isFalse();
+        assertEquals("mermaid", generator.getFormat());
+        assertTrue(generator.supports("mermaid"));
+        assertTrue(generator.supports("MERMAID"));
+        assertFalse(generator.supports("plantuml"));
     }
 }

@@ -1,7 +1,6 @@
 package io.statemodeler.diagram;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.statemodeler.diagram.mermaid.MermaidDiagramGenerator;
 import org.junit.jupiter.api.Test;
@@ -14,8 +13,8 @@ class DiagramGeneratorsTest {
         var generator = DiagramGenerators.forFormat("mermaid");
 
         // Then
-        assertThat(generator).isInstanceOf(MermaidDiagramGenerator.class);
-        assertThat(generator.getFormat()).isEqualTo("mermaid");
+        assertInstanceOf(MermaidDiagramGenerator.class, generator);
+        assertEquals("mermaid", generator.getFormat());
     }
 
     @Test
@@ -25,25 +24,23 @@ class DiagramGeneratorsTest {
         var generator2 = DiagramGenerators.forFormat("Mermaid");
 
         // Then
-        assertThat(generator1).isInstanceOf(MermaidDiagramGenerator.class);
-        assertThat(generator2).isInstanceOf(MermaidDiagramGenerator.class);
+        assertInstanceOf(MermaidDiagramGenerator.class, generator1);
+        assertInstanceOf(MermaidDiagramGenerator.class, generator2);
     }
 
     @Test
     void shouldThrowExceptionForUnsupportedFormat() {
         // When/Then
-        assertThatThrownBy(() -> DiagramGenerators.forFormat("plantuml"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported diagram format: plantuml")
-                .hasMessageContaining("Supported formats: mermaid");
+        var ex = assertThrows(IllegalArgumentException.class, () -> DiagramGenerators.forFormat("plantuml"));
+        assertTrue(ex.getMessage().contains("Unsupported diagram format: plantuml"));
+        assertTrue(ex.getMessage().contains("Supported formats: mermaid"));
     }
 
     @Test
     void shouldThrowExceptionForNullFormat() {
         // When/Then
-        assertThatThrownBy(() -> DiagramGenerators.forFormat(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("format cannot be null");
+        var ex = assertThrows(IllegalArgumentException.class, () -> DiagramGenerators.forFormat(null));
+        assertTrue(ex.getMessage().contains("format cannot be null"));
     }
 
     @Test
@@ -52,7 +49,7 @@ class DiagramGeneratorsTest {
         var isSupported = DiagramGenerators.isSupported("mermaid");
 
         // Then
-        assertThat(isSupported).isTrue();
+        assertTrue(isSupported);
     }
 
     @Test
@@ -61,15 +58,15 @@ class DiagramGeneratorsTest {
         var isSupported = DiagramGenerators.isSupported("plantuml");
 
         // Then
-        assertThat(isSupported).isFalse();
+        assertFalse(isSupported);
     }
 
     @Test
     void shouldBeCaseInsensitiveForIsSupported() {
         // When/Then
-        assertThat(DiagramGenerators.isSupported("MERMAID")).isTrue();
-        assertThat(DiagramGenerators.isSupported("Mermaid")).isTrue();
-        assertThat(DiagramGenerators.isSupported("mermaid")).isTrue();
+        assertTrue(DiagramGenerators.isSupported("MERMAID"));
+        assertTrue(DiagramGenerators.isSupported("Mermaid"));
+        assertTrue(DiagramGenerators.isSupported("mermaid"));
     }
 
     @Test
@@ -78,7 +75,7 @@ class DiagramGeneratorsTest {
         var isSupported = DiagramGenerators.isSupported(null);
 
         // Then
-        assertThat(isSupported).isFalse();
+        assertFalse(isSupported);
     }
 
     @Test
@@ -87,6 +84,6 @@ class DiagramGeneratorsTest {
         var formats = DiagramGenerators.getSupportedFormats();
 
         // Then
-        assertThat(formats).containsExactly("mermaid");
+        assertArrayEquals(new String[] {"mermaid"}, formats);
     }
 }

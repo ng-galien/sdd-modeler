@@ -1,6 +1,6 @@
 package io.statemodeler.sql;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.statemodeler.core.*;
 import io.statemodeler.dsl.YamlModelLoader;
@@ -19,14 +19,14 @@ class PostgresDdlGeneratorIntegrationTest {
         var ddl = generator.generateDdl(model);
 
         // Entity table in entity schema (public)
-        assertThat(ddl).contains("CREATE TABLE public.orders");
-        assertThat(ddl).contains("id serial NOT NULL");
-        assertThat(ddl).contains("customer_id int NOT NULL");
+        assertTrue(ddl.contains("CREATE TABLE public.orders"));
+        assertTrue(ddl.contains("id serial NOT NULL"));
+        assertTrue(ddl.contains("customer_id int NOT NULL"));
 
         // State tables in state schema (public_states)
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS public_states");
-        assertThat(ddl).contains("CREATE TABLE public_states.order_pending");
-        assertThat(ddl).contains("pending_reason text NOT NULL");
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS public_states"));
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_pending"));
+        assertTrue(ddl.contains("pending_reason text NOT NULL"));
     }
 
     @Test
@@ -34,59 +34,55 @@ class PostgresDdlGeneratorIntegrationTest {
         // Load model from test resources
         var yamlLoader = new YamlModelLoader();
         var modelUrl = getClass().getClassLoader().getResource("orders-sdd-model.yaml");
-        assertThat(modelUrl)
-                .as("orders-sdd-model.yaml should exist in test resources")
-                .isNotNull();
+        assertNotNull(modelUrl, "orders-sdd-model.yaml should exist in test resources");
 
         var modelPath = Paths.get(modelUrl.getPath());
         var result = yamlLoader.loadFromFile(modelPath);
 
-        assertThat(result.isSuccess())
-                .withFailMessage("Failed to load model: %s", result.isFailure() ? result.getCause() : "")
-                .isTrue();
+        assertTrue(result.isSuccess(), "Failed to load model: " + (result.isFailure() ? result.getCause() : ""));
 
         var model = result.get();
         var generator = DdlGenerators.forDialect("postgres");
         var ddl = generator.generateDdl(model);
 
         // Verify schema creation
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS public_states");
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS public_states"));
 
         // Verify entity table in entity schema
-        assertThat(ddl).contains("CREATE TABLE public.orders");
+        assertTrue(ddl.contains("CREATE TABLE public.orders"));
 
         // Verify state tables in state schema
-        assertThat(ddl).contains("CREATE TABLE public_states.order_pending");
-        assertThat(ddl).contains("CREATE TABLE public_states.order_paid");
-        assertThat(ddl).contains("CREATE TABLE public_states.order_cancelled");
-        assertThat(ddl).contains("CREATE TABLE public_states.order_refunded");
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_pending"));
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_paid"));
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_cancelled"));
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_refunded"));
 
         // Verify OR transition mapping table in state schema
-        assertThat(ddl).contains("CREATE TABLE public_states.cancelled_source");
-        assertThat(ddl).contains("pending_state_id INTEGER REFERENCES order_pending(id)");
-        assertThat(ddl).contains("paid_state_id INTEGER REFERENCES order_paid(id)");
+        assertTrue(ddl.contains("CREATE TABLE public_states.cancelled_source"));
+        assertTrue(ddl.contains("pending_state_id INTEGER REFERENCES order_pending(id)"));
+        assertTrue(ddl.contains("paid_state_id INTEGER REFERENCES order_paid(id)"));
 
         // Verify CHECK constraint for OR transitions
-        assertThat(ddl).contains("ALTER TABLE cancelled_source ADD CONSTRAINT cancelled_source_check");
+        assertTrue(ddl.contains("ALTER TABLE cancelled_source ADD CONSTRAINT cancelled_source_check"));
 
         // Verify extension tables in state schema
-        assertThat(ddl).contains("CREATE TABLE public_states.order_paid_extensions");
-        assertThat(ddl).contains("CREATE TABLE public_states.order_cancelled_extensions");
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_paid_extensions"));
+        assertTrue(ddl.contains("CREATE TABLE public_states.order_cancelled_extensions"));
 
         // Verify intervals view in state schema
-        assertThat(ddl).contains("CREATE VIEW public_states.order_state_intervals AS");
-        assertThat(ddl).contains("UNION ALL");
-        assertThat(ddl).contains("'PENDING' AS state_type");
-        assertThat(ddl).contains("'PAID' AS state_type");
-        assertThat(ddl).contains("'CANCELLED' AS state_type");
-        assertThat(ddl).contains("'REFUNDED' AS state_type");
-        assertThat(ddl).contains("start_at");
-        assertThat(ddl).contains("end_at");
+        assertTrue(ddl.contains("CREATE VIEW public_states.order_state_intervals AS"));
+        assertTrue(ddl.contains("UNION ALL"));
+        assertTrue(ddl.contains("'PENDING' AS state_type"));
+        assertTrue(ddl.contains("'PAID' AS state_type"));
+        assertTrue(ddl.contains("'CANCELLED' AS state_type"));
+        assertTrue(ddl.contains("'REFUNDED' AS state_type"));
+        assertTrue(ddl.contains("start_at"));
+        assertTrue(ddl.contains("end_at"));
 
         // Verify current state view in state schema
-        assertThat(ddl).contains("CREATE VIEW public_states.current_order_states AS");
-        assertThat(ddl).contains("FROM order_state_intervals");
-        assertThat(ddl).contains("WHERE end_at IS NULL");
+        assertTrue(ddl.contains("CREATE VIEW public_states.current_order_states AS"));
+        assertTrue(ddl.contains("FROM order_state_intervals"));
+        assertTrue(ddl.contains("WHERE end_at IS NULL"));
     }
 
     @Test
@@ -120,14 +116,14 @@ class PostgresDdlGeneratorIntegrationTest {
         var ddl = generator.generateDdl(model);
 
         // Then - verify custom schemas are created
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS myapp");
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS custom_states");
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS myapp"));
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS custom_states"));
 
         // Entity table in entity schema
-        assertThat(ddl).contains("CREATE TABLE myapp.documents");
+        assertTrue(ddl.contains("CREATE TABLE myapp.documents"));
 
         // State table in custom state schema
-        assertThat(ddl).contains("CREATE TABLE custom_states.document_draft");
+        assertTrue(ddl.contains("CREATE TABLE custom_states.document_draft"));
     }
 
     @Test
@@ -154,15 +150,15 @@ class PostgresDdlGeneratorIntegrationTest {
         var ddl = generator.generateDdl(model);
 
         // Then - no CREATE SCHEMA for public (default), but CREATE SCHEMA for states
-        assertThat(ddl).doesNotContain("CREATE SCHEMA IF NOT EXISTS public");
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS states");
+        assertFalse(ddl.contains("CREATE SCHEMA IF NOT EXISTS public"));
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS states"));
 
         // Entity table without schema prefix (default schema)
-        assertThat(ddl).contains("CREATE TABLE tasks");
-        assertThat(ddl).doesNotContain("CREATE TABLE public.tasks");
+        assertTrue(ddl.contains("CREATE TABLE tasks"));
+        assertFalse(ddl.contains("CREATE TABLE public.tasks"));
 
         // State table in 'states' schema
-        assertThat(ddl).contains("CREATE TABLE states.task_active");
+        assertTrue(ddl.contains("CREATE TABLE states.task_active"));
     }
 
     @Test
@@ -189,14 +185,14 @@ class PostgresDdlGeneratorIntegrationTest {
         var ddl = generator.generateDdl(model);
 
         // Then - CREATE SCHEMA for myapp, but NOT for public (state schema)
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS myapp");
-        assertThat(ddl).doesNotContain("CREATE SCHEMA IF NOT EXISTS public");
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS myapp"));
+        assertFalse(ddl.contains("CREATE SCHEMA IF NOT EXISTS public"));
 
         // Entity table in custom schema
-        assertThat(ddl).contains("CREATE TABLE myapp.projects");
+        assertTrue(ddl.contains("CREATE TABLE myapp.projects"));
 
         // State table in public schema (default)
-        assertThat(ddl).contains("CREATE TABLE public.project_active");
+        assertTrue(ddl.contains("CREATE TABLE public.project_active"));
     }
 
     @Test
@@ -223,16 +219,16 @@ class PostgresDdlGeneratorIntegrationTest {
         var ddl = generator.generateDdl(model);
 
         // Then - empty strings treated as null, same behavior as null schemas
-        assertThat(ddl).doesNotContain("CREATE SCHEMA IF NOT EXISTS public");
-        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS states");
+        assertFalse(ddl.contains("CREATE SCHEMA IF NOT EXISTS public"));
+        assertTrue(ddl.contains("CREATE SCHEMA IF NOT EXISTS states"));
 
         // Entity table without schema prefix (default schema)
-        assertThat(ddl).contains("CREATE TABLE resources");
-        assertThat(ddl).doesNotContain("CREATE TABLE .resources"); // No invalid SQL
+        assertTrue(ddl.contains("CREATE TABLE resources"));
+        assertFalse(ddl.contains("CREATE TABLE .resources")); // No invalid SQL
 
         // State table in 'states' schema
-        assertThat(ddl).contains("CREATE TABLE states.resource_active");
-        assertThat(ddl).doesNotContain("CREATE TABLE .resource_active"); // No invalid SQL
+        assertTrue(ddl.contains("CREATE TABLE states.resource_active"));
+        assertFalse(ddl.contains("CREATE TABLE .resource_active")); // No invalid SQL
     }
 
     @Test
@@ -268,15 +264,14 @@ class PostgresDdlGeneratorIntegrationTest {
 
         // Then - verify indexes are created for FK columns
         // Index on order_paid.order_id (FK to orders)
-        assertThat(ddl).contains("CREATE INDEX idx_order_paid_order_id ON public_states.order_paid (order_id);");
+        assertTrue(ddl.contains("CREATE INDEX idx_order_paid_order_id ON public_states.order_paid (order_id);"));
 
         // Index on order_paid.previous_pending_id (FK to order_pending)
-        assertThat(ddl)
-                .contains(
-                        "CREATE INDEX idx_order_paid_previous_pending_id ON public_states.order_paid (previous_pending_id);");
+        assertTrue(ddl.contains(
+                "CREATE INDEX idx_order_paid_previous_pending_id ON public_states.order_paid (previous_pending_id);"));
 
         // Index on order_pending.order_id (FK to orders)
-        assertThat(ddl).contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);");
+        assertTrue(ddl.contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);"));
     }
 
     private SddModel createSimpleOrderModel() {

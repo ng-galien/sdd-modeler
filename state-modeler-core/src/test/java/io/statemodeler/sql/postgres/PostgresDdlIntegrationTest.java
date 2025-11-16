@@ -203,7 +203,12 @@ class PostgresDdlIntegrationTest {
                 DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
 
             try (Statement stmt = conn.createStatement()) {
-                stmt.execute(ddl);
+                for (String statement : ddl.split(";\\s*\\n")) {
+                    statement = statement.trim();
+                    if (!statement.isEmpty()) {
+                        stmt.execute(statement + ";");
+                    }
+                }
             }
 
             // When - Insert test data

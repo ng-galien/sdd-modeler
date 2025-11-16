@@ -1,38 +1,51 @@
 package io.statemodeler.dsl;
 
 import io.statemodeler.core.SddModel;
-import java.io.IOException;
+import io.vavr.control.Try;
 import java.io.InputStream;
 import java.nio.file.Path;
 
 /**
  * Interface for loading SDD models from various formats (YAML, JSON).
+ * Uses Vavr Try for functional error handling instead of checked exceptions.
  */
 public interface ModelLoader {
 
     /**
      * Load an SDD model from a file path.
      * @param path the path to the model file
-     * @return the loaded SDD model
-     * @throws IOException if the file cannot be read
-     * @throws IllegalArgumentException if the model format is invalid
+     * @return Try containing either the loaded SDD model or an exception
      */
-    SddModel loadFromFile(Path path) throws IOException;
+    Try<SddModel> loadFromFile(Path path);
 
     /**
      * Load an SDD model from an input stream.
      * @param inputStream the input stream containing the model
-     * @return the loaded SDD model
-     * @throws IOException if the stream cannot be read
-     * @throws IllegalArgumentException if the model format is invalid
+     * @return Try containing either the loaded SDD model or an exception
      */
-    SddModel loadFromStream(InputStream inputStream) throws IOException;
+    Try<SddModel> loadFromStream(InputStream inputStream);
 
     /**
      * Load an SDD model from a string.
      * @param content the string content containing the model
-     * @return the loaded SDD model
-     * @throws IllegalArgumentException if the model format is invalid
+     * @return Try containing either the loaded SDD model or an exception
      */
-    SddModel loadFromString(String content);
+    Try<SddModel> loadFromString(String content);
+
+    /**
+     * Factory method to create the appropriate loader based on file extension.
+     * @param file the model file path
+     * @return ModelLoader instance for the file type
+     * @throws IllegalArgumentException if the file type is not supported
+     */
+    static ModelLoader forFile(Path file) {
+        var fileName = file.getFileName().toString().toLowerCase();
+        if (fileName.endsWith(".yaml") || fileName.endsWith(".yml")) {
+            return new YamlModelLoader();
+        } else if (fileName.endsWith(".json")) {
+            return new JsonModelLoader();
+        } else {
+            throw new IllegalArgumentException("Unsupported file extension. Supported: .yaml, .yml, .json");
+        }
+    }
 }

@@ -11,6 +11,9 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${rootProject.ext["jacksonVersion"]}")
     implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:${rootProject.ext["jacksonVersion"]}")
     
+    // Vavr for functional programming and enhanced error handling
+    implementation("io.vavr:vavr:0.10.7")
+    
     // JSON Schema generation for IDE support (victools)
     implementation("com.github.victools:jsonschema-generator:4.38.0")
     implementation("com.github.victools:jsonschema-module-jackson:4.28.0")

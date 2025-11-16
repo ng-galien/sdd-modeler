@@ -10,6 +10,9 @@ dependencies {
     // Depend on core module
     implementation(project(":state-modeler-core"))
     
+    // Vavr for functional programming (needed for Try<T> from core)
+    implementation("io.vavr:vavr:0.10.7")
+    
     // Picocli for CLI
     implementation("info.picocli:picocli:${rootProject.ext["picocliVersion"]}")
     annotationProcessor("info.picocli:picocli-codegen:${rootProject.ext["picocliVersion"]}")

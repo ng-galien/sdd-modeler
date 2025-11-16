@@ -7,5 +7,4 @@ import lombok.experimental.StandardException;
  * Follows modern Java exception practices with runtime semantics.
  */
 @StandardException
-public class ModelParsingException extends RuntimeException {
-}
+public class ModelParsingException extends RuntimeException {}

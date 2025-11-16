@@ -8,10 +8,7 @@ import org.jspecify.annotations.Nullable;
  * Abstract representation of a SQL table definition.
  */
 public record TableDefinition(
-        String name,
-        @Nullable String schema,
-        List<ColumnDefinition> columns,
-        List<String> primaryKey) {
+        String name, @Nullable String schema, List<ColumnDefinition> columns, List<String> primaryKey) {
 
     public TableDefinition {
         if (name == null) {

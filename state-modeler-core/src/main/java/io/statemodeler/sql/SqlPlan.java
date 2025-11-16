@@ -8,9 +8,7 @@ import java.util.Objects;
  * This is dialect-agnostic and can be rendered to specific SQL dialects.
  */
 public record SqlPlan(
-        List<TableDefinition> tables,
-        List<ViewDefinition> views,
-        List<ConstraintDefinition> constraints) {
+        List<TableDefinition> tables, List<ViewDefinition> views, List<ConstraintDefinition> constraints) {
 
     public SqlPlan {
         tables = List.copyOf(Objects.requireNonNull(tables, "tables cannot be null"));

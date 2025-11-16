@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -16,6 +18,8 @@ import picocli.CommandLine.Parameters;
  */
 @Command(name = "diagram", description = "Generate state diagrams from an SDD model file (Mermaid, PlantUML)")
 public class DiagramCommand implements Callable<Integer> {
+
+    private static final Logger logger = LoggerFactory.getLogger(DiagramCommand.class);
 
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)")
     private Path modelFile;
@@ -38,19 +42,19 @@ public class DiagramCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        System.out.println("Generating diagram from model file: " + modelFile);
+        logger.info("Generating diagram from model file: {}", modelFile);
 
         try {
             // Check if model file exists
             if (!Files.exists(modelFile)) {
-                System.err.println("Error: Model file does not exist: " + modelFile);
+                logger.error("Error: Model file does not exist: {}", modelFile);
                 return 1;
             }
 
             // Validate format
             if (!DiagramGenerators.isSupported(format)) {
-                System.err.println("Error: Unsupported diagram format: " + format);
-                System.err.println("Supported formats: " + String.join(", ", DiagramGenerators.getSupportedFormats()));
+                logger.error("Error: Unsupported diagram format: {}", format);
+                logger.error("Supported formats: {}", String.join(", ", DiagramGenerators.getSupportedFormats()));
                 return 1;
             }
 
@@ -59,33 +63,34 @@ public class DiagramCommand implements Callable<Integer> {
             var loadResult = loader.loadFromFile(modelFile);
 
             if (loadResult.isFailure()) {
-                System.err.println("✗ Failed to parse model file:");
-                System.err.println("  " + loadResult.getCause().getMessage());
+                logger.error("✗ Failed to parse model file:");
+                logger.error("  {}", loadResult.getCause().getMessage());
                 return 1;
             }
 
             var model = loadResult.get();
-            System.out.println("✓ Model parsed successfully: " + model.name());
+            logger.info("✓ Model parsed successfully: {}", model.name());
 
             // Validate the loaded model
             var validator = ModelValidators.getInstance();
             var validationResult = validator.validate(model);
 
             if (validationResult.isInvalid()) {
-                System.err.println("✗ Model validation failed:");
+                logger.error("✗ Model validation failed:");
                 for (var error : validationResult.getError()) {
-                    System.err.println("  • " + error.message());
+                    logger.error("  • {}", error.message());
                 }
                 return 1;
             }
 
-            System.out.println("✓ Model validation passed");
+            logger.info("✓ Model validation passed");
 
             // Validate entity name if specified
             if (entityName != null && !model.entities().containsKey(entityName)) {
-                System.err.println("Error: Entity not found: " + entityName);
-                System.err.println("Available entities: "
-                        + String.join(", ", model.entities().keySet()));
+                logger.error("Error: Entity not found: {}", entityName);
+                logger.error(
+                        "Available entities: {}",
+                        String.join(", ", model.entities().keySet()));
                 return 1;
             }
 
@@ -94,17 +99,17 @@ public class DiagramCommand implements Callable<Integer> {
             String diagram;
 
             if (entityName != null) {
-                System.out.println("Generating diagram for entity: " + entityName);
+                logger.info("Generating diagram for entity: {}", entityName);
                 diagram = generator.generateDiagram(model, entityName);
             } else {
-                System.out.println("Generating diagram for all entities");
+                logger.info("Generating diagram for all entities");
                 diagram = generator.generateDiagram(model);
             }
 
             // Write output
             if (outputFile != null) {
                 Files.writeString(outputFile, diagram);
-                System.out.println("✓ Diagram written to: " + outputFile);
+                logger.info("✓ Diagram written to: {}", outputFile);
             } else {
                 System.out.println("\n" + diagram);
             }
@@ -112,11 +117,10 @@ public class DiagramCommand implements Callable<Integer> {
             return 0;
 
         } catch (IOException e) {
-            System.err.println("Error: Failed to read/write file: " + e.getMessage());
+            logger.error("Error: Failed to read/write file: {}", e.getMessage());
             return 1;
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace(System.err);
+            logger.error("Error: {}", e.getMessage(), e);
             return 1;
         }
     }

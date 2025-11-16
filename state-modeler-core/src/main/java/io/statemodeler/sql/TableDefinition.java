@@ -7,53 +7,25 @@ import org.jspecify.annotations.Nullable;
 /**
  * Abstract representation of a SQL table definition.
  */
-public final class TableDefinition {
-    private final String name;
-    private final @Nullable String schema;
-    private final List<ColumnDefinition> columns;
-    private final List<String> primaryKey;
+public record TableDefinition(
+        String name,
+        @Nullable String schema,
+        List<ColumnDefinition> columns,
+        List<String> primaryKey) {
 
-    public TableDefinition(String name, String schema, List<ColumnDefinition> columns, List<String> primaryKey) {
-        this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.schema = schema; // Can be null
-        this.columns = List.copyOf(Objects.requireNonNull(columns, "columns cannot be null"));
-        this.primaryKey = List.copyOf(Objects.requireNonNull(primaryKey, "primaryKey cannot be null"));
-    }
+    public TableDefinition {
+        if (name == null) {
+            throw new IllegalArgumentException("name cannot be null");
+        }
+        Objects.requireNonNull(columns, "columns cannot be null");
+        Objects.requireNonNull(primaryKey, "primaryKey cannot be null");
 
-    public String name() {
-        return name;
-    }
-
-    public String schema() {
-        return schema;
-    }
-
-    public List<ColumnDefinition> columns() {
-        return columns;
-    }
-
-    public List<String> primaryKey() {
-        return primaryKey;
+        columns = List.copyOf(columns);
+        primaryKey = List.copyOf(primaryKey);
     }
 
     public String fullName() {
         return schema != null ? schema + "." + name : name;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        TableDefinition that = (TableDefinition) obj;
-        return Objects.equals(name, that.name)
-                && Objects.equals(schema, that.schema)
-                && Objects.equals(columns, that.columns)
-                && Objects.equals(primaryKey, that.primaryKey);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, schema, columns, primaryKey);
     }
 
     @Override

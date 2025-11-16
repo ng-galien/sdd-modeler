@@ -7,6 +7,10 @@ application {
 }
 
 dependencies {
+    // Lombok for reducing boilerplate
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    
     // Depend on core module
     implementation(project(":state-modeler-core"))
     

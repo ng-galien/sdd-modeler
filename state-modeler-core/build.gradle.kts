@@ -1,4 +1,8 @@
 dependencies {
+    // Lombok for reducing boilerplate
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    
     // JSpecify for null-safety annotations
     compileOnly("org.jspecify:jspecify:${rootProject.ext["jspecifyVersion"]}")
     

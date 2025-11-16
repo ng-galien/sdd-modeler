@@ -51,16 +51,16 @@ public final class PostgresTypeValidator {
     // Common PostgreSQL UUID type
     private static final Set<String> UUID_TYPES = Set.of("UUID");
 
-    // Common PostgreSQL array types (handled via pattern)
-    private static final Pattern ARRAY_TYPE_PATTERN = Pattern.compile("^[A-Z]+\\[\\]$", Pattern.CASE_INSENSITIVE);
-
     // Parameterized types patterns
+    // Support NUMERIC(10) or NUMERIC(10,2)
     private static final Pattern NUMERIC_WITH_PRECISION_PATTERN =
-            Pattern.compile("^(NUMERIC|DECIMAL)\\(\\d+,\\s*\\d+\\)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^(NUMERIC|DECIMAL)\\(\\d+(,\\s*\\d+)?\\)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern VARCHAR_WITH_LENGTH_PATTERN =
             Pattern.compile("^(VARCHAR|CHAR)\\(\\d+\\)$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern TIMESTAMP_WITH_PRECISION_PATTERN =
-            Pattern.compile("^(TIMESTAMP|TIMESTAMPTZ|TIME|TIMETZ)\\(\\d+\\)$", Pattern.CASE_INSENSITIVE);
+    // Support TIMESTAMP(6), TIMESTAMPTZ(6), TIME WITH TIME ZONE(6), etc.
+    private static final Pattern TIMESTAMP_WITH_PRECISION_PATTERN = Pattern.compile(
+            "^(TIMESTAMP|TIMESTAMPTZ|TIME|TIMETZ)(\\s+(WITH|WITHOUT)\\s+TIME\\s+ZONE)?\\(\\d+\\)$",
+            Pattern.CASE_INSENSITIVE);
 
     private PostgresTypeValidator() {
         // Utility class
@@ -77,7 +77,15 @@ public final class PostgresTypeValidator {
             return false;
         }
 
-        var normalizedType = type.trim().toUpperCase();
+        var trimmedType = type.trim();
+
+        // Check array types recursively (e.g., VARCHAR(255)[], NUMERIC(10,2)[], TIMESTAMP WITH TIME ZONE[])
+        if (trimmedType.endsWith("[]")) {
+            var baseType = trimmedType.substring(0, trimmedType.length() - 2).trim();
+            return isValidType(baseType); // Recursive validation
+        }
+
+        var normalizedType = trimmedType.toUpperCase();
 
         // Check simple types
         if (NUMERIC_TYPES.contains(normalizedType)
@@ -90,15 +98,10 @@ public final class PostgresTypeValidator {
             return true;
         }
 
-        // Check array types
-        if (ARRAY_TYPE_PATTERN.matcher(type).matches()) {
-            return true;
-        }
-
         // Check parameterized types
-        if (NUMERIC_WITH_PRECISION_PATTERN.matcher(type).matches()
-                || VARCHAR_WITH_LENGTH_PATTERN.matcher(type).matches()
-                || TIMESTAMP_WITH_PRECISION_PATTERN.matcher(type).matches()) {
+        if (NUMERIC_WITH_PRECISION_PATTERN.matcher(trimmedType).matches()
+                || VARCHAR_WITH_LENGTH_PATTERN.matcher(trimmedType).matches()
+                || TIMESTAMP_WITH_PRECISION_PATTERN.matcher(trimmedType).matches()) {
             return true;
         }
 

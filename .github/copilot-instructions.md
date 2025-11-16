@@ -216,3 +216,106 @@ Example: "I need to use victools/jsonschema-generator but I'm not familiar with 
 - **Factory pattern**: `DdlGenerators.forDialect("postgres")` returns appropriate generator
 - **Future support**: Keep PostgreSQL-specific syntax isolated in `sql.postgres` package
 - **View generation priority**: Interval views use `LEAD()` window function for calculating `end_at`
+
+## GitHub Pull Request Review Workflow
+
+When reviewing or responding to PR feedback, follow this process:
+
+### 1. Reading Pull Request Details and Comments
+
+Use the **MCP GitHub tools** to fetch PR information programmatically:
+
+```bash
+# Get PR details (status, commits, file changes, stats)
+mcp_github_pull_request_read(method="get", owner="ng-galien", repo="sdd-modeler", pullNumber=8)
+
+# Get conversation comments (includes Codecov bot reports)
+mcp_github_pull_request_read(method="get_comments", owner="ng-galien", repo="sdd-modeler", pullNumber=8)
+
+# Get review comments (inline code suggestions from reviewers)
+mcp_github_pull_request_read(method="get_review_comments", owner="ng-galien", repo="sdd-modeler", pullNumber=8)
+```
+
+**Key information to extract:**
+- **Codecov report**: Look for `codecov-commenter` in comments - shows coverage percentage, files with missing lines
+- **Review comments**: Copilot PR Reviewer or human reviewers provide inline suggestions with file paths, line numbers, and specific code improvements
+- **PR stats**: `additions`, `deletions`, `changed_files`, `commits` count
+- **Merge status**: `mergeable`, `mergeable_state`, `merged`
+
+### 2. Analyzing Feedback and Creating Action Plan
+
+After reading PR comments, create a structured action plan:
+
+**A. Categorize feedback by type:**
+- **Coverage issues**: Identify files with low coverage (< 80%) from Codecov report
+- **Code quality**: Review suggestions from Copilot/reviewers (e.g., pattern improvements, edge cases)
+- **Documentation**: Check if new features need documentation updates
+
+**B. Prioritize actions:**
+1. **Critical**: Bugs, security issues, breaking changes
+2. **High**: Coverage gaps in new code, reviewer suggestions on core logic
+3. **Medium**: Code quality improvements, pattern enhancements
+4. **Low**: Style suggestions, documentation tweaks
+
+**C. Document the plan** (use `manage_todo_list` or create checklist in response):
+
+Example plan structure:
+```markdown
+## PR #8 Review Response Plan
+
+### Coverage Improvements (Priority: High)
+- [ ] Add tests for `DefaultModelValidator.validateAttributeTypes()` edge cases (12 missing lines)
+- [ ] Add tests for `IndexDefinition` null checks (4 partial lines)
+
+### Copilot Suggestions (Priority: High)
+- [ ] Fix NUMERIC pattern to support `NUMERIC(p)` (PostgresTypeValidator.java:59)
+- [ ] Implement recursive array validation (PostgresTypeValidator.java:55)
+- [ ] Enhance TIMESTAMP precision pattern (PostgresTypeValidator.java:63)
+
+### Testing
+- [ ] Add tests for new type validation cases (NUMERIC(10), VARCHAR(255)[], TIMESTAMP WITH TIME ZONE(6))
+- [ ] Verify coverage increase with `./gradlew test jacocoTestReport`
+```
+
+### 3. Implementation Guidelines
+
+When implementing PR feedback:
+
+- **One commit per logical change group**: Don't mix coverage improvements with refactoring
+- **Reference review comments**: Use commit messages like `fix: support NUMERIC(p) format (addresses PR #8 review)`
+- **Add tests FIRST**: For coverage issues, write failing tests before fixing code
+- **Verify before pushing**: Always run `./gradlew test jacocoTestReport` and check coverage locally
+- **Update PR description**: If changes are significant, add a comment summarizing what was addressed
+
+### 4. Common Codecov Patterns
+
+**Partial coverage (yellow lines):**
+- Usually lambda expressions, ternary operators, or multi-branch conditions
+- Add tests exercising both branches
+
+**Missing coverage (red lines):**
+- Untested code paths (error handling, edge cases)
+- Add dedicated test methods for each case
+
+**Example: Addressing "12 missing lines in DefaultModelValidator":**
+```java
+// Add tests for each attribute type validation path
+@Test
+void shouldValidateEntityAttributeTypes() { /* test entity attrs */ }
+
+@Test
+void shouldValidateStateAttributeTypes() { /* test state attrs */ }
+
+@Test
+void shouldValidateExtensionAttributeTypes() { /* test extension attrs */ }
+```
+
+### 5. Post-Implementation Checklist
+
+Before marking PR as ready:
+- [ ] All review comments addressed or discussed
+- [ ] Coverage increased (check Codecov report in new commit)
+- [ ] All tests passing (`./gradlew test`)
+- [ ] Code formatted (`./gradlew spotlessApply`)
+- [ ] Commits have clear messages referencing PR feedback
+- [ ] PR description updated if scope changed

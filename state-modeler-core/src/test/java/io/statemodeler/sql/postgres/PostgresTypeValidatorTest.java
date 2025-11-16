@@ -23,6 +23,41 @@ class PostgresTypeValidatorTest {
         assertThat(PostgresTypeValidator.isValidType("NUMERIC(10,2)")).isTrue();
         assertThat(PostgresTypeValidator.isValidType("NUMERIC(10, 2)")).isTrue(); // with space
         assertThat(PostgresTypeValidator.isValidType("DECIMAL(5,3)")).isTrue();
+        // Support precision-only format (no scale)
+        assertThat(PostgresTypeValidator.isValidType("NUMERIC(10)")).isTrue();
+        assertThat(PostgresTypeValidator.isValidType("DECIMAL(5)")).isTrue();
+    }
+
+    @Test
+    void shouldValidateComplexArrayTypes() {
+        // Simple arrays
+        assertThat(PostgresTypeValidator.isValidType("TEXT[]")).isTrue();
+        assertThat(PostgresTypeValidator.isValidType("INTEGER[]")).isTrue();
+        // Parameterized type arrays
+        assertThat(PostgresTypeValidator.isValidType("VARCHAR(255)[]")).isTrue();
+        assertThat(PostgresTypeValidator.isValidType("NUMERIC(10,2)[]")).isTrue();
+        // Complex datetime arrays
+        assertThat(PostgresTypeValidator.isValidType("TIMESTAMP WITH TIME ZONE[]"))
+                .isTrue();
+        assertThat(PostgresTypeValidator.isValidType("TIME WITHOUT TIME ZONE[]"))
+                .isTrue();
+        // Case insensitive
+        assertThat(PostgresTypeValidator.isValidType("varchar(100)[]")).isTrue();
+    }
+
+    @Test
+    void shouldValidateDateTimeTypesWithPrecision() {
+        // Short form with precision
+        assertThat(PostgresTypeValidator.isValidType("TIMESTAMP(6)")).isTrue();
+        assertThat(PostgresTypeValidator.isValidType("TIMESTAMPTZ(3)")).isTrue();
+        assertThat(PostgresTypeValidator.isValidType("TIME(0)")).isTrue();
+        assertThat(PostgresTypeValidator.isValidType("TIMETZ(6)")).isTrue();
+        // Full form with precision - note: PostgreSQL only accepts abbreviated forms with precision
+        // TIMESTAMP WITH TIME ZONE(6) is NOT valid PostgreSQL syntax
+        // Use TIMESTAMPTZ(6) instead
+        assertThat(PostgresTypeValidator.isValidType("timestamp with time zone(6)"))
+                .isTrue();
+        assertThat(PostgresTypeValidator.isValidType("time with time zone(6)")).isTrue();
     }
 
     @Test

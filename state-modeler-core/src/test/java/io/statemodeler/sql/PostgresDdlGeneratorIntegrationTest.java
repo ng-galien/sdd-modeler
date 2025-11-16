@@ -272,7 +272,8 @@ class PostgresDdlGeneratorIntegrationTest {
 
         // Index on order_paid.previous_pending_id (FK to order_pending)
         assertThat(ddl)
-                .contains("CREATE INDEX idx_order_paid_previous_pending_id ON public_states.order_paid (previous_pending_id);");
+                .contains(
+                        "CREATE INDEX idx_order_paid_previous_pending_id ON public_states.order_paid (previous_pending_id);");
 
         // Index on order_pending.order_id (FK to orders)
         assertThat(ddl).contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);");

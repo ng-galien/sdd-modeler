@@ -233,6 +233,54 @@ class DefaultModelValidatorTest {
         assertThat(validator.isValid(invalidModel)).isFalse();
     }
 
+    @Test
+    void shouldRejectInvalidAttributeTypes() {
+        // Given - model with invalid PostgreSQL type
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        // Invalid type "string" instead of "TEXT"
+        var invalidAttr = new AttributeDef("name", "string", false, false, null, null);
+        var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var states = Map.of("pending", pendingState);
+        var entity = new EntityDef("order", "orders", idAttr, Map.of("name", invalidAttr), states, Map.of(), Map.of());
+        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+
+        // When
+        var result = validator.validate(model);
+
+        // Then
+        assertThat(result.isInvalid()).isTrue();
+        var errors = result.getError();
+        assertThat(errors).hasSizeGreaterThanOrEqualTo(1);
+        assertThat(errors).anyMatch(e -> e.code().equals("INVALID_ATTRIBUTE_TYPE"));
+        assertThat(errors).anyMatch(e -> e.message().contains("string"));
+    }
+
+    @Test
+    void shouldAcceptValidPostgresTypes() {
+        // Given - model with valid PostgreSQL types
+        var database = new DatabaseConfig("postgres", "public", null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+        var nameAttr = new AttributeDef("name", "TEXT", false, false, null, null);
+        var priceAttr = new AttributeDef("price", "NUMERIC(10,2)", false, false, null, null);
+        var createdAtAttr = new AttributeDef("created_at", "TIMESTAMPTZ", false, false, null, null);
+        var metadataAttr = new AttributeDef("metadata", "JSONB", true, false, null, null);
+
+        var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var states = Map.of("pending", pendingState);
+        var attributes =
+                Map.of("name", nameAttr, "price", priceAttr, "created_at", createdAtAttr, "metadata", metadataAttr);
+        var entity = new EntityDef("order", "orders", idAttr, attributes, states, Map.of(), Map.of());
+        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+
+        // When
+        var result = validator.validate(model);
+
+        // Then
+        assertThat(result.isValid()).isTrue();
+    }
+
     private SddModel createValidModel() {
         var database = new DatabaseConfig("postgres", "public", null);
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);

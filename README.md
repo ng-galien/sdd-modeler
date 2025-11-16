@@ -1,7 +1,7 @@
 # sdd-modeler
 
-[![CI](https://github.com/alexandreboyer/sdd-modeler/actions/workflows/ci.yml/badge.svg)](https://github.com/alexandreboyer/sdd-modeler/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/alexandreboyer/sdd-modeler/graph/badge.svg)](https://codecov.io/gh/alexandreboyer/sdd-modeler)
+[![CI](https://github.com/ng-galien/sdd-modeler/actions/workflows/ci.yml/badge.svg)](https://github.com/ng-galien/sdd-modeler/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ng-galien/sdd-modeler/graph/badge.svg)](https://codecov.io/gh/ng-galien/sdd-modeler)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java Version](https://img.shields.io/badge/Java-21%2B-blue.svg)](https://openjdk.java.net/)
 [![Gradle](https://img.shields.io/badge/Gradle-8.11.1-blue.svg)](https://gradle.org/)

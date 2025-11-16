@@ -22,7 +22,7 @@ public record TableDefinition(
     }
 
     public String fullName() {
-        return schema != null ? schema + "." + name : name;
+        return (schema != null && !schema.isEmpty()) ? schema + "." + name : name;
     }
 
     @Override

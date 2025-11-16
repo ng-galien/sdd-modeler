@@ -4,6 +4,7 @@ name: orders-sdd-example
 database:
   dialect: postgres
   schema: public
+  # state_schema: public_states  # Optional: defaults to <schema>_states
 
 entities:
   order:

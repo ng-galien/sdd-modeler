@@ -13,6 +13,6 @@ public record ViewDefinition(String name, @Nullable String schema, String query)
     }
 
     public String fullName() {
-        return schema != null ? schema + "." + name : name;
+        return (schema != null && !schema.isEmpty()) ? schema + "." + name : name;
     }
 }

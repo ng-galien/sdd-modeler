@@ -18,7 +18,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     public String generateDdl(SddModel model) {
         try {
             var plan = generateSqlPlan(model);
-            return renderDdl(plan, model.database().schema());
+            return renderDdl(plan, model.database().schema(), model.database().effectiveStateSchema());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to generate PostgreSQL DDL", e);
         }
@@ -37,35 +37,35 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         var views = new ArrayList<ViewDefinition>();
         var constraints = new ArrayList<ConstraintDefinition>();
 
+        var entitySchema = model.database().schema();
+        var stateSchema = model.database().effectiveStateSchema();
+
         // Generate entity tables and state tables for each entity
         for (var entity : model.entities().values()) {
-            // Main entity table
-            tables.add(generateEntityTable(entity, model.database().schema()));
+            // Main entity table in entity schema
+            tables.add(generateEntityTable(entity, entitySchema));
 
-            // State tables
+            // State tables in state schema
             for (var state : entity.states().values()) {
-                tables.add(generateStateTable(entity, state, model.database().schema()));
+                tables.add(generateStateTable(entity, state, stateSchema));
             }
 
-            // Extension tables
+            // Extension tables in state schema
             for (var extension : entity.extensions().values()) {
-                tables.add(generateExtensionTable(
-                        entity, extension, model.database().schema()));
+                tables.add(generateExtensionTable(entity, extension, stateSchema));
             }
 
-            // OR transition mapping tables
+            // OR transition mapping tables in state schema
             for (var state : entity.states().values()) {
                 if (state.hasOrTransitions()) {
-                    tables.add(generateOrTransitionTable(
-                            entity, state, model.database().schema()));
+                    tables.add(generateOrTransitionTable(entity, state, stateSchema));
                     constraints.add(generateOrTransitionConstraint(entity, state));
                 }
             }
 
-            // Projection views
+            // Projection views in state schema
             for (var projection : entity.projections().values()) {
-                views.add(generateProjectionView(
-                        entity, projection, model.database().schema()));
+                views.add(generateProjectionView(entity, projection, stateSchema));
             }
         }
 
@@ -75,12 +75,17 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     /**
      * Render the SQL plan to PostgreSQL DDL.
      */
-    private String renderDdl(SqlPlan plan, String schema) {
+    private String renderDdl(SqlPlan plan, String entitySchema, String stateSchema) {
         var ddl = new StringBuilder();
 
-        // Schema creation if specified
-        if (schema != null && !schema.equals("public")) {
-            ddl.append("CREATE SCHEMA IF NOT EXISTS ").append(schema).append(";\n\n");
+        // Schema creation for entity schema if specified (non-null, non-empty, non-public)
+        if (entitySchema != null && !entitySchema.isEmpty() && !entitySchema.equals("public")) {
+            ddl.append("CREATE SCHEMA IF NOT EXISTS ").append(entitySchema).append(";\n\n");
+        }
+
+        // Schema creation for state schema (always create if different from public)
+        if (stateSchema != null && !stateSchema.isEmpty() && !stateSchema.equals("public")) {
+            ddl.append("CREATE SCHEMA IF NOT EXISTS ").append(stateSchema).append(";\n\n");
         }
 
         // Tables

@@ -30,13 +30,18 @@ respecter. Elle ne remplace pas les articles du blog, mais sert de référence
 rapide pour guider les décisions techniques.
 
 1. **Séparer entités et états**
-   - Une **entité** (ex. `order`) porte l’identité et des attributs stables
+   - Une **entité** (ex. `order`) porte l'identité et des attributs stables
      (id, références, montants initiaux, dates de création…).
    - Les **états métier** (`PENDING`, `PAID`, `CANCELLED`, `REFUNDED`, …) ne
      sont pas des valeurs dans une colonne `status`, mais des objets / lignes
      distincts.
-   - En SQL, cela se traduit par une table d’entité (`orders`) et des tables
-     d’états (`order_pending`, `order_paid`, …).
+   - En SQL, cela se traduit par une table d'entité (`orders`) et des tables
+     d'états (`order_pending`, `order_paid`, …).
+   - **Séparation au niveau des schémas** : pour renforcer l'isolation de l'ADT
+     des états, sdd-modeler génère les tables d'entités dans un schéma (ex. `public`)
+     et les tables d'états, extensions, transitions OR et projections dans un
+     schéma dédié (ex. `public_states`). Cette séparation rend la structure
+     SDD plus explicite et facilite la gestion des droits d'accès et des migrations.
 
 2. **Un état = un fait immuable**
    - Chaque état métier est représenté comme un **fait daté**, append‑only.
@@ -93,6 +98,54 @@ rapide pour guider les décisions techniques.
 
 ---
 
+## Séparation des schémas PostgreSQL
+
+Pour renforcer la cohérence de l'ADT des états et matérialiser la séparation
+conceptuelle entre entités et états, sdd-modeler génère un DDL PostgreSQL qui
+utilise **deux schémas distincts** :
+
+### Schéma entité (`schema`)
+
+Contient les tables d'entités avec leurs attributs stables :
+
+- Tables d'entités (ex. `public.orders`)
+- Colonnes : identifiant, références, attributs immuables ou rarement modifiés
+
+### Schéma d'états (`stateSchema`)
+
+Contient tout ce qui relève de la gestion des états métier :
+
+- **Tables d'états** (ex. `public_states.order_pending`, `public_states.order_paid`)
+- **Tables d'extensions** (ex. `public_states.order_paid_extensions`)
+- **Tables de mapping OR** pour les transitions `from_any_of` (ex. `public_states.cancelled_source`)
+- **Vues de projections** (ex. `public_states.order_state_intervals`, `public_states.current_order_states`)
+
+### Configuration
+
+Dans le DSL YAML/JSON, le schéma d'états est configurable :
+
+```yaml
+database:
+  dialect: postgres
+  schema: public           # Schéma pour les entités
+  state_schema: my_states  # Optionnel, défaut: <schema>_states
+```
+
+Si `state_schema` est omis, la valeur par défaut est `<schema>_states` :
+
+- `schema: public` → `stateSchema: public_states`
+- `schema: myapp` → `stateSchema: myapp_states`
+- `schema: null` → `stateSchema: states`
+
+### Avantages
+
+- **Isolation conceptuelle** : séparation claire entre données stables et gestion d'états
+- **Gestion des droits** : permissions différenciées (lecture seule sur entités, lecture/écriture sur états)
+- **Migrations** : évolutions du modèle d'états sans toucher aux entités
+- **Clarté** : structure du schéma reflète l'architecture SDD
+
+---
+
 ## Modules Gradle
 
 ### 1. state-modeler-core
@@ -111,12 +164,15 @@ rapide pour guider les décisions techniques.
 
 - `io.statemodeler.core`
   - Types de base du modèle SDD :
-    - `SddModel` — racine du modèle (ensemble d’entités).
+    - `SddModel` — racine du modèle (ensemble d'entités).
     - `EntityDef` — entité « neutre » (table principale, attributs stables).
-    - `StateDef` — état métier (table d’état, attributs propres, métadonnées).
+    - `StateDef` — état métier (table d'état, attributs propres, métadonnées).
     - `TransitionDef` — relation entre états (`from`, `fromAnyOf`).
-    - `ExtensionDef` — tables d’extension non décisionnelles.
+    - `ExtensionDef` — tables d'extension non décisionnelles.
     - `ProjectionDef` — projections/vues dérivées (intervals, current_state, etc.).
+    - `DatabaseConfig` — configuration base de données incluant `dialect`, `schema`
+      (pour les entités) et `stateSchema` (pour les états, extensions, transitions
+      OR et projections). Si `stateSchema` est null, utilise `<schema>_states` par défaut.
 
 - `io.statemodeler.dsl`
   - Chargement et mapping YAML/JSON → `SddModel` :
@@ -148,8 +204,11 @@ rapide pour guider les décisions techniques.
 
 - `io.statemodeler.sql.postgres`
   - Rendu du plan SQL en DDL PostgreSQL :
-    - `PostgresDdlRenderer` — produit du texte DDL (une chaîne ou un flux) à
-      partir d’un `SqlPlan`.
+    - `PostgresDdlGenerator` — génère le DDL PostgreSQL complet à partir d'un
+      `SddModel`. Gère la séparation des schémas : tables d'entités dans le
+      schéma entité (`schema`), tables d'états/extensions/OR transitions/projections
+      dans le schéma d'états (`stateSchema` ou `<schema>_states` par défaut).
+    - Génère automatiquement `CREATE SCHEMA IF NOT EXISTS` pour les schémas nécessaires.
   - Possibles helpers : formatage, indentation, gestion de types PostgreSQL.
 
 **Tests (core)** :

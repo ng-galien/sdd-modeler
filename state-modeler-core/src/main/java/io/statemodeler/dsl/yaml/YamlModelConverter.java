@@ -34,7 +34,7 @@ public final class YamlModelConverter {
         if (dto == null) {
             throw new IllegalArgumentException("Database configuration is required");
         }
-        return new DatabaseConfig(dto.dialect(), dto.schema());
+        return new DatabaseConfig(dto.dialect(), dto.schema(), dto.stateSchema());
     }
 
     private static Map<String, EntityDef> convertEntities(Map<String, YamlEntityDto> entities) {

@@ -89,6 +89,82 @@ class PostgresDdlGeneratorIntegrationTest {
         assertThat(ddl).contains("WHERE end_at IS NULL");
     }
 
+    @Test
+    void shouldGenerateWithCustomStateSchema() throws Exception {
+        // Given - model with custom state schema
+        var database = new DatabaseConfig("postgres", "myapp", "custom_states");
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+        var nameAttr = new AttributeDef("name", "text", false, false, null, null);
+
+        var initialState = new StateDef(
+                "draft",
+                "document_draft",
+                true,
+                List.of(),
+                List.of(),
+                Map.of("content", new AttributeDef("content", "text", false, false, null, null)));
+
+        var entity = new EntityDef(
+                "document",
+                "documents",
+                idAttr,
+                Map.of("name", nameAttr),
+                Map.of("draft", initialState),
+                Map.of(),
+                Map.of());
+
+        var model = new SddModel("0.1", "test-custom-schema", database, Map.of("document", entity));
+
+        // When
+        var generator = DdlGenerators.forDialect("postgres");
+        var ddl = generator.generateDdl(model);
+
+        // Then - verify custom schemas are created
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS myapp");
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS custom_states");
+
+        // Entity table in entity schema
+        assertThat(ddl).contains("CREATE TABLE myapp.documents");
+
+        // State table in custom state schema
+        assertThat(ddl).contains("CREATE TABLE custom_states.document_draft");
+    }
+
+    @Test
+    void shouldGenerateWithNullSchemaDefaultingToStates() throws Exception {
+        // Given - model with null schemas (tests default behavior)
+        var database = new DatabaseConfig("postgres", null, null);
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        var initialState = new StateDef(
+                "active",
+                "task_active",
+                true,
+                List.of(),
+                List.of(),
+                Map.of("status", new AttributeDef("status", "text", false, false, null, null)));
+
+        var entity =
+                new EntityDef("task", "tasks", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
+
+        var model = new SddModel("0.1", "test-null-schema", database, Map.of("task", entity));
+
+        // When
+        var generator = DdlGenerators.forDialect("postgres");
+        var ddl = generator.generateDdl(model);
+
+        // Then - no CREATE SCHEMA for public (default), but CREATE SCHEMA for states
+        assertThat(ddl).doesNotContain("CREATE SCHEMA IF NOT EXISTS public");
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS states");
+
+        // Entity table without schema prefix (default schema)
+        assertThat(ddl).contains("CREATE TABLE tasks");
+        assertThat(ddl).doesNotContain("CREATE TABLE public.tasks");
+
+        // State table in 'states' schema
+        assertThat(ddl).contains("CREATE TABLE states.task_active");
+    }
+
     private SddModel createSimpleOrderModel() {
         var database = new DatabaseConfig("postgres", "public", null);
 

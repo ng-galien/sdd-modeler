@@ -100,4 +100,48 @@ public interface SdrRepository {
      * @return Success with true/false, Failure if database error
      */
     Try<Boolean> exists(String schemaHash);
+
+    // ========== Migration Management ==========
+
+    /**
+     * Saves a migration script between two SDR versions.
+     *
+     * @param migration the migration record to persist
+     * @return Success if saved, Failure if error occurs (e.g., duplicate, invalid refs)
+     */
+    Try<Void> saveMigration(SdrMigration migration);
+
+    /**
+     * Retrieves a migration between two specific SDR hashes.
+     *
+     * @param fromHash source SDR hash
+     * @param toHash target SDR hash
+     * @return Success with Optional migration, Failure if database error
+     */
+    Try<Optional<SdrMigration>> findMigration(String fromHash, String toHash);
+
+    /**
+     * Lists all migrations from a specific SDR hash.
+     *
+     * @param fromHash source SDR hash
+     * @return Success with list of migrations, Failure if database error
+     */
+    Try<List<SdrMigration>> findMigrationsFrom(String fromHash);
+
+    /**
+     * Lists all migrations to a specific SDR hash.
+     *
+     * @param toHash target SDR hash
+     * @return Success with list of migrations, Failure if database error
+     */
+    Try<List<SdrMigration>> findMigrationsTo(String toHash);
+
+    /**
+     * Deletes a migration between two SDR hashes.
+     *
+     * @param fromHash source SDR hash
+     * @param toHash target SDR hash
+     * @return Success with true if deleted, false if not found, Failure if database error
+     */
+    Try<Boolean> deleteMigration(String fromHash, String toHash);
 }

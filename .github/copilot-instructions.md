@@ -3,7 +3,7 @@
 ## Project Overview
 **sdd-modeler** is a Java 21 library + CLI for implementing State-Driven Design (SDD). It generates PostgreSQL DDL from declarative YAML/JSON models describing entities, states, transitions, extensions, and projections.
 
-**Current Implementation Status**: Core model classes (✅), YAML/JSON parsing (✅), model validation with Vavr (✅), SQL plan framework (✅), PostgreSQL DDL generation (🚧 views incomplete). CLI functional but needs full core integration.
+**Current Implementation Status**: Core model classes (✅), YAML/JSON parsing (✅), model validation with Vavr (✅), SQL plan framework (✅), PostgreSQL DDL generation (✅ complete with views). CLI fully integrated with validation and SQL generation (✅).
 
 ## Core SDD Principles (Critical Context)
 - **Entities vs States**: Separate stable entity data (`orders` table) from mutable state facts (`order_pending`, `order_paid` tables)
@@ -15,7 +15,7 @@
 ## Architecture & Module Structure
 Multi-module Gradle 8.11.1 project with Java 21 toolchain:
 - `state-modeler-core`: Model classes, YAML/JSON parsing (Jackson), validation (Vavr), SQL plan, PostgreSQL DDL
-- `state-modeler-cli`: Picocli-based CLI (`validate`, `sql` commands) - integration in progress
+- `state-modeler-cli`: Picocli-based CLI (`validate`, `sql` commands) - fully integrated with core validation and DDL generation
 - `state-modeler-spring`: Future Java/Spring code generation
 
 ### Core Package Structure (Current Implementation)
@@ -25,8 +25,9 @@ io.statemodeler.dsl           // ✅ YamlModelLoader, JsonModelLoader (Jackson +
 io.statemodeler.dsl.yaml      // ✅ YamlModelDto records for deserialization
 io.statemodeler.validation    // ✅ DefaultModelValidator (Vavr Validation<List<ValidationError>, SddModel>)
 io.statemodeler.sql           // ✅ SqlPlan, TableDefinition, ViewDefinition, DdlGenerator interface
-io.statemodeler.sql.postgres  // 🚧 PostgresDdlGenerator (tables done, views TODO)
+io.statemodeler.sql.postgres  // ✅ PostgresDdlGenerator (complete: tables, views, constraints)
 io.statemodeler.schema        // ✅ JSON schema generation (victools/jsonschema-generator)
+io.statemodeler.cli           // ✅ ValidateCommand, SqlCommand (Picocli with full integration)
 ```
 
 ### Build & Development Commands
@@ -112,19 +113,16 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
 - YAML/JSON parsing: `YamlModelLoader`, `JsonModelLoader` using Jackson + `io.vavr.control.Try<T>`
 - Validation: `DefaultModelValidator` returns `Validation<List<ValidationError>, SddModel>`
 - SQL plan: `SqlPlan` abstraction (tables, views, constraints)
-- PostgreSQL table generation: entity, state, extension, OR transition tables
-- CLI framework: Picocli with `validate` and `sql` subcommands
+- PostgreSQL DDL generation: Complete implementation including entity, state, extension, OR transition tables, and projection views (intervals, current_state)
+- CLI integration: `ValidateCommand` and `SqlCommand` fully integrated with YamlModelLoader + DefaultModelValidator
+- CLI testing: Comprehensive tests for both commands (valid/invalid models, file I/O, error handling)
 - JSON Schema generation: Using victools/jsonschema-generator (auto-generated during build)
 
-**🚧 In Progress:**
-- PostgreSQL view generation for projections (intervals, current_state)
-- CLI integration with YamlModelLoader + DefaultModelValidator
-
 **⏳ TODO Priority:**
-1. Complete `PostgresDdlGenerator` view rendering (intervals + current_state projections)
-2. Wire YamlModelLoader into CLI ValidateCommand
-3. Add integration test: `orders-sdd-model.yaml` → DDL matches `orders-sdd-ddl.sql` structure
-4. Document validation error codes in `ValidationError` javadoc
+1. Document validation error codes in `ValidationError` javadoc
+2. Add CLI usage examples to README.md
+3. Consider adding support for JSON input (currently only YAML tested in CLI)
+4. Explore advanced projection types (aggregations, custom queries)
 
 ## Testing Strategy
 - **Unit tests**: JUnit 5 + AssertJ for fluent assertions

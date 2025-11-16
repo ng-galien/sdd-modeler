@@ -165,6 +165,40 @@ class PostgresDdlGeneratorIntegrationTest {
         assertThat(ddl).contains("CREATE TABLE states.task_active");
     }
 
+    @Test
+    void shouldGenerateWithPublicStateSchema() throws Exception {
+        // Given - model with custom entity schema but 'public' state schema
+        var database = new DatabaseConfig("postgres", "myapp", "public");
+        var idAttr = new AttributeDef("id", "serial", false, true, null, null);
+
+        var initialState = new StateDef(
+                "active",
+                "project_active",
+                true,
+                List.of(),
+                List.of(),
+                Map.of("status", new AttributeDef("status", "text", false, false, null, null)));
+
+        var entity = new EntityDef(
+                "project", "projects", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
+
+        var model = new SddModel("0.1", "test-public-state-schema", database, Map.of("project", entity));
+
+        // When
+        var generator = DdlGenerators.forDialect("postgres");
+        var ddl = generator.generateDdl(model);
+
+        // Then - CREATE SCHEMA for myapp, but NOT for public (state schema)
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS myapp");
+        assertThat(ddl).doesNotContain("CREATE SCHEMA IF NOT EXISTS public");
+
+        // Entity table in custom schema
+        assertThat(ddl).contains("CREATE TABLE myapp.projects");
+
+        // State table in public schema (default)
+        assertThat(ddl).contains("CREATE TABLE public.project_active");
+    }
+
     private SddModel createSimpleOrderModel() {
         var database = new DatabaseConfig("postgres", "public", null);
 

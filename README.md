@@ -1,5 +1,11 @@
 # sdd-modeler
 
+[![CI](https://github.com/alexandreboyer/sdd-modeler/actions/workflows/ci.yml/badge.svg)](https://github.com/alexandreboyer/sdd-modeler/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/alexandreboyer/sdd-modeler/graph/badge.svg)](https://codecov.io/gh/alexandreboyer/sdd-modeler)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Java Version](https://img.shields.io/badge/Java-21%2B-blue.svg)](https://openjdk.java.net/)
+[![Gradle](https://img.shields.io/badge/Gradle-8.11.1-blue.svg)](https://gradle.org/)
+
 State‑Modeler est une bibliothèque Java + CLI pour implémenter concrètement le State‑Driven Design (SDD).
 
 L'objectif principal est de **générer du DDL SQL** (d'abord PostgreSQL) à partir d'un schéma déclaratif (JSON ou YAML) décrivant un modèle SDD : entités, états, transitions, extensions, projections. À terme, le même modèle servira également à générer du code Java (par exemple pour Spring).

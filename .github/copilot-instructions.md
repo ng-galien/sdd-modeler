@@ -1,7 +1,7 @@
 # Copilot Instructions for sdd-modeler
 
 ## Project Overview
-**sdd-modeler** is a Java 25 library + CLI for implementing State-Driven Design (SDD). It generates PostgreSQL DDL from declarative YAML/JSON models describing entities, states, transitions, extensions, and projections.
+**sdd-modeler** is a Java 21 library + CLI for implementing State-Driven Design (SDD). It generates PostgreSQL DDL from declarative YAML/JSON models describing entities, states, transitions, extensions, and projections.
 
 ## Core SDD Principles (Critical Context)
 - **Entities vs States**: Separate stable entity data (`orders` table) from mutable state facts (`order_pending`, `order_paid` tables)

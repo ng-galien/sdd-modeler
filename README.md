@@ -43,7 +43,27 @@ A Java library and CLI tool for implementing State-Driven Design (SDD) with auto
 
 # Generate PostgreSQL DDL
 ./state-modeler sql model.yaml --output schema.sql
+
+# Register model in local repository
+./state-modeler register model.yaml --name my-model --version 1.0.0
+
+# List registered models
+./state-modeler list --format table
+
+# Show model details
+./state-modeler show my-model:1.0.0
+
+# Delete a model
+./state-modeler delete <hash>
 ```
+
+### ✅ SDR Repository Management
+
+- **State Definition Records (SDR)**: Immutable snapshots of your models with cryptographic hashes
+- **Local H2 database**: Automatic persistence in `~/.sdd-modeler/repository`
+- **Version tracking**: Compare models across versions
+- **Hash-based integrity**: SHA-256 ensures model consistency
+- **Multiple output formats**: Table, JSON, or YAML for listing models
 
 ## 📖 Example: E-Commerce Order Model
 
@@ -136,8 +156,8 @@ See `instructions/examples/` for complete examples.
 
 ### Multi-Module Structure
 
-- **`state-modeler-core`**: Model classes, YAML/JSON parsing, validation, SQL generation
-- **`state-modeler-cli`**: Picocli-based command-line interface
+- **`state-modeler-core`**: Model classes, YAML/JSON parsing, validation, SQL generation, SDR factory
+- **`state-modeler-app`**: Picocli-based CLI with repository management (register, list, show, delete)
 - **`state-modeler-spring`** *(planned)*: Java/Spring code generation
 
 ### Core Principles
@@ -154,7 +174,9 @@ See `instructions/examples/` for complete examples.
 - **Parsing**: Jackson (YAML/JSON)
 - **Validation**: Vavr (functional error accumulation)
 - **CLI**: Picocli
-- **Testing**: JUnit 5 + AssertJ (120+ tests, 85%+ coverage)
+- **Repository**: H2 Database 2.2.224 (embedded, file-based)
+- **Hashing**: SHA-256 for cryptographic integrity
+- **Testing**: JUnit 5 (249+ tests, 87%+ coverage)
 
 ## 📦 Installation & Usage
 
@@ -175,10 +197,28 @@ cd sdd-modeler
 
 ```bash
 # Validate a model
-./gradlew :state-modeler-cli:run --args="validate examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="validate examples/orders-sdd-model.yaml"
 
 # Generate SQL
-./gradlew :state-modeler-cli:run --args="sql examples/orders-sdd-model.yaml -o output.sql"
+./gradlew :state-modeler-app:run --args="sql examples/orders-sdd-model.yaml -o output.sql"
+
+# Register model in repository
+./gradlew :state-modeler-app:run --args="register examples/orders-sdd-model.yaml"
+
+# List all registered models
+./gradlew :state-modeler-app:run --args="list --format table"
+
+# Show model details by name
+./gradlew :state-modeler-app:run --args="show orders-sdd-example"
+
+# Show model details by hash
+./gradlew :state-modeler-app:run --args="show 222fa0d3..."
+
+# Delete a model (interactive confirmation)
+./gradlew :state-modeler-app:run --args="delete 222fa0d3..."
+
+# Delete without confirmation
+./gradlew :state-modeler-app:run --args="delete 222fa0d3... --yes"
 ```
 
 ### Run Tests
@@ -197,8 +237,12 @@ cd sdd-modeler
 - [x] PostgreSQL DDL generation (tables, views, constraints)
 - [x] Automatic foreign key indexing
 - [x] PostgreSQL type validation
-- [x] CLI integration (validate, sql commands)
-- [x] Comprehensive test suite (120+ tests)
+- [x] CLI integration (validate, sql, diagram commands)
+- [x] **SDR Repository with H2 database**
+- [x] **Repository CLI commands** (register, list, show, delete)
+- [x] **Cryptographic hashing** (SHA-256 for schema + DDL)
+- [x] **Version tracking and comparison**
+- [x] Comprehensive test suite (249+ tests, 87%+ coverage)
 
 ### 🚧 In Progress
 
@@ -207,11 +251,13 @@ cd sdd-modeler
 
 ### 🔮 Planned
 
+- [ ] **Model comparison service** (schema diff, DDL diff)
+- [ ] **Migration generator** (automatic ALTER scripts)
 - [ ] Java/Spring code generation
 - [ ] MySQL/MariaDB support
 - [ ] Advanced projections (aggregations, custom queries)
 - [ ] Interactive CLI mode for model creation
-- [ ] Diagram generation (Mermaid, PlantUML)
+- [ ] Remote repository synchronization
 
 ## 📚 Documentation
 

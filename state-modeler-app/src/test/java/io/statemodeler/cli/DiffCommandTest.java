@@ -342,5 +342,95 @@ class DiffCommandTest {
 
         // Then
         assertEquals(1, exitCode);
+        var errorOutput = errContent.toString();
+        assertTrue(errorOutput.contains("Unsupported SQL dialect"));
+    }
+
+    @Test
+    void shouldFailWhenCurrentModelIsMalformedYaml() throws Exception {
+        // Given
+        var malformedYaml = """
+                version: "0.1"
+                name: test-model
+                  invalid: [unclosed bracket
+                """;
+
+        var validYaml = """
+                version: "0.1"
+                name: "test-model"
+                database:
+                  dialect: postgres
+                entities:
+                  order:
+                    table: orders
+                    id:
+                      name: id
+                      type: serial
+                      primary_key: true
+                    states:
+                      pending:
+                        initial: true
+                        table: order_pending
+                """;
+
+        var currentFile = tempDir.resolve("current.yaml");
+        var futureFile = tempDir.resolve("future.yaml");
+        Files.writeString(currentFile, malformedYaml);
+        Files.writeString(futureFile, validYaml);
+
+        var command = new DiffCommand();
+        var cmd = new CommandLine(command);
+
+        // When
+        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
+
+        // Then
+        assertEquals(1, exitCode);
+        var errorOutput = errContent.toString();
+        assertTrue(errorOutput.contains("Failed to parse current model"));
+    }
+
+    @Test
+    void shouldFailWhenFutureModelIsMalformedYaml() throws Exception {
+        // Given
+        var validYaml = """
+                version: "0.1"
+                name: "test-model"
+                database:
+                  dialect: postgres
+                entities:
+                  order:
+                    table: orders
+                    id:
+                      name: id
+                      type: serial
+                      primary_key: true
+                    states:
+                      pending:
+                        initial: true
+                        table: order_pending
+                """;
+
+        var malformedYaml = """
+                version: "0.1"
+                name: test-model
+                  invalid: [unclosed bracket
+                """;
+
+        var currentFile = tempDir.resolve("current.yaml");
+        var futureFile = tempDir.resolve("future.yaml");
+        Files.writeString(currentFile, validYaml);
+        Files.writeString(futureFile, malformedYaml);
+
+        var command = new DiffCommand();
+        var cmd = new CommandLine(command);
+
+        // When
+        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
+
+        // Then
+        assertEquals(1, exitCode);
+        var errorOutput = errContent.toString();
+        assertTrue(errorOutput.contains("Failed to parse future model"));
     }
 }

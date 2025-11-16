@@ -5,10 +5,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.SdrRecord;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 
 /**
@@ -20,6 +23,9 @@ import picocli.CommandLine;
  * These tests validate CLI argument parsing, repository integration, and error handling.
  */
 class MigrateCommandTest {
+
+    @TempDir
+    File tempDir;
 
     private H2SdrRepository repository;
     private ByteArrayOutputStream outContent;
@@ -260,6 +266,37 @@ class MigrateCommandTest {
         String output = errContent.toString();
         // Should see "Generating migration" message before failure
         assertTrue(output.contains("INFO: Generating migration") || output.contains("ERROR"));
+    }
+
+    @Test
+    void shouldWriteOutputToFile() throws Exception {
+        // Given - migration already exists
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "test-model", "1.0").get();
+        repository.save(sdr2, "test-model", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Test migration script\nBEGIN;\nCOMMIT;", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var outputFile = new File(tempDir, "migration.sql");
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "postgres";
+        cmd.outputFile = outputFile;
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(0, exitCode);
+        assertTrue(outputFile.exists());
+        String fileContent = Files.readString(outputFile.toPath());
+        assertTrue(fileContent.contains("Test migration script"));
     }
 
     private SdrRecord createTestSdr(String hash, String ddl) {

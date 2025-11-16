@@ -70,6 +70,16 @@ class MainTest {
     }
 
     @Test
+    void shouldHaveListSubcommand() {
+        // Given
+        Main main = new Main();
+        CommandLine cmd = new CommandLine(main);
+
+        // When/Then
+        assertNotNull(cmd.getSubcommands().get("list"), "Should have list subcommand");
+    }
+
+    @Test
     void shouldShowVersionWithVersionFlag() {
         // Given
         Main main = new Main();

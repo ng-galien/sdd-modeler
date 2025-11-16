@@ -17,7 +17,8 @@ import picocli.CommandLine.Command;
             DiagramCommand.class,
             RegisterCommand.class,
             ListCommand.class,
-            ShowCommand.class
+            ShowCommand.class,
+            DeleteCommand.class
         })
 public class Main implements Runnable {
 

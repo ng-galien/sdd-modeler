@@ -90,6 +90,16 @@ class MainTest {
     }
 
     @Test
+    void shouldHaveDeleteSubcommand() {
+        // Given
+        Main main = new Main();
+        CommandLine cmd = new CommandLine(main);
+
+        // When/Then
+        assertNotNull(cmd.getSubcommands().get("delete"), "Should have delete subcommand");
+    }
+
+    @Test
     void shouldShowVersionWithVersionFlag() {
         // Given
         Main main = new Main();

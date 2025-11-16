@@ -15,12 +15,12 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     private static final String DIALECT = "postgres";
 
     @Override
-    public String generateDdl(SddModel model) throws DdlGenerationException {
+    public String generateDdl(SddModel model) {
         try {
             var plan = generateSqlPlan(model);
             return renderDdl(plan, model.database().schema());
         } catch (Exception e) {
-            throw new DdlGenerationException("Failed to generate PostgreSQL DDL", e);
+            throw new IllegalStateException("Failed to generate PostgreSQL DDL", e);
         }
     }
 

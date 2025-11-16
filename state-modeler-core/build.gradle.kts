@@ -27,6 +27,12 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    
+    // PostgreSQL integration tests with Testcontainers
+    testImplementation("org.testcontainers:testcontainers:${rootProject.ext["testcontainersVersion"]}")
+    testImplementation("org.testcontainers:postgresql:${rootProject.ext["testcontainersVersion"]}")
+    testImplementation("org.testcontainers:junit-jupiter:${rootProject.ext["testcontainersVersion"]}")
+    testImplementation("org.postgresql:postgresql:${rootProject.ext["postgresqlVersion"]}")
 }
 
 // Task to generate JSON Schema automatically during build

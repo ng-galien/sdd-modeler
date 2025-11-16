@@ -80,6 +80,16 @@ class MainTest {
     }
 
     @Test
+    void shouldHaveShowSubcommand() {
+        // Given
+        Main main = new Main();
+        CommandLine cmd = new CommandLine(main);
+
+        // When/Then
+        assertNotNull(cmd.getSubcommands().get("show"), "Should have show subcommand");
+    }
+
+    @Test
     void shouldShowVersionWithVersionFlag() {
         // Given
         Main main = new Main();

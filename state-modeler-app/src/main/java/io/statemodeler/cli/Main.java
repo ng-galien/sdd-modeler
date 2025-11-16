@@ -15,10 +15,12 @@ import picocli.CommandLine.Command;
             ValidateCommand.class,
             SqlCommand.class,
             DiagramCommand.class,
+            DiffCommand.class,
             RegisterCommand.class,
             ListCommand.class,
             ShowCommand.class,
-            DeleteCommand.class
+            DeleteCommand.class,
+            MigrateCommand.class
         })
 public class Main implements Runnable {
 

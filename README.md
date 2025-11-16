@@ -55,6 +55,12 @@ A Java library and CLI tool for implementing State-Driven Design (SDD) with auto
 
 # Delete a model
 ./state-modeler delete <hash>
+
+# Compare DDL between two versions
+./state-modeler diff my-model:1.0 my-model:2.0
+
+# Generate migration script using AI
+./state-modeler migrate my-model:1.0 my-model:2.0 --output migration.sql
 ```
 
 ### ✅ SDR Repository Management
@@ -64,6 +70,14 @@ A Java library and CLI tool for implementing State-Driven Design (SDD) with auto
 - **Version tracking**: Compare models across versions
 - **Hash-based integrity**: SHA-256 ensures model consistency
 - **Multiple output formats**: Table, JSON, or YAML for listing models
+
+### ✅ AI-Powered Migration Generation
+
+- **LLM-based migration scripts**: Automatic SQL migration generation using LangChain4j
+- **DDL comparison service**: Structural diff analysis between model versions
+- **Migration caching**: Persisted migrations to avoid regeneration costs
+- **Multiple LLM providers**: Support for Jlama (in-process) and Ollama (server-based)
+- **Intelligent prompts**: PostgreSQL-specific patterns with safety guidelines
 
 ## 📖 Example: E-Commerce Order Model
 
@@ -174,9 +188,10 @@ See `instructions/examples/` for complete examples.
 - **Parsing**: Jackson (YAML/JSON)
 - **Validation**: Vavr (functional error accumulation)
 - **CLI**: Picocli
-- **Repository**: H2 Database 2.2.224 (embedded, file-based)
+- **Repository**: H2 Database 2.2.224 (embedded, in-memory for tests)
+- **AI Integration**: LangChain4j 0.36.2 (Jlama, Ollama)
 - **Hashing**: SHA-256 for cryptographic integrity
-- **Testing**: JUnit 5 (249+ tests, 87%+ coverage)
+- **Testing**: JUnit 5 (196 tests, ~87% coverage)
 
 ## 📦 Installation & Usage
 
@@ -219,6 +234,18 @@ cd sdd-modeler
 
 # Delete without confirmation
 ./gradlew :state-modeler-app:run --args="delete 222fa0d3... --yes"
+
+# Compare DDL between two versions
+./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
+
+# Generate migration with Jlama (downloads model on first use)
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0"
+
+# Use Ollama with custom model
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --llm ollama --model llama3.2"
+
+# Force regeneration and save to file
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --force -o migration.sql"
 ```
 
 ### Run Tests
@@ -237,12 +264,15 @@ cd sdd-modeler
 - [x] PostgreSQL DDL generation (tables, views, constraints)
 - [x] Automatic foreign key indexing
 - [x] PostgreSQL type validation
-- [x] CLI integration (validate, sql, diagram commands)
+- [x] CLI integration (validate, sql, register, list, show, delete)
 - [x] **SDR Repository with H2 database**
 - [x] **Repository CLI commands** (register, list, show, delete)
 - [x] **Cryptographic hashing** (SHA-256 for schema + DDL)
 - [x] **Version tracking and comparison**
-- [x] Comprehensive test suite (249+ tests, 87%+ coverage)
+- [x] **DDL comparison service** (diff command)
+- [x] **AI-powered migration generation** (migrate command with LangChain4j)
+- [x] **Migration persistence layer** (cache LLM-generated scripts)
+- [x] Comprehensive test suite (196 tests, ~87% coverage)
 
 ### 🚧 In Progress
 
@@ -251,8 +281,9 @@ cd sdd-modeler
 
 ### 🔮 Planned
 
-- [ ] **Model comparison service** (schema diff, DDL diff)
-- [ ] **Migration generator** (automatic ALTER scripts)
+- [ ] **Migration execution tracking** (apply/rollback history)
+- [ ] **Multi-dialect migrations** (MySQL, SQL Server)
+- [ ] **Custom LLM endpoints** (OpenAI, Anthropic, Azure)
 - [ ] Java/Spring code generation
 - [ ] MySQL/MariaDB support
 - [ ] Advanced projections (aggregations, custom queries)
@@ -287,4 +318,5 @@ Built with:
 - [Jackson](https://github.com/FasterXML/jackson) for YAML/JSON parsing
 - [Vavr](https://www.vavr.io/) for functional validation
 - [Picocli](https://picocli.info/) for CLI framework
-- [AssertJ](https://assertj.github.io/doc/) for fluent test assertions
+- [LangChain4j](https://github.com/langchain4j/langchain4j) for LLM integration
+- [JUnit 5](https://junit.org/junit5/) for unit testing

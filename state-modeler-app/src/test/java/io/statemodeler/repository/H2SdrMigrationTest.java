@@ -1,0 +1,261 @@
+package io.statemodeler.repository;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Instant;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests for {@link H2SdrRepository} migration management features.
+ */
+class H2SdrMigrationTest {
+
+    private H2SdrRepository repository;
+    private String fromHash;
+    private String toHash;
+
+    @BeforeEach
+    void setUp() {
+        // Use in-memory database for faster tests
+        repository = H2SdrRepository.createInMemory("test-migrations-" + System.nanoTime());
+
+        // Create test SDR records to reference
+        fromHash = "abc123def456";
+        toHash = "def789ghi012";
+
+        var fromSdr = createTestSdr(fromHash, "schema1", "ddl1");
+        var toSdr = createTestSdr(toHash, "schema2", "ddl2");
+
+        repository.save(fromSdr, "test-model", "1.0").get();
+        repository.save(toSdr, "test-model", "2.0").get();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (repository != null) {
+            repository.close();
+        }
+    }
+
+    @Test
+    void shouldSaveAndRetrieveMigration() {
+        // Given
+        var migration = new SdrMigration(
+                fromHash, toHash, "ALTER TABLE users ADD COLUMN email VARCHAR(255);", "postgres", Instant.now());
+
+        // When
+        var saveResult = repository.saveMigration(migration);
+        var findResult = repository.findMigration(fromHash, toHash);
+
+        // Then
+        assertTrue(saveResult.isSuccess());
+        assertTrue(findResult.isSuccess());
+        assertTrue(findResult.get().isPresent());
+
+        var retrieved = findResult.get().get();
+        assertEquals(fromHash, retrieved.fromHash());
+        assertEquals(toHash, retrieved.toHash());
+        assertEquals("ALTER TABLE users ADD COLUMN email VARCHAR(255);", retrieved.migrationScript());
+        assertEquals("postgres", retrieved.dialect());
+        assertNotNull(retrieved.createdAt());
+    }
+
+    @Test
+    void shouldReturnEmptyWhenMigrationNotFound() {
+        // When
+        var result = repository.findMigration("nonexistent1", "nonexistent2");
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertTrue(result.get().isEmpty());
+    }
+
+    @Test
+    void shouldRejectNullMigration() {
+        // When
+        var result = repository.saveMigration(null);
+
+        // Then
+        assertTrue(result.isFailure());
+        assertTrue(result.getCause() instanceof IllegalArgumentException);
+        assertEquals("migration cannot be null", result.getCause().getMessage());
+    }
+
+    @Test
+    void shouldRejectDuplicateMigration() {
+        // Given
+        var migration = new SdrMigration(fromHash, toHash, "ALTER TABLE test;", "postgres", Instant.now());
+        repository.saveMigration(migration).get();
+
+        // When - try to save duplicate
+        var duplicate = new SdrMigration(fromHash, toHash, "Different script", "postgres", Instant.now());
+        var result = repository.saveMigration(duplicate);
+
+        // Then
+        assertTrue(result.isFailure());
+    }
+
+    @Test
+    void shouldFindMigrationsFrom() {
+        // Given
+        var migration1 = new SdrMigration(fromHash, toHash, "ALTER 1", "postgres", Instant.now());
+        var migration2 = new SdrMigration(
+                fromHash, "another123", "ALTER 2", "postgres", Instant.now().plusSeconds(1));
+
+        // Create another SDR to reference
+        var anotherSdr = createTestSdr("another123", "schema3", "ddl3");
+        repository.save(anotherSdr, "test-model", "3.0").get();
+
+        repository.saveMigration(migration1).get();
+        repository.saveMigration(migration2).get();
+
+        // When
+        var result = repository.findMigrationsFrom(fromHash);
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertEquals(2, result.get().size());
+        assertTrue(result.get().stream().allMatch(m -> m.fromHash().equals(fromHash)));
+    }
+
+    @Test
+    void shouldFindMigrationsTo() {
+        // Given
+        var migration1 = new SdrMigration(fromHash, toHash, "ALTER 1", "postgres", Instant.now());
+        var migration2 = new SdrMigration(
+                "another123", toHash, "ALTER 2", "postgres", Instant.now().plusSeconds(1));
+
+        // Create another SDR to reference
+        var anotherSdr = createTestSdr("another123", "schema0", "ddl0");
+        repository.save(anotherSdr, "test-model", "0.9").get();
+
+        repository.saveMigration(migration1).get();
+        repository.saveMigration(migration2).get();
+
+        // When
+        var result = repository.findMigrationsTo(toHash);
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertEquals(2, result.get().size());
+        assertTrue(result.get().stream().allMatch(m -> m.toHash().equals(toHash)));
+    }
+
+    @Test
+    void shouldDeleteMigration() {
+        // Given
+        var migration = new SdrMigration(fromHash, toHash, "ALTER TABLE test;", "postgres", Instant.now());
+        repository.saveMigration(migration).get();
+
+        // When
+        var deleteResult = repository.deleteMigration(fromHash, toHash);
+        var findResult = repository.findMigration(fromHash, toHash);
+
+        // Then
+        assertTrue(deleteResult.isSuccess());
+        assertTrue(deleteResult.get());
+        assertTrue(findResult.get().isEmpty());
+    }
+
+    @Test
+    void shouldReturnFalseWhenDeletingNonexistentMigration() {
+        // When
+        var result = repository.deleteMigration("nonexistent1", "nonexistent2");
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertFalse(result.get());
+    }
+
+    @Test
+    void shouldRejectNullParametersInFind() {
+        // When/Then
+        var result1 = repository.findMigration(null, toHash);
+        assertTrue(result1.isFailure());
+        assertTrue(result1.getCause() instanceof IllegalArgumentException);
+
+        var result2 = repository.findMigration(fromHash, null);
+        assertTrue(result2.isFailure());
+        assertTrue(result2.getCause() instanceof IllegalArgumentException);
+
+        var result3 = repository.findMigration("", toHash);
+        assertTrue(result3.isFailure());
+        assertTrue(result3.getCause() instanceof IllegalArgumentException);
+    }
+
+    @Test
+    void shouldRejectNullParametersInDelete() {
+        // When/Then
+        var result1 = repository.deleteMigration(null, toHash);
+        assertTrue(result1.isFailure());
+        assertTrue(result1.getCause() instanceof IllegalArgumentException);
+
+        var result2 = repository.deleteMigration(fromHash, null);
+        assertTrue(result2.isFailure());
+        assertTrue(result2.getCause() instanceof IllegalArgumentException);
+    }
+
+    @Test
+    void shouldRejectNullParametersInFindFrom() {
+        // When
+        var result = repository.findMigrationsFrom(null);
+
+        // Then
+        assertTrue(result.isFailure());
+        assertTrue(result.getCause() instanceof IllegalArgumentException);
+    }
+
+    @Test
+    void shouldRejectNullParametersInFindTo() {
+        // When
+        var result = repository.findMigrationsTo(null);
+
+        // Then
+        assertTrue(result.isFailure());
+        assertTrue(result.getCause() instanceof IllegalArgumentException);
+    }
+
+    @Test
+    void shouldCascadeDeleteMigrationsWhenSdrDeleted() {
+        // Given
+        var migration = new SdrMigration(fromHash, toHash, "ALTER TABLE test;", "postgres", Instant.now());
+        repository.saveMigration(migration).get();
+
+        // When - delete source SDR
+        repository.delete(fromHash).get();
+        var findResult = repository.findMigration(fromHash, toHash);
+
+        // Then - migration should be cascade deleted
+        assertTrue(findResult.isSuccess());
+        assertTrue(findResult.get().isEmpty());
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoMigrationsFrom() {
+        // When
+        var result = repository.findMigrationsFrom(fromHash);
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertTrue(result.get().isEmpty());
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoMigrationsTo() {
+        // When
+        var result = repository.findMigrationsTo(toHash);
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertTrue(result.get().isEmpty());
+    }
+
+    /**
+     * Helper to create test SDR records.
+     */
+    private io.statemodeler.sdr.SdrRecord createTestSdr(String hash, String schema, String ddl) {
+        return new io.statemodeler.sdr.SdrRecord(schema, "application/json", ddl, hash, "ddl-hash-" + hash, "1.0.0");
+    }
+}

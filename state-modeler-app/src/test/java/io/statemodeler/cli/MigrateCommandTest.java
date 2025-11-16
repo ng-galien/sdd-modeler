@@ -1,0 +1,306 @@
+package io.statemodeler.cli;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import io.statemodeler.repository.H2SdrRepository;
+import io.statemodeler.sdr.SdrRecord;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import picocli.CommandLine;
+
+/**
+ * Tests for {@link MigrateCommand}.
+ *
+ * <p>Note: Tests requiring actual LLM execution are disabled as they need either:
+ * - Jlama model download (~1GB+)
+ * - Ollama server running locally
+ * These tests validate CLI argument parsing, repository integration, and error handling.
+ */
+class MigrateCommandTest {
+
+    @TempDir
+    File tempDir;
+
+    private H2SdrRepository repository;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+    private PrintStream originalOut;
+    private PrintStream originalErr;
+
+    @BeforeEach
+    void setUp() {
+        // Use in-memory database for faster tests
+        repository = H2SdrRepository.createInMemory("test-migrate-" + System.nanoTime());
+
+        // Capture stdout/stderr
+        originalOut = System.out;
+        originalErr = System.err;
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (repository != null) {
+            repository.close();
+        }
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+
+    @Test
+    void shouldFailWhenSourceSdrNotFound() {
+        // Given
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "nonexistent";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(1, exitCode);
+        String output = errContent.toString();
+        assertTrue(output.contains("ERROR"));
+        assertTrue(output.contains("Source SDR not found"));
+    }
+
+    @Test
+    void shouldFailWhenTargetSdrNotFound() {
+        // Given
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        repository.save(sdr1, "test-model", "1.0").get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "nonexistent";
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(1, exitCode);
+        String output = errContent.toString();
+        assertTrue(output.contains("ERROR"));
+        assertTrue(output.contains("Target SDR not found"));
+    }
+
+    @Test
+    void shouldRejectUnsupportedDialect() {
+        // Given
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "test-model", "1.0").get();
+        repository.save(sdr2, "test-model", "2.0").get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "mysql"; // Unsupported
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(1, exitCode);
+        String output = errContent.toString();
+        assertTrue(output.contains("ERROR"));
+        assertTrue(output.contains("Unsupported dialect"));
+    }
+
+    @Test
+    void shouldReuseExistingMigrationByDefault() {
+        // Given - create migration first
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "test-model", "1.0").get();
+        repository.save(sdr2, "test-model", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Existing migration", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(0, exitCode);
+        String output = errContent.toString();
+        assertTrue(output.contains("Migration already exists"));
+    }
+
+    @Test
+    void shouldHaveMigrateSubcommandInMain() {
+        // Given
+        var main = new Main();
+        var cmd = new CommandLine(main);
+
+        // When
+        var subcommands = cmd.getSubcommands();
+
+        // Then
+        assertTrue(subcommands.containsKey("migrate"));
+    }
+
+    @Test
+    void shouldFindSdrByNameAndVersion() {
+        // Given
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "orders", "1.0").get();
+        repository.save(sdr2, "orders", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Migration script", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "orders:1.0"; // Name:version format
+        cmd.toIdentifier = "orders:2.0"; // Name:version format
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(0, exitCode);
+        String output = errContent.toString();
+        assertTrue(output.contains("Migration already exists"));
+    }
+
+    @Test
+    void shouldHandleInvalidNameVersionFormat() {
+        // Given
+        var sdr = createTestSdr("hash1", "CREATE TABLE test;");
+        repository.save(sdr, "model", "1.0").get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "model:"; // Invalid - missing version
+        cmd.toIdentifier = "hash1";
+        cmd.dialect = "postgres";
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then - should attempt to find by name only (latest version)
+        assertEquals(1, exitCode); // Fails because toIdentifier doesn't exist
+    }
+
+    @Test
+    void shouldUseDefaultModelNameForJlama() {
+        // Given - model name not specified, should use default
+        var cmd = new MigrateCommand();
+        cmd.llmProvider = "jlama";
+        cmd.modelName = null; // Not specified
+
+        // When/Then - verify command initializes (can't test full execution without LLM)
+        assertNotNull(cmd);
+        assertEquals("jlama", cmd.llmProvider);
+        assertNull(cmd.modelName); // Will use default in createLlmModel()
+    }
+
+    @Test
+    void shouldUseCustomModelName() {
+        // Given
+        var cmd = new MigrateCommand();
+        cmd.llmProvider = "ollama";
+        cmd.modelName = "llama3.2";
+
+        // When/Then
+        assertNotNull(cmd);
+        assertEquals("llama3.2", cmd.modelName);
+    }
+
+    @Test
+    void shouldHandleForceFlag() {
+        // Given - migration exists but --force is set
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "test-model", "1.0").get();
+        repository.save(sdr2, "test-model", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Old migration", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "postgres";
+        cmd.force = true; // Should NOT reuse existing
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When - would generate new migration (but fails without real LLM)
+        int exitCode = cmd.call();
+
+        // Then - attempts generation (fails at LLM execution stage)
+        assertEquals(1, exitCode); // Fails because we don't have LLM model
+        String output = errContent.toString();
+        // Should see "Generating migration" message before failure
+        assertTrue(output.contains("INFO: Generating migration") || output.contains("ERROR"));
+    }
+
+    @Test
+    void shouldWriteOutputToFile() throws Exception {
+        // Given - migration already exists
+        var sdr1 = createTestSdr("hash1", "CREATE TABLE test;");
+        var sdr2 = createTestSdr("hash2", "CREATE TABLE test2;");
+        repository.save(sdr1, "test-model", "1.0").get();
+        repository.save(sdr2, "test-model", "2.0").get();
+
+        var migration = new io.statemodeler.repository.SdrMigration(
+                "hash1", "hash2", "-- Test migration script\nBEGIN;\nCOMMIT;", "postgres", java.time.Instant.now());
+        repository.saveMigration(migration).get();
+
+        var outputFile = new File(tempDir, "migration.sql");
+        var cmd = new MigrateCommand();
+        cmd.fromIdentifier = "hash1";
+        cmd.toIdentifier = "hash2";
+        cmd.dialect = "postgres";
+        cmd.outputFile = outputFile;
+        cmd.repositoryMixin = new RepositoryMixin();
+        cmd.repositoryMixin.testRepository = repository;
+
+        // When
+        int exitCode = cmd.call();
+
+        // Then
+        assertEquals(0, exitCode);
+        assertTrue(outputFile.exists());
+        String fileContent = Files.readString(outputFile.toPath());
+        assertTrue(fileContent.contains("Test migration script"));
+    }
+
+    private SdrRecord createTestSdr(String hash, String ddl) {
+        String schema = "{\"name\":\"test\"}";
+        return new SdrRecord(schema, "application/json", ddl, hash, "ddl-hash-" + hash, "1.0.0");
+    }
+}

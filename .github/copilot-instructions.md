@@ -3,6 +3,8 @@
 ## Project Overview
 **sdd-modeler** is a Java 21 library + CLI for implementing State-Driven Design (SDD). It generates PostgreSQL DDL from declarative YAML/JSON models describing entities, states, transitions, extensions, and projections.
 
+**Current Implementation Status**: Core model classes and SQL generation framework are implemented. YAML/JSON parsing and model validation are partially complete. CLI framework is functional but needs integration with core features.
+
 ## Core SDD Principles (Critical Context)
 - **Entities vs States**: Separate stable entity data (`orders` table) from mutable state facts (`order_pending`, `order_paid` tables)
 - **States as immutable facts**: Each state is an append-only record with non-null attributes, not status columns
@@ -11,18 +13,32 @@
 - **Derived current state**: No `status` column - current state derived from projections/views (`current_order_states`)
 
 ## Architecture & Module Structure
-Multi-module Gradle project (not yet initialized):
-- `state-modeler-core`: SDD model, YAML/JSON parsing, validation, SQL generation
-- `state-modeler-cli`: Command-line interface wrapping core functionality
+Multi-module Gradle project with Java 21:
+- `state-modeler-core`: ✅ SDD model classes, SQL generation framework, partial YAML/JSON parsing
+- `state-modeler-cli`: ✅ CLI framework with Picocli (validate/sql commands) - needs core integration
 - `state-modeler-spring`: Future Java/Spring code generation
 
-### Core Package Structure
+### Core Package Structure (Current Implementation)
 ```
-io.statemodeler.core     // SddModel, EntityDef, StateDef, TransitionDef
-io.statemodeler.dsl      // ModelLoader, YamlModelLoader, JsonModelLoader  
-io.statemodeler.validation // ModelValidator, rules validation
-io.statemodeler.sql      // SqlPlan, SqlPlanGenerator (dialect-agnostic)
-io.statemodeler.sql.postgres // PostgresDdlRenderer
+io.statemodeler.core     // ✅ SddModel, EntityDef, StateDef, etc. (records with validation)
+io.statemodeler.dsl      // 🚧 ModelLoader interfaces, YamlModelLoader skeleton
+io.statemodeler.validation // ⏳ Package structure only
+io.statemodeler.sql      // ✅ SqlPlan, TableDefinition, ViewDefinition, DdlGenerator
+io.statemodeler.sql.postgres // ✅ PostgresDdlGenerator (partial implementation)
+io.statemodeler.schema   // ✅ JSON schema generation support
+```
+
+### Build & Development Commands
+```bash
+# Run CLI during development
+./gradlew :state-modeler-cli:run --args="validate instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-cli:run --args="sql instructions/examples/orders-sdd-model.yaml"
+
+# Code formatting (required before commit)
+./gradlew spotlessApply
+
+# Run tests with coverage
+./gradlew test jacocoTestReport
 ```
 
 ## Key DSL Format (Reference: `instructions/examples/orders-sdd-model.yaml`)
@@ -57,14 +73,23 @@ When implementing DDL generation, follow these patterns from `instructions/examp
 4. **Interval Views**: Complex UNION ALL queries calculating state start/end times
 5. **Current State Views**: Filter intervals where `end_at IS NULL`
 
-## Development Workflow
-Since project structure isn't initialized yet:
-1. Create Gradle multi-module setup with `settings.gradle.kts`
-2. Implement core model classes first (`SddModel`, `EntityDef`, etc.)
-3. Add YAML parsing with Jackson
-4. Build validation rules matching SDD principles
-5. Generate SQL plans, then PostgreSQL-specific DDL
-6. CLI wraps core with Picocli for commands: `validate model.yaml`, `sql model.yaml --dialect postgres`
+## Implementation Status & Next Steps
+**✅ Completed:**
+- Core model classes with immutable records (`SddModel`, `EntityDef`, `StateDef`, etc.)
+- SQL plan framework (`SqlPlan`, `TableDefinition`, `ViewDefinition`)
+- PostgreSQL DDL generator skeleton (`DdlGenerators.forDialect()`)
+- CLI framework with Picocli subcommands (`validate`, `sql`)
+- Code formatting with Spotless + Palantir Java Format
+
+**🚧 In Progress:**
+- YAML/JSON model parsing (classes exist, deserialization needs work)
+- PostgreSQL DDL generation (views need implementation)
+
+**⏳ TODO Priority:**
+1. Complete `YamlModelLoader` - parse `orders-sdd-model.yaml` to `SddModel`
+2. Implement model validation (`ModelValidator` in `validation` package)
+3. Complete PostgreSQL DDL generation for projections/views
+4. Integrate model loading into CLI commands
 
 ## External Libraries Policy
 **CRITICAL:** When working with external libraries that you don't know well:
@@ -103,11 +128,21 @@ When implementing validation, enforce SDD constraints:
 - **No traditional POJOs**: Avoid manual getters/setters/equals/hashCode/toString
 - **Null Safety**: Required fields checked with `Objects.requireNonNull()` or `@NonNull`
 
-**Exception Handling (Modern Java):**
+**Exception Handling (Modern Java + Vavr):**
 - **Runtime exceptions**: Prefer `IllegalArgumentException`, `IllegalStateException` for validation/programming errors
-- **Avoid checked exceptions**: Don't create custom checked exceptions (e.g., `extends Exception`)
+- **No custom exceptions**: Use runtime exceptions with clear messages instead of custom checked exceptions
+- **Vavr Validation**: Use `io.vavr.control.Validation<Error, Success>` for collecting multiple validation errors
+- **Vavr Either**: Use `io.vavr.control.Either<Error, Success>` for single error/success operations  
+- **Java collections**: Use standard Java `List`, `Set`, `Map` collections (NOT Vavr collections)
 - **Keep IOException**: Only for genuine I/O operations where recovery is possible
 - **Fail fast**: Validate inputs early with clear runtime exceptions
+
+**Validation Strategy:**
+- **Vavr Validation ONLY**: Use `io.vavr.control.Validation` to accumulate validation errors
+- **Java collections everywhere else**: `java.util.List`, `java.util.Set`, `java.util.Map` for all data structures
+- **ValidationError records**: Immutable error descriptions with context using Java collections
+- **Either for single operations**: File parsing, database operations (but prefer exceptions)
+- **Validation for business rules**: Model structure, SDD constraints, referential integrity
 
 **When to use what:**
 - **Records**: Simple data containers, API DTOs, test fixtures

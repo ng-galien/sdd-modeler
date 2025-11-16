@@ -1,19 +1,9 @@
 package io.statemodeler.sql;
 
+import lombok.experimental.StandardException;
+
 /**
  * Exception thrown when DDL generation fails.
  */
-public class DdlGenerationException extends Exception {
-
-    public DdlGenerationException(String message) {
-        super(message);
-    }
-
-    public DdlGenerationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public DdlGenerationException(Throwable cause) {
-        super(cause);
-    }
-}
+@StandardException
+public class DdlGenerationException extends Exception {}

@@ -1,6 +1,8 @@
 package io.statemodeler.cli;
 
+import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
+import io.statemodeler.validation.ModelValidators;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -47,19 +49,45 @@ public class SqlCommand implements Callable<Integer> {
                 return 1;
             }
 
-            // For now, generate a simple example DDL to show the integration
+            // Load and validate the model
+            var loader = ModelLoader.forFile(modelFile);
+            var loadResult = loader.loadFromFile(modelFile);
+
+            if (loadResult.isFailure()) {
+                System.err.println("✗ Failed to parse model file:");
+                System.err.println("  " + loadResult.getCause().getMessage());
+                return 1;
+            }
+
+            var model = loadResult.get();
+            System.out.println("✓ Model parsed successfully: " + model.name());
+
+            // Validate the model before generating SQL
+            var validator = ModelValidators.getInstance();
+            var validationResult = validator.validate(model);
+
+            if (validationResult.isInvalid()) {
+                System.err.println("✗ Model validation failed:");
+                for (var error : validationResult.getError()) {
+                    System.err.println("  • " + error.message());
+                }
+                return 1;
+            }
+
+            // Generate DDL
             var generator = DdlGenerators.forDialect(dialect);
+            var ddlStatements = generator.generateDdl(model);
 
-            // TODO: Implement model loading from YAML/JSON
-            // For now, show that the DDL generator works
-            System.out.println("DDL Generator initialized successfully for dialect: " + generator.getDialect());
-            System.out.println("✓ Model parsing from YAML/JSON not yet implemented");
-            System.out.println("✓ Once YAML loader is ready, full DDL generation will work");
+            var output = String.join(";\n", ddlStatements) + ";\n";
 
+            // Write to file or stdout
             if (outputFile != null) {
-                System.out.println("Will output to: " + outputFile);
+                Files.writeString(outputFile, output);
+                System.out.println("✓ DDL written to: " + outputFile);
             } else {
-                System.out.println("Will output to: stdout");
+                System.out.println();
+                System.out.println("-- Generated DDL for " + model.name());
+                System.out.println(output);
             }
 
             return 0;

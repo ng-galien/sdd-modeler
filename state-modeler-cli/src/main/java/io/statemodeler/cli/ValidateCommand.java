@@ -1,5 +1,8 @@
 package io.statemodeler.cli;
 
+import io.statemodeler.dsl.ModelLoader;
+import io.statemodeler.validation.ModelValidators;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
@@ -18,13 +21,44 @@ public class ValidateCommand implements Callable<Integer> {
     public Integer call() throws Exception {
         System.out.println("Validating model file: " + modelFile);
 
-        // TODO: Implement model loading and validation
-        // 1. Detect file format (YAML/JSON)
-        // 2. Load model using appropriate ModelLoader
-        // 3. Run ModelValidator
-        // 4. Report results
+        try {
+            // Check if model file exists
+            if (!Files.exists(modelFile)) {
+                System.err.println("Error: Model file does not exist: " + modelFile);
+                return 1;
+            }
 
-        System.out.println("✓ Model validation not yet implemented");
-        return 0;
+            // Load model using appropriate loader based on file extension
+            var loader = ModelLoader.forFile(modelFile);
+            var loadResult = loader.loadFromFile(modelFile);
+
+            if (loadResult.isFailure()) {
+                System.err.println("✗ Failed to parse model file:");
+                System.err.println("  " + loadResult.getCause().getMessage());
+                return 1;
+            }
+
+            var model = loadResult.get();
+            System.out.println("✓ Model parsed successfully: " + model.name());
+
+            // Validate the loaded model
+            var validator = ModelValidators.getInstance();
+            var validationResult = validator.validate(model);
+
+            if (validationResult.isInvalid()) {
+                System.err.println("✗ Model validation failed:");
+                for (var error : validationResult.getError()) {
+                    System.err.println("  • " + error.message());
+                }
+                return 1;
+            }
+
+            System.out.println("✓ Model validation passed");
+            return 0;
+
+        } catch (Exception e) {
+            System.err.println("Error validating model: " + e.getMessage());
+            return 1;
+        }
     }
 }

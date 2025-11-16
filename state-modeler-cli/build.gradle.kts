@@ -7,8 +7,15 @@ application {
 }
 
 dependencies {
+    // Lombok for reducing boilerplate
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    
     // Depend on core module
     implementation(project(":state-modeler-core"))
+    
+    // Vavr for functional programming (needed for Try<T> from core)
+    implementation("io.vavr:vavr:0.10.7")
     
     // Picocli for CLI
     implementation("info.picocli:picocli:${rootProject.ext["picocliVersion"]}")

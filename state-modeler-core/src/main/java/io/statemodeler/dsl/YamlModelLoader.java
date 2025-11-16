@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.statemodeler.core.SddModel;
-import java.io.IOException;
+import io.statemodeler.dsl.yaml.YamlModelConverter;
+import io.statemodeler.dsl.yaml.YamlModelDto;
+import io.vavr.control.Try;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +15,7 @@ import java.util.Set;
 /**
  * ModelLoader implementation for YAML files using Jackson YAML.
  * Supports both .yaml and .yml file extensions.
+ * Uses Vavr Try for functional error handling.
  */
 public final class YamlModelLoader implements ModelLoader {
 
@@ -33,47 +36,43 @@ public final class YamlModelLoader implements ModelLoader {
     }
 
     @Override
-    public SddModel loadFromFile(Path path) throws IOException {
-        if (!Files.exists(path)) {
-            throw new IOException("Model file not found: " + path);
-        }
+    public Try<SddModel> loadFromFile(Path path) {
+        return Try.of(() -> {
+            if (!Files.exists(path)) {
+                throw new IllegalArgumentException("Model file not found: " + path);
+            }
 
-        if (!Files.isRegularFile(path)) {
-            throw new IOException("Path is not a regular file: " + path);
-        }
+            if (!Files.isRegularFile(path)) {
+                throw new IllegalArgumentException("Path is not a regular file: " + path);
+            }
 
-        try {
             String content = Files.readString(path);
-            return loadFromString(content);
-        } catch (IOException e) {
-            throw new IOException("Failed to read model file: " + path, e);
-        }
+            return loadFromString(content).get();
+        });
     }
 
     @Override
-    public SddModel loadFromStream(InputStream inputStream) throws IOException {
-        if (inputStream == null) {
-            throw new IllegalArgumentException("InputStream cannot be null");
-        }
+    public Try<SddModel> loadFromStream(InputStream inputStream) {
+        return Try.of(() -> {
+            if (inputStream == null) {
+                throw new IllegalArgumentException("InputStream cannot be null");
+            }
 
-        try {
-            return mapper.readValue(inputStream, SddModel.class);
-        } catch (Exception e) {
-            throw new IOException("Failed to parse YAML from stream: " + e.getMessage(), e);
-        }
+            var dto = mapper.readValue(inputStream, YamlModelDto.class);
+            return YamlModelConverter.convert(dto);
+        });
     }
 
     @Override
-    public SddModel loadFromString(String content) {
-        if (content == null || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("Model content cannot be empty");
-        }
+    public Try<SddModel> loadFromString(String content) {
+        return Try.of(() -> {
+            if (content == null || content.trim().isEmpty()) {
+                throw new IllegalArgumentException("Model content cannot be empty");
+            }
 
-        try {
-            return mapper.readValue(content, SddModel.class);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse YAML model: " + e.getMessage(), e);
-        }
+            var dto = mapper.readValue(content, YamlModelDto.class);
+            return YamlModelConverter.convert(dto);
+        });
     }
 
     /**

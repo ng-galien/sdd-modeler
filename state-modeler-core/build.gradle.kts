@@ -1,4 +1,8 @@
 dependencies {
+    // Lombok for reducing boilerplate
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    
     // JSpecify for null-safety annotations
     compileOnly("org.jspecify:jspecify:${rootProject.ext["jspecifyVersion"]}")
     
@@ -10,6 +14,9 @@ dependencies {
     // Additional Jackson modules for Java time, etc.
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${rootProject.ext["jacksonVersion"]}")
     implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:${rootProject.ext["jacksonVersion"]}")
+    
+    // Vavr for functional programming and enhanced error handling
+    implementation("io.vavr:vavr:0.10.7")
     
     // JSON Schema generation for IDE support (victools)
     implementation("com.github.victools:jsonschema-generator:4.38.0")

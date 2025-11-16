@@ -13,9 +13,8 @@ public interface DdlGenerator {
      *
      * @param model the SDD model to generate DDL for
      * @return the generated DDL SQL as a string
-     * @throws DdlGenerationException if DDL generation fails
      */
-    String generateDdl(SddModel model) throws DdlGenerationException;
+    String generateDdl(SddModel model);
 
     /**
      * Get the SQL dialect supported by this generator.

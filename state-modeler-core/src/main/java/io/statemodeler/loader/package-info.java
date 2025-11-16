@@ -3,6 +3,6 @@
  * All types are non-null unless explicitly annotated with @Nullable.
  */
 @NullMarked
-package io.statemodeler.dsl;
+package io.statemodeler.loader;
 
 import org.jspecify.annotations.NullMarked;

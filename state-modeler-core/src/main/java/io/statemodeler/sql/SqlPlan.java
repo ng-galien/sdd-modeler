@@ -44,13 +44,4 @@ public final class SqlPlan {
     public int hashCode() {
         return Objects.hash(tables, views, constraints);
     }
-
-    @Override
-    public String toString() {
-        return "SqlPlan{"
-                + "tables=" + tables.size()
-                + ", views=" + views.size()
-                + ", constraints=" + constraints.size()
-                + '}';
-    }
 }

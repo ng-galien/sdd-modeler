@@ -1,4 +1,4 @@
-package io.statemodeler.dsl;
+package io.statemodeler.loader;
 
 import static org.assertj.core.api.Assertions.*;
 

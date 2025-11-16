@@ -1,0 +1,17 @@
+---
+title: order State Diagram
+---
+stateDiagram-v2
+    [*] --> pending
+    pending : pending_reason
+    refunded : refund_method, refund_amount
+    cancelled : cancel_reason
+    paid : payment_method, paid_amount
+    paid --> refunded
+    pending --> cancelled : OR
+    paid --> cancelled : OR
+    pending --> paid
+
+    note right of pending
+        Extensions: cancelled_extensions, paid_extensions
+    end note

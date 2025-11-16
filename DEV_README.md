@@ -37,26 +37,38 @@
 
 # Generate SQL to file
 ./gradlew :state-modeler-cli:run --args="sql instructions/examples/orders-sdd-model.yaml -o output.sql"
+
+# Generate Mermaid state diagram
+./gradlew :state-modeler-cli:run --args="diagram instructions/examples/orders-sdd-model.yaml"
+
+# Generate diagram to file
+./gradlew :state-modeler-cli:run --args="diagram instructions/examples/orders-sdd-model.yaml -o diagram.mmd"
+
+# Generate diagram for specific entity
+./gradlew :state-modeler-cli:run --args="diagram instructions/examples/orders-sdd-model.yaml --entity order"
 ```
 
 ## Project Structure
 
 ```text
 sdd-modeler/
-├── state-modeler-core/          # Core SDD model + SQL generation
+├── state-modeler-core/          # Core SDD model + SQL/Diagram generation
 │   └── src/main/java/io/statemodeler/
 │       ├── core/                # Model classes (SddModel, EntityDef, etc.)
 │       ├── dsl/                 # YAML/JSON loading
-│       ├── validation/          # Model validation (TODO)
-│       └── sql/                 # SQL generation (TODO)
+│       ├── validation/          # Model validation
+│       ├── sql/                 # SQL generation (PostgreSQL DDL)
+│       └── diagram/             # Diagram generation (Mermaid, PlantUML)
 ├── state-modeler-cli/           # CLI application
 │   └── src/main/java/io/statemodeler/cli/
 │       ├── Main.java            # CLI entry point
 │       ├── ValidateCommand.java # validate subcommand
-│       └── SqlCommand.java      # sql subcommand
-└── instructions/examples/       # Reference model & expected DDL
+│       ├── SqlCommand.java      # sql subcommand
+│       └── DiagramCommand.java  # diagram subcommand
+└── instructions/examples/       # Reference model & expected outputs
     ├── orders-sdd-model.yaml    # Sample SDD model
-    └── orders-sdd-ddl.sql       # Expected SQL output
+    ├── orders-sdd-ddl.sql       # Expected SQL output
+    └── orders-sdd-diagram.mmd   # Mermaid state diagram
 ```
 
 ## Current Status & Next Steps

@@ -26,8 +26,9 @@
 - [ ] Support de requêtes SQL personnalisées dans le DSL
 
 ### 5. Amélioration du CLI
+- [x] Génération de diagrammes Mermaid
 - [ ] Mode interactif pour créer un modèle
-- [ ] Génération de diagrammes (Mermaid, PlantUML)
+- [ ] Support de PlantUML pour diagrammes
 - [ ] Diff entre deux versions de modèle
 - [ ] Migration SQL automatique (ALTER TABLE)
 

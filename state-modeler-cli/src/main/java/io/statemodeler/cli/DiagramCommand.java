@@ -2,6 +2,7 @@ package io.statemodeler.cli;
 
 import io.statemodeler.diagram.DiagramGenerators;
 import io.statemodeler.dsl.ModelLoader;
+import io.statemodeler.validation.ModelValidators;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -64,7 +65,21 @@ public class DiagramCommand implements Callable<Integer> {
             }
 
             var model = loadResult.get();
-            System.out.println("✓ Model loaded: " + model.name());
+            System.out.println("✓ Model parsed successfully: " + model.name());
+
+            // Validate the loaded model
+            var validator = ModelValidators.getInstance();
+            var validationResult = validator.validate(model);
+
+            if (validationResult.isInvalid()) {
+                System.err.println("✗ Model validation failed:");
+                for (var error : validationResult.getError()) {
+                    System.err.println("  • " + error.message());
+                }
+                return 1;
+            }
+
+            System.out.println("✓ Model validation passed");
 
             // Validate entity name if specified
             if (entityName != null && !model.entities().containsKey(entityName)) {

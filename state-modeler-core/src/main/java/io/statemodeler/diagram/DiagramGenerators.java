@@ -16,12 +16,17 @@ public final class DiagramGenerators {
      *
      * @param format the diagram format (e.g., "mermaid", "plantuml")
      * @return the appropriate diagram generator
-     * @throws IllegalArgumentException if the format is not supported
+     * @throws IllegalArgumentException if the format is not supported or null
      */
     public static DiagramGenerator forFormat(String format) {
+        if (format == null) {
+            throw new IllegalArgumentException("format cannot be null");
+        }
         return switch (format.toLowerCase()) {
             case "mermaid" -> new MermaidDiagramGenerator();
-            default -> throw new IllegalArgumentException("Unsupported diagram format: " + format);
+            default ->
+                throw new IllegalArgumentException("Unsupported diagram format: " + format + ". Supported formats: "
+                        + String.join(", ", getSupportedFormats()));
         };
     }
 

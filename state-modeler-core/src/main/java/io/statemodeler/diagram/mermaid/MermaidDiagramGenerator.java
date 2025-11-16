@@ -113,15 +113,19 @@ public final class MermaidDiagramGenerator implements DiagramGenerator {
             }
         }
 
-        // Add notes for extensions
+        // Add notes for extensions, grouped by target state
         if (entity.extensions() != null && !entity.extensions().isEmpty()) {
-            diagram.append("\n");
-            diagram.append("    note right of ")
-                    .append(entity.states().keySet().iterator().next())
-                    .append("\n");
-            diagram.append("        Extensions: ");
-            diagram.append(String.join(", ", entity.extensions().keySet()));
-            diagram.append("\n    end note\n");
+            // Group extensions by their target state
+            var extensionsByState =
+                    entity.extensions().values().stream().collect(Collectors.groupingBy(ext -> ext.targetState()));
+            for (var entry : extensionsByState.entrySet()) {
+                var stateName = entry.getKey();
+                var stateExtensions =
+                        entry.getValue().stream().map(ext -> ext.name()).collect(Collectors.joining(", "));
+                diagram.append("\n    note right of ").append(stateName).append("\n");
+                diagram.append("        Extensions: ").append(stateExtensions);
+                diagram.append("\n    end note\n");
+            }
         }
 
         return diagram.toString();

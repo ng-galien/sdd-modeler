@@ -233,9 +233,113 @@ class MermaidDiagramGeneratorTest {
         var diagram = generator.generateDiagram(model);
 
         // Then
-        assertThat(diagram).contains("note right of");
+        assertThat(diagram).contains("note right of paid");
         assertThat(diagram).contains("Extensions:");
         assertThat(diagram).contains("paid_ext");
+    }
+
+    @Test
+    void shouldGroupExtensionsByTargetState() {
+        // Given
+        var pending = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var paid = new StateDef("paid", "order_paid", false, List.of("pending"), List.of(), Map.of());
+
+        var pendingExt = new ExtensionDef(
+                "pending_ext",
+                "order_pending_ext",
+                "pending",
+                Map.of("notes", new AttributeDef("notes", "text", true, false, null, null)));
+
+        var paidExt1 = new ExtensionDef(
+                "paid_ext1",
+                "order_paid_ext1",
+                "paid",
+                Map.of("notes", new AttributeDef("notes", "text", true, false, null, null)));
+
+        var paidExt2 = new ExtensionDef(
+                "paid_ext2",
+                "order_paid_ext2",
+                "paid",
+                Map.of("metadata", new AttributeDef("metadata", "jsonb", true, false, null, null)));
+
+        var entity = new EntityDef(
+                "order",
+                "orders",
+                new AttributeDef("id", "serial", false, true, null, null),
+                Map.of(),
+                Map.of("pending", pending, "paid", paid),
+                Map.of("pending_ext", pendingExt, "paid_ext1", paidExt1, "paid_ext2", paidExt2),
+                Map.of());
+
+        var model =
+                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+
+        var generator = new MermaidDiagramGenerator();
+
+        // When
+        var diagram = generator.generateDiagram(model);
+
+        // Then
+        assertThat(diagram).contains("note right of pending");
+        assertThat(diagram).contains("note right of paid");
+        assertThat(diagram).contains("pending_ext");
+        assertThat(diagram).contains("paid_ext1");
+        assertThat(diagram).contains("paid_ext2");
+    }
+
+    @Test
+    void shouldHandleEmptyExtensions() {
+        // Given
+        var state = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+
+        var entity = new EntityDef(
+                "order",
+                "orders",
+                new AttributeDef("id", "serial", false, true, null, null),
+                Map.of(),
+                Map.of("pending", state),
+                Map.of(),
+                Map.of());
+
+        var model =
+                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+
+        var generator = new MermaidDiagramGenerator();
+
+        // When
+        var diagram = generator.generateDiagram(model);
+
+        // Then
+        assertThat(diagram).doesNotContain("note right of");
+        assertThat(diagram).doesNotContain("Extensions:");
+    }
+
+    @Test
+    void shouldHandleStateWithNoAttributes() {
+        // Given
+        var state = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+
+        var entity = new EntityDef(
+                "order",
+                "orders",
+                new AttributeDef("id", "serial", false, true, null, null),
+                Map.of(),
+                Map.of("pending", state),
+                Map.of(),
+                Map.of());
+
+        var model =
+                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+
+        var generator = new MermaidDiagramGenerator();
+
+        // When
+        var diagram = generator.generateDiagram(model);
+
+        // Then
+        assertThat(diagram).contains("stateDiagram-v2");
+        assertThat(diagram).contains("[*] --> pending");
+        assertThat(diagram).doesNotContain("pending :");
     }
 
     @Test

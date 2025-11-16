@@ -3,7 +3,7 @@
 ## Project Overview
 **sdd-modeler** is a Java 21 library + CLI for implementing State-Driven Design (SDD). It generates PostgreSQL DDL from declarative YAML/JSON models describing entities, states, transitions, extensions, and projections.
 
-**Current Implementation Status**: Core model classes (✅), YAML/JSON parsing (✅), model validation with Vavr (✅), SQL plan framework (✅), PostgreSQL DDL generation (✅ complete with views). CLI fully integrated with validation and SQL generation (✅).
+**Current Implementation Status**: Core model classes (✅), YAML/JSON parsing (✅), model validation with Vavr (✅), SQL plan framework (✅), PostgreSQL DDL generation (✅ complete with views + automatic FK indexing). CLI fully integrated with validation and SQL generation (✅). JSON Schema generation (✅).
 
 ## Core SDD Principles (Critical Context)
 - **Entities vs States**: Separate stable entity data (`orders` table) from mutable state facts (`order_pending`, `order_paid` tables)
@@ -11,6 +11,7 @@
 - **Explicit state graphs**: Transitions via `from` (simple) or `from_any_of` (OR transitions → mapping tables like `canceled_source`)
 - **Extensions for optionals**: Non-decisional, mutable data in separate extension tables (e.g., `order_paid_extensions`)
 - **Derived current state**: No `status` column - derive from projections/views (`current_order_states` filters `end_at IS NULL`)
+- **Schema separation**: Entities in `schema` (e.g., `public`), states/extensions/projections in `stateSchema` (e.g., `public_states`)
 
 ## Architecture & Module Structure
 Multi-module Gradle 8.11.1 project with Java 21 toolchain:
@@ -25,7 +26,7 @@ io.statemodeler.dsl           // ✅ YamlModelLoader, JsonModelLoader (Jackson +
 io.statemodeler.dsl.yaml      // ✅ YamlModelDto records for deserialization
 io.statemodeler.validation    // ✅ DefaultModelValidator (Vavr Validation<List<ValidationError>, SddModel>)
 io.statemodeler.sql           // ✅ SqlPlan, TableDefinition, ViewDefinition, DdlGenerator interface
-io.statemodeler.sql.postgres  // ✅ PostgresDdlGenerator (complete: tables, views, constraints)
+io.statemodeler.sql.postgres  // ✅ PostgresDdlGenerator (complete: tables, views, constraints, indexes)
 io.statemodeler.schema        // ✅ JSON schema generation (victools/jsonschema-generator)
 io.statemodeler.cli           // ✅ ValidateCommand, SqlCommand (Picocli with full integration)
 ```
@@ -44,6 +45,9 @@ io.statemodeler.cli           // ✅ ValidateCommand, SqlCommand (Picocli with f
 ./gradlew test                   # Run all tests (JUnit 5 + AssertJ)
 ./gradlew jacocoTestReport       # Generate coverage reports
 ./gradlew build                  # Full build (tests + formatting + JAR)
+
+# JSON Schema generation (automatic during build)
+./gradlew :state-modeler-core:generateJsonSchema  # Manual trigger
 ```
 
 ## Key DSL Format (Reference: `instructions/examples/orders-sdd-model.yaml`)
@@ -99,6 +103,7 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
    - `previous_<state>_id BIGINT` FK to source state(s)
    - State-specific non-null attributes
    - `created_at TIMESTAMPTZ DEFAULT now()`
+   - **Automatic FK indexing**: `idx_<table>_<column>` for all FK columns (performance optimization)
 3. **OR Transition Mapping**: `from_any_of` creates tables like `canceled_source`:
    - FKs to each source state table (nullable)
    - CHECK constraint: exactly ONE source FK is non-null
@@ -106,6 +111,10 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
 4. **Extension Tables**: 1:1 with state tables via `<state>_id PK/FK`, optional attributes only
 5. **Interval Views**: Complex UNION ALL calculating state timelines with LEAD() for `end_at`
 6. **Current State Views**: `SELECT * FROM <entity>_state_intervals WHERE end_at IS NULL`
+7. **Schema Separation**: 
+   - Entity tables in `schema` (default: `public`)
+   - State/extension/OR/projection tables in `stateSchema` (default: `<schema>_states`)
+   - Configured via `DatabaseConfig.effectiveStateSchema()` method
 
 ## Implementation Status & Next Steps
 **✅ Completed:**

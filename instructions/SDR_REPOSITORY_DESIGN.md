@@ -520,41 +520,100 @@ dependencies {
 }
 ```
 
-## 🚀 Roadmap de développement
+## 🚀 Roadmap de développement (IMPLÉMENTATION ITÉRATIVE)
 
-### Phase 1 : Repository Core (Semaine 1)
-1. Créer module `state-modeler-repository`
-2. Implémenter `SdrRepository` interface
-3. Implémenter `H2SdrRepository` avec schema DDL
-4. Tests d'intégration H2
-5. `SdrMetadata` record
+### ✅ Phase 1 : Repository Core
+**Step 1.1** - Module setup
+- [ ] Créer module `state-modeler-repository` avec build.gradle.kts
+- [ ] Ajouter dépendances (H2, zjsonpatch, java-diff-utils)
+- [ ] Configuration Gradle multi-module
 
-### Phase 2 : CLI Commands - Part 1 (Semaine 2)
-6. `RegisterCommand` (save SDR)
-7. `ListCommand` (browse repo)
-8. `ShowCommand` (display details)
-9. Tests CLI commands
+**Step 1.2** - Core interfaces & records
+- [ ] `SdrMetadata` record (lightweight DTO)
+- [ ] `SdrRepository` interface (CRUD operations)
+- [ ] Package structure (`io.statemodeler.repository`)
 
-### Phase 3 : Comparison Service (Semaine 3)
-10. `SdrComparisonService` (schema + DDL diff)
-11. `SchemaComparison` avec zjsonpatch
-12. `DdlComparison` avec java-diff-utils
-13. `CompareCommand` CLI
-14. Tests comparison
+**Step 1.3** - H2 Repository implementation
+- [ ] `H2SdrRepository` class avec connection pooling
+- [ ] Schema DDL creation (sdr_records table)
+- [ ] CRUD methods implementation
 
-### Phase 4 : Migration Generator (Semaine 4)
-15. `MigrationGenerator` (DDL→DDL)
-16. `MigrationScript` + `MigrationStep`
-17. Breaking change detection
-18. `MigrateCommand` CLI
-19. Tests migration avec cas réels
+**Step 1.4** - Repository tests
+- [ ] `H2SdrRepositoryTest` avec Testcontainers ou embedded H2
+- [ ] Tests CRUD complets
+- [ ] Tests edge cases (duplicate hash, not found, etc.)
 
-### Phase 5 : Polish & Docs (Semaine 5)
-20. `DeleteCommand` CLI
-21. Documentation complète (README, examples)
-22. Workflow guides (register → compare → migrate)
-23. Integration tests end-to-end
-24. Performance optimization (indexes, caching)
+### ✅ Phase 2 : CLI Commands - Basic CRUD
+**Step 2.1** - Register command
+- [ ] `RegisterCommand` class (extends Picocli Callable)
+- [ ] Parse model → create SDR → save to repo
+- [ ] Options: --name, --version, --dialect, --force
+- [ ] Tests CLI avec model fixtures
+
+**Step 2.2** - List command
+- [ ] `ListCommand` class
+- [ ] Format table (default), JSON, YAML outputs
+- [ ] Filtering par --name, --recent
+- [ ] Tests output formats
+
+**Step 2.3** - Show command
+- [ ] `ShowCommand` class
+- [ ] Support hash ou name:version syntax
+- [ ] Options: --schema-only, --ddl-only, --json
+- [ ] Tests retrieval + formatting
+
+**Step 2.4** - Delete command
+- [ ] `DeleteCommand` class
+- [ ] Confirmation prompt (skip with --force)
+- [ ] Tests deletion workflow
+
+### ✅ Phase 3 : Comparison Service
+**Step 3.1** - Comparison interfaces
+- [ ] `SchemaComparison` record (JSON diff result)
+- [ ] `DdlComparison` record (SQL diff result)
+- [ ] `SdrComparisonService` interface
+
+**Step 3.2** - Schema comparison implementation
+- [ ] Implémenter `compareSchemas()` avec zjsonpatch
+- [ ] Detect breaking changes (removed entities/states)
+- [ ] Tests avec fixtures (v1 → v2 known diffs)
+
+**Step 3.3** - DDL comparison implementation
+- [ ] Implémenter `compareDdl()` avec java-diff-utils
+- [ ] Unified diff + line-by-line parsing
+- [ ] Tests diff algorithms
+
+**Step 3.4** - Compare command
+- [ ] `CompareCommand` class
+- [ ] Options: --schema-only, --ddl-only, --format
+- [ ] Pretty-print diffs (colors, symbols)
+- [ ] Tests comparison CLI output
+
+### ⏸️ Phase 4 : Migration Generator (FUTUR - NON IMPLÉMENTÉ)
+> **Note** : MigrationGenerator sera implémenté dans une phase ultérieure.
+> Fonctionnalités prévues :
+> - Génération automatique de scripts ALTER TABLE
+> - Détection de breaking changes (DROP COLUMN, etc.)
+> - Migration step-by-step avec rollback
+> - `MigrateCommand` CLI
+
+### ✅ Phase 5 : Polish & Documentation
+**Step 5.1** - Integration tests end-to-end
+- [ ] Test complet: register → list → show → compare → delete
+- [ ] Tests avec vrais modèles (orders example)
+- [ ] Performance tests (1000+ SDR inserts)
+
+**Step 5.2** - Documentation
+- [ ] README.md avec exemples CLI
+- [ ] DEV_README.md updates (new commands)
+- [ ] Copilot instructions updates
+- [ ] Example workflow guides
+
+**Step 5.3** - Code quality
+- [ ] Coverage 100% pour repository module
+- [ ] Spotless formatting
+- [ ] Javadoc complète
+- [ ] Error messages clairs et actionables
 
 ## 🔮 Extensions futures
 

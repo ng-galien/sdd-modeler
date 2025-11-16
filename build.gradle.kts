@@ -36,6 +36,13 @@ subprojects {
             endWithNewline()
             formatAnnotations()
         }
+        
+        flexmark {
+            target("*.md", "**/*.md")
+            // Flexmark formatting with defaults (which handle trailing spaces properly)
+            flexmark()
+            endWithNewline()
+        }
     }
 }
 

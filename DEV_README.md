@@ -3,10 +3,12 @@
 ## Quick Start
 
 ### Prerequisites
+
 - Java 25+ (set up with toolchain, project will handle this automatically)
 - No need to install Gradle (using wrapper)
 
 ### Build & Test
+
 ```bash
 # Build the entire project
 ./gradlew build
@@ -22,6 +24,7 @@
 ```
 
 ### CLI Usage
+
 ```bash
 # Show help
 ./gradlew :state-modeler-cli:run
@@ -38,7 +41,7 @@
 
 ## Project Structure
 
-```
+```text
 sdd-modeler/
 ├── state-modeler-core/          # Core SDD model + SQL generation
 │   └── src/main/java/io/statemodeler/
@@ -59,6 +62,7 @@ sdd-modeler/
 ## Current Status & Next Steps
 
 ### ✅ Implemented
+
 - [x] Gradle multi-module build with Java 25
 - [x] Core model classes (SddModel, EntityDef, StateDef, etc.)
 - [x] CLI skeleton with Picocli (validate/sql commands)
@@ -67,6 +71,7 @@ sdd-modeler/
 - [x] Jackson dependency setup for YAML/JSON parsing
 
 ### 🚧 Next Implementation Priorities
+
 1. **YAML Model Loader** (`io.statemodeler.dsl.YamlModelLoader`)
    - Parse `instructions/examples/orders-sdd-model.yaml`
    - Map YAML structure to `SddModel` objects
@@ -85,6 +90,7 @@ sdd-modeler/
 ## Development Guidelines
 
 ### Code Style
+
 - **Immutability**: Use Java records and Lombok `@Value` for immutable classes
 - **Simplicity**: Avoid traditional POJOs - prefer records or Lombok annotations
 - **Records**: For simple data containers, DTOs, value objects
@@ -96,17 +102,20 @@ sdd-modeler/
 - **Exception Strategy**: Use `IOException` only for genuine I/O operations, runtime exceptions for validation/parsing errors
 
 ### Testing Strategy
+
 - **Unit tests**: Core classes and parsing logic
 - **Integration test**: Load `orders-sdd-model.yaml` → validate generated SQL matches expected `orders-sdd-ddl.sql`
 - **No mocking**: Direct testing without Mockito
 
 ### Key SDD Patterns to Implement
+
 - **OR transitions**: `from_any_of` generates mapping tables with CHECK constraints
 - **State references**: Each state table has FK to previous state(s)
 - **Extension tables**: 1:1 with state tables for optional/mutable data
 - **Projection views**: Complex queries for state intervals and current state
 
 ## Dependencies
+
 - **Jackson 2.18.0**: YAML/JSON parsing
 - **Picocli 4.7.6**: CLI framework
 - **JUnit 5.11.3**: Testing framework

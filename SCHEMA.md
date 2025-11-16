@@ -27,7 +27,7 @@ Créez/modifiez `.vscode/settings.json` dans votre projet :
 }
 ```
 
-2. **Méthode 2 - Fichier par fichier**
+1. **Méthode 1 - Tout en un**
 
 Ajoutez en haut de vos fichiers SDD YAML :
 

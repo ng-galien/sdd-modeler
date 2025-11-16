@@ -319,6 +319,57 @@ class RegisterCommandTest {
         // Should use CLI version "3.0.0" instead of "1.5"
     }
 
+    @Test
+    void shouldHandleFilenameWithoutExtension() throws IOException {
+        // Given - file without extension (edge case for resolveName)
+        Path noExtensionFile = tempDir.resolve("noextension");
+        Files.writeString(noExtensionFile, """
+                version: "0.1"
+                name: "test-no-ext"
+                database:
+                  dialect: postgres
+                entities:
+                  order:
+                    table: orders
+                    id:
+                      name: id
+                      type: serial
+                      primary_key: true
+                    states:
+                      pending:
+                        initial: true
+                        table: order_pending
+                """);
+
+        var command = new RegisterCommand();
+        command.modelFile = noExtensionFile;
+        command.repositoryMixin = createMixin();
+
+        // When
+        int exitCode = command.call();
+
+        // Then
+        assertEquals(0, exitCode);
+        // Should derive name as "noextension" (full filename)
+    }
+
+    @Test
+    void shouldHandleRepositoryException() {
+        // Given - command that will trigger repository error
+        var command = new RegisterCommand();
+        command.modelFile = validModelFile;
+        // Use an invalid repository path to trigger exception
+        var mixin = new RepositoryMixin();
+        mixin.repositoryPath = "/invalid/\0/path"; // Invalid path with null char
+        command.repositoryMixin = mixin;
+
+        // When
+        int exitCode = command.call();
+
+        // Then
+        assertEquals(1, exitCode, "Should fail with exit code 1 for repository error");
+    }
+
     private RepositoryMixin createMixin() {
         var mixin = new RepositoryMixin();
         mixin.repositoryPath = repositoryPath.toString();

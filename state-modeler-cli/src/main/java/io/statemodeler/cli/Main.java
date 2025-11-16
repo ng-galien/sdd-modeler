@@ -11,7 +11,7 @@ import picocli.CommandLine.Command;
         description = "State-Driven Design modeler CLI for generating SQL from YAML/JSON models",
         mixinStandardHelpOptions = true,
         version = "sdd-modeler 0.1.0",
-        subcommands = {ValidateCommand.class, SqlCommand.class})
+        subcommands = {ValidateCommand.class, SqlCommand.class, DiagramCommand.class})
 public class Main implements Runnable {
 
     @Override

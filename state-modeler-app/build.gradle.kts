@@ -28,7 +28,12 @@ dependencies {
     implementation("com.flipkart.zjsonpatch:zjsonpatch:0.4.16")
     
     // Diff algorithm for DDL comparison
-    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+    implementation("io.github.java-diff-utils:java-diff-utils:4.15")
+    
+    // LangChain4j for LLM-based migration script generation
+    implementation("dev.langchain4j:langchain4j:0.36.2")
+    implementation("dev.langchain4j:langchain4j-jlama:0.36.2")
+    implementation("dev.langchain4j:langchain4j-ollama:0.36.2")
     
     // SLF4J for logging
     implementation("org.slf4j:slf4j-api:2.0.16")

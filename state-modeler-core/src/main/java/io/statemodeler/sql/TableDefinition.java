@@ -2,13 +2,14 @@ package io.statemodeler.sql;
 
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstract representation of a SQL table definition.
  */
 public final class TableDefinition {
     private final String name;
-    private final String schema;
+    private final @Nullable String schema;
     private final List<ColumnDefinition> columns;
     private final List<String> primaryKey;
 

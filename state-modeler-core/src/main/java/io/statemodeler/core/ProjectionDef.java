@@ -1,9 +1,12 @@
 package io.statemodeler.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Definition of a projection (view) derived from state data.
  */
-public record ProjectionDef(String name, String viewName, ProjectionKind kind) {
+public record ProjectionDef(
+        String name, @JsonProperty("view_name") String viewName, ProjectionKind kind) {
 
     public ProjectionDef {
         if (name == null) throw new IllegalArgumentException("name cannot be null");

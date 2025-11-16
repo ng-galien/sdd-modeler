@@ -21,6 +21,15 @@ dependencies {
     implementation("info.picocli:picocli:${rootProject.ext["picocliVersion"]}")
     annotationProcessor("info.picocli:picocli-codegen:${rootProject.ext["picocliVersion"]}")
     
+    // H2 Database (embedded) for SDR repository
+    implementation("com.h2database:h2:2.2.224")
+    
+    // JSON diff library for schema comparison
+    implementation("com.flipkart.zjsonpatch:zjsonpatch:0.4.16")
+    
+    // Diff algorithm for DDL comparison
+    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+    
     // SLF4J for logging
     implementation("org.slf4j:slf4j-api:2.0.16")
     runtimeOnly("ch.qos.logback:logback-classic:1.5.12")

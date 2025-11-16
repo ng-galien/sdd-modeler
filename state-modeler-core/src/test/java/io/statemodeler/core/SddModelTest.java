@@ -10,7 +10,7 @@ class SddModelTest {
     @Test
     void shouldCreateValidSddModel() {
         // Given
-        var database = new DatabaseConfig("postgres", "public");
+        var database = new DatabaseConfig("postgres", "public", null);
         var entityDef = createSampleEntityDef();
         var entities = Map.of("order", entityDef);
 
@@ -27,7 +27,7 @@ class SddModelTest {
 
     @Test
     void shouldRequireNonNullFields() {
-        var database = new DatabaseConfig("postgres", "public");
+        var database = new DatabaseConfig("postgres", "public", null);
         var entities = Map.<String, EntityDef>of();
 
         assertThatThrownBy(() -> new SddModel(null, "test", database, entities))

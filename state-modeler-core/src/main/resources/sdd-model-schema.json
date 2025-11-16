@@ -26,6 +26,9 @@
         },
         "schema" : {
           "type" : "string"
+        },
+        "stateSchema" : {
+          "type" : "string"
         }
       }
     },

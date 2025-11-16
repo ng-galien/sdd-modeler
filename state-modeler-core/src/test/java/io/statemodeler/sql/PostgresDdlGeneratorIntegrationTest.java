@@ -18,10 +18,14 @@ class PostgresDdlGeneratorIntegrationTest {
 
         var ddl = generator.generateDdl(model);
 
+        // Entity table in entity schema (public)
         assertThat(ddl).contains("CREATE TABLE public.orders");
         assertThat(ddl).contains("id serial NOT NULL");
         assertThat(ddl).contains("customer_id int NOT NULL");
-        assertThat(ddl).contains("CREATE TABLE public.order_pending");
+
+        // State tables in state schema (public_states)
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS public_states");
+        assertThat(ddl).contains("CREATE TABLE public_states.order_pending");
         assertThat(ddl).contains("pending_reason text NOT NULL");
     }
 
@@ -45,29 +49,32 @@ class PostgresDdlGeneratorIntegrationTest {
         var generator = DdlGenerators.forDialect("postgres");
         var ddl = generator.generateDdl(model);
 
-        // Verify entity table
+        // Verify schema creation
+        assertThat(ddl).contains("CREATE SCHEMA IF NOT EXISTS public_states");
+
+        // Verify entity table in entity schema
         assertThat(ddl).contains("CREATE TABLE public.orders");
 
-        // Verify state tables
-        assertThat(ddl).contains("CREATE TABLE public.order_pending");
-        assertThat(ddl).contains("CREATE TABLE public.order_paid");
-        assertThat(ddl).contains("CREATE TABLE public.order_cancelled");
-        assertThat(ddl).contains("CREATE TABLE public.order_refunded");
+        // Verify state tables in state schema
+        assertThat(ddl).contains("CREATE TABLE public_states.order_pending");
+        assertThat(ddl).contains("CREATE TABLE public_states.order_paid");
+        assertThat(ddl).contains("CREATE TABLE public_states.order_cancelled");
+        assertThat(ddl).contains("CREATE TABLE public_states.order_refunded");
 
-        // Verify OR transition mapping table
-        assertThat(ddl).contains("CREATE TABLE public.cancelled_source");
+        // Verify OR transition mapping table in state schema
+        assertThat(ddl).contains("CREATE TABLE public_states.cancelled_source");
         assertThat(ddl).contains("pending_state_id INTEGER REFERENCES order_pending(id)");
         assertThat(ddl).contains("paid_state_id INTEGER REFERENCES order_paid(id)");
 
         // Verify CHECK constraint for OR transitions
         assertThat(ddl).contains("ALTER TABLE cancelled_source ADD CONSTRAINT cancelled_source_check");
 
-        // Verify extension tables
-        assertThat(ddl).contains("CREATE TABLE public.order_paid_extensions");
-        assertThat(ddl).contains("CREATE TABLE public.order_cancelled_extensions");
+        // Verify extension tables in state schema
+        assertThat(ddl).contains("CREATE TABLE public_states.order_paid_extensions");
+        assertThat(ddl).contains("CREATE TABLE public_states.order_cancelled_extensions");
 
-        // Verify intervals view
-        assertThat(ddl).contains("CREATE VIEW public.order_state_intervals AS");
+        // Verify intervals view in state schema
+        assertThat(ddl).contains("CREATE VIEW public_states.order_state_intervals AS");
         assertThat(ddl).contains("UNION ALL");
         assertThat(ddl).contains("'PENDING' AS state_type");
         assertThat(ddl).contains("'PAID' AS state_type");
@@ -76,14 +83,14 @@ class PostgresDdlGeneratorIntegrationTest {
         assertThat(ddl).contains("start_at");
         assertThat(ddl).contains("end_at");
 
-        // Verify current state view
-        assertThat(ddl).contains("CREATE VIEW public.current_order_states AS");
+        // Verify current state view in state schema
+        assertThat(ddl).contains("CREATE VIEW public_states.current_order_states AS");
         assertThat(ddl).contains("FROM order_state_intervals");
         assertThat(ddl).contains("WHERE end_at IS NULL");
     }
 
     private SddModel createSimpleOrderModel() {
-        var database = new DatabaseConfig("postgres", "public");
+        var database = new DatabaseConfig("postgres", "public", null);
 
         // Entity attributes
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);

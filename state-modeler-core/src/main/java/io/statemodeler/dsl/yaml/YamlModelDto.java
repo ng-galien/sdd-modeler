@@ -10,7 +10,10 @@ import java.util.Map;
  */
 public record YamlModelDto(String version, String name, YamlDatabaseDto database, Map<String, YamlEntityDto> entities) {
 
-    public record YamlDatabaseDto(String dialect, String schema) {}
+    public record YamlDatabaseDto(
+            String dialect,
+            String schema,
+            @JsonProperty("state_schema") String stateSchema) {}
 
     public record YamlEntityDto(
             String table,

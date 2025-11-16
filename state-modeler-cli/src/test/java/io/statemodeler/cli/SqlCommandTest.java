@@ -79,7 +79,7 @@ class SqlCommandTest {
         assertThat(output).contains("✓ Model parsed successfully");
         assertThat(output).contains("-- Generated DDL for test-model");
         assertThat(output).contains("CREATE TABLE public.orders");
-        assertThat(output).contains("CREATE TABLE public.order_pending");
+        assertThat(output).contains("CREATE TABLE public_states.order_pending");
     }
 
     @Test

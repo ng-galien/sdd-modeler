@@ -1,6 +1,7 @@
 package io.statemodeler.cli;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
@@ -55,7 +56,7 @@ public class MigrateCommand implements Callable<Integer> {
 
     @Option(
             names = {"--llm"},
-            description = "LLM provider (only ollama supported)",
+            description = "LLM provider (ollama|openai)",
             defaultValue = "ollama")
     String llmProvider;
 
@@ -124,7 +125,7 @@ public class MigrateCommand implements Callable<Integer> {
             // Create LLM-based migration service
             System.err.println("INFO: Generating migration using " + llmProvider + " LLM...");
 
-            ChatLanguageModel llmModel;
+            ChatModel llmModel;
             try {
                 llmModel = createLlmModel();
             } catch (NoClassDefFoundError e) {
@@ -133,6 +134,7 @@ public class MigrateCommand implements Callable<Integer> {
                 System.err.println("  Please ensure the following dependencies are available:");
                 System.err.println("    - dev.langchain4j:langchain4j:0.36.2");
                 System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2");
+                System.err.println("    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
                 System.err.println("  Missing class: " + e.getMessage());
                 return 1;
             }
@@ -209,12 +211,32 @@ public class MigrateCommand implements Callable<Integer> {
     /**
      * Create LLM model based on provider.
      */
-    private ChatLanguageModel createLlmModel() {
+    private ChatModel createLlmModel() {
         String effectiveModelName = modelName != null ? modelName : getDefaultModelName();
-        ChatModelProvider provider = new LangChainModelProvider();
+        // Default timeout
+        final int timeoutSeconds = 300;
 
-        // Only Ollama supported now
-        return provider.createModel(effectiveModelName, 0.7, "http://localhost:11434", 300);
+        // Currently support 'ollama' and 'openai'
+        if (llmProvider == null || llmProvider.isBlank() || llmProvider.equalsIgnoreCase("ollama")) {
+            ChatModelProvider provider = new LangChainModelProvider();
+            return provider.createModel(effectiveModelName, 0.7, "http://localhost:11434", timeoutSeconds);
+        }
+        if (llmProvider.equalsIgnoreCase("openai")) {
+            // Use OpenAI provider
+            var apiKey = System.getenv("OPENAI_API_KEY");
+            if (apiKey == null || apiKey.isBlank()) {
+                throw new IllegalArgumentException("OPENAI_API_KEY is required for OpenAI provider");
+            }
+            return OpenAiChatModel.builder()
+                    .apiKey(apiKey)
+                    .modelName(effectiveModelName)
+                    .logRequests(true)
+                    .logResponses(true)
+                    .strictJsonSchema(true)
+                    .build();
+        }
+
+        throw new IllegalArgumentException("Unsupported LLM provider: " + llmProvider);
     }
 
     /**

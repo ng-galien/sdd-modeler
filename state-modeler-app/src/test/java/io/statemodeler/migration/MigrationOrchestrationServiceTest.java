@@ -67,6 +67,35 @@ class MigrationOrchestrationServiceTest {
     }
 
     @Test
+    void shouldIncludeDiffInPrompt() {
+        // Given - capture textDiff passed into migration generator
+        java.util.concurrent.atomic.AtomicReference<String> capturedDiff =
+                new java.util.concurrent.atomic.AtomicReference<>();
+
+        var capturingGenerator = (MigrationGenerationService) (oldDdl, newDdl, textDiff, dialect) -> {
+            capturedDiff.set(textDiff);
+            return io.vavr.control.Try.success(new MigrationResult(0.9, "-- Migration script", "Added email column"));
+        };
+
+        var comparisonService = new DdlComparisonService();
+        var svc = new MigrationOrchestrationService(capturingGenerator, comparisonService, repository);
+
+        var fromSdr = createTestSdr("hash1", "CREATE TABLE users (id INT);");
+        var toSdr = createTestSdr("hash2", "CREATE TABLE users (id INT, email VARCHAR(255));");
+
+        repository.save(fromSdr, "test-model", "1.0").get();
+        repository.save(toSdr, "test-model", "2.0").get();
+
+        // When
+        var result = svc.generateAndSaveMigration(fromSdr, toSdr, "postgres");
+
+        // Then
+        assertTrue(result.isSuccess());
+        assertNotNull(capturedDiff.get());
+        assertTrue(capturedDiff.get().contains("email VARCHAR(255)"));
+    }
+
+    @Test
     void shouldRejectNullFromSdr() {
         // Given
         var toSdr = createTestSdr("hash2", "CREATE TABLE test;");

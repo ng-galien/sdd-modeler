@@ -36,7 +36,7 @@ MODEL_V1="$EXAMPLES_DIR/orders-sdd-model.yaml"
 MODEL_V2="$EXAMPLES_DIR/orders-sdd-model-v2.yaml"
 
 # LLM configuration
-LLM_MODEL="qwen2.5:0.5b"
+LLM_MODEL="qwen3:8b"
 OLLAMA_URL="http://localhost:11434"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
@@ -88,14 +88,30 @@ echo -e "${GREEN}  ✓ DDL v2 generated${NC}"
 # Register models in SDR
 echo -e "\n${BLUE}Step 4: Registering models in SDR repository${NC}"
 
+# Clean up SDR repository for a fresh start
+echo -e "${CYAN}  Cleaning up SDR repository...${NC}"
+SDR_REPO_PATH="${HOME}/.sdd-modeler/repository.mv.db"
+if [ -f "$SDR_REPO_PATH" ]; then
+    rm -f "${HOME}/.sdd-modeler/repository"*.db
+    echo -e "${GREEN}  ✓ Repository cleaned${NC}"
+fi
+
 echo -e "${CYAN}  Registering v1 as 'orders:1.0'...${NC}"
-"$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V1 orders 1.0" > "$OUTPUT_DIR/register-v1.log" 2>&1
-V1_HASH=$(grep -o "hash: [a-f0-9]*" "$OUTPUT_DIR/register-v1.log" | head -1 | cut -d' ' -f2)
+if ! "$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V1 -n orders -v 1.0" > "$OUTPUT_DIR/register-v1.log" 2>&1; then
+    echo -e "${RED}✗ Failed to register v1${NC}"
+    cat "$OUTPUT_DIR/register-v1.log"
+    exit 1
+fi
+V1_HASH=$(grep -o "hash: [a-f0-9]*" "$OUTPUT_DIR/register-v1.log" | head -1 | cut -d' ' -f2 || echo "unknown")
 echo -e "${GREEN}  ✓ Registered with hash: $V1_HASH${NC}"
 
 echo -e "${CYAN}  Registering v2 as 'orders:2.0'...${NC}"
-"$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V2 orders 2.0" > "$OUTPUT_DIR/register-v2.log" 2>&1
-V2_HASH=$(grep -o "hash: [a-f0-9]*" "$OUTPUT_DIR/register-v2.log" | head -1 | cut -d' ' -f2)
+if ! "$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V2 -n orders -v 2.0" > "$OUTPUT_DIR/register-v2.log" 2>&1; then
+    echo -e "${RED}✗ Failed to register v2${NC}"
+    cat "$OUTPUT_DIR/register-v2.log"
+    exit 1
+fi
+V2_HASH=$(grep -o "hash: [a-f0-9]*" "$OUTPUT_DIR/register-v2.log" | head -1 | cut -d' ' -f2 || echo "unknown")
 echo -e "${GREEN}  ✓ Registered with hash: $V2_HASH${NC}"
 
 # Generate migration with LLM

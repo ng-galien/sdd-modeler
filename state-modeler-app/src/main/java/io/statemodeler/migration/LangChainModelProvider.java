@@ -1,6 +1,6 @@
 package io.statemodeler.migration;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import java.time.Duration;
 
@@ -25,26 +25,27 @@ public final class LangChainModelProvider implements ChatModelProvider {
     private static final int DEFAULT_TIMEOUT_SECONDS = 60;
 
     @Override
-    public ChatLanguageModel createModel(String modelName, double temperature) {
+    public ChatModel createModel(String modelName, double temperature) {
         return createOllamaModel(modelName, temperature);
     }
 
     @Override
-    public ChatLanguageModel createModel(String modelName, double temperature, String baseUrl, int timeoutSeconds) {
+    public ChatModel createModel(String modelName, double temperature, String baseUrl, int timeoutSeconds) {
         return createOllamaModel(baseUrl, modelName, temperature, timeoutSeconds);
     }
 
-    private ChatLanguageModel createOllamaModel(String modelName, double temperature) {
+    private ChatModel createOllamaModel(String modelName, double temperature) {
         return createOllamaModel(DEFAULT_BASE_URL, modelName, temperature, DEFAULT_TIMEOUT_SECONDS);
     }
 
-    private ChatLanguageModel createOllamaModel(
-            String baseUrl, String modelName, double temperature, int timeoutSeconds) {
+    private ChatModel createOllamaModel(String baseUrl, String modelName, double temperature, int timeoutSeconds) {
         return OllamaChatModel.builder()
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .temperature(temperature)
                 .timeout(Duration.ofSeconds(timeoutSeconds))
+                .logRequests(true)
+                .logResponses(true)
                 .build();
     }
 }

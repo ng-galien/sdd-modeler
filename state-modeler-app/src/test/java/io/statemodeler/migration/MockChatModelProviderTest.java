@@ -21,7 +21,7 @@ class MockChatModelProviderTest {
 
         // Then
         assertNotNull(model);
-        String response = model.generate("test prompt");
+        String response = model.chat("test prompt");
         assertTrue(response.contains("Mock migration script"));
         assertTrue(response.contains("BEGIN"));
         assertTrue(response.contains("COMMIT"));
@@ -38,7 +38,7 @@ class MockChatModelProviderTest {
 
         // Then
         assertNotNull(model);
-        assertEquals(customResponse, model.generate("any prompt"));
+        assertEquals(customResponse, model.chat("any prompt"));
     }
 
     @Test
@@ -49,9 +49,9 @@ class MockChatModelProviderTest {
         var model = provider.createModel("test", 0.5);
 
         // When/Then - all prompts return same response
-        assertEquals(expectedResponse, model.generate("prompt 1"));
-        assertEquals(expectedResponse, model.generate("prompt 2"));
-        assertEquals(expectedResponse, model.generate("different prompt"));
+        assertEquals(expectedResponse, model.chat("prompt 1"));
+        assertEquals(expectedResponse, model.chat("prompt 2"));
+        assertEquals(expectedResponse, model.chat("different prompt"));
     }
 
     @Test
@@ -64,7 +64,7 @@ class MockChatModelProviderTest {
 
         // Then
         assertNotNull(model);
-        assertEquals("test response", model.generate("prompt"));
+        assertEquals("test response", model.chat("prompt"));
     }
 
     @Test
@@ -78,8 +78,8 @@ class MockChatModelProviderTest {
         var model3 = provider.createModel("test", 0.5);
 
         // Then - all return same mock response
-        assertEquals("fixed response", model1.generate("test"));
-        assertEquals("fixed response", model2.generate("test"));
-        assertEquals("fixed response", model3.generate("test"));
+        assertEquals("fixed response", model1.chat("test"));
+        assertEquals("fixed response", model2.chat("test"));
+        assertEquals("fixed response", model3.chat("test"));
     }
 }

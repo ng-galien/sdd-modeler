@@ -44,6 +44,6 @@ class LangChainModelProviderTest {
     // 2. Model downloaded (ollama pull llama3.2)
     //
     // The provider is tested indirectly through:
-    // 1. LangChainMigrationGenerationServiceTest (uses mock ChatLanguageModel)
+    // 1. LangChainMigrationGenerationServiceTest (uses mock ChatModel)
     // 2. Integration tests with real Ollama server (optional)
 }

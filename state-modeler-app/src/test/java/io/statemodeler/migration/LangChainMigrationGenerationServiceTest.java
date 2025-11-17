@@ -4,12 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.output.Response;
 import io.vavr.control.Try;
-import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,7 +42,7 @@ class LangChainMigrationGenerationServiceTest {
                 ALTER TABLE orders ADD COLUMN customer_name TEXT;
                 """;
 
-        // Mock ChatLanguageModel that returns JSON with MigrationResult structure
+        // Mock ChatModel that returns JSON with MigrationResult structure
         String jsonResponse =
                 String.format("""
                 {
@@ -54,7 +52,7 @@ class LangChainMigrationGenerationServiceTest {
                 }
                 """, expectedScript.replace("\n", "\\n").replace("\"", "\\\""));
 
-        ChatLanguageModel mockModel = createMockModel(jsonResponse);
+        ChatModel mockModel = createMockModel(jsonResponse);
         var service = new LangChainMigrationGenerationService(mockModel);
 
         // When
@@ -73,7 +71,7 @@ class LangChainMigrationGenerationServiceTest {
     void shouldFailWhenParameterIsNull(
             String oldDdl, String newDdl, String textDiff, String dialect, String expectedMessage) {
         // Given
-        ChatLanguageModel mockModel = createMockModel("test");
+        ChatModel mockModel = createMockModel("test");
         var service = new LangChainMigrationGenerationService(mockModel);
 
         // When
@@ -101,7 +99,7 @@ class LangChainMigrationGenerationServiceTest {
     @Test
     void shouldFailWhenLlmReturnsEmptyScript() {
         // Given
-        ChatLanguageModel mockModel = createMockModel("");
+        ChatModel mockModel = createMockModel("");
         var service = new LangChainMigrationGenerationService(mockModel);
 
         // When
@@ -118,14 +116,14 @@ class LangChainMigrationGenerationServiceTest {
     @Test
     void shouldFailWhenLlmThrowsException() {
         // Given
-        ChatLanguageModel mockModel = new ChatLanguageModel() {
+        ChatModel mockModel = new ChatModel() {
             @Override
             public ChatResponse chat(ChatRequest request) {
                 throw new RuntimeException("LLM connection failed");
             }
 
             @Override
-            public Response<AiMessage> generate(List<ChatMessage> messages) {
+            public ChatResponse chat(java.util.List<ChatMessage> messages) {
                 throw new RuntimeException("LLM connection failed");
             }
         };
@@ -151,9 +149,9 @@ class LangChainMigrationGenerationServiceTest {
         assertEquals("chatModel cannot be null", exception.getMessage());
     }
 
-    // Helper method to create a simple mock ChatLanguageModel
-    private ChatLanguageModel createMockModel(String response) {
-        return new ChatLanguageModel() {
+    // Helper method to create a simple mock ChatModel
+    private ChatModel createMockModel(String response) {
+        return new ChatModel() {
             @Override
             public ChatResponse chat(ChatRequest request) {
                 return ChatResponse.builder()
@@ -162,8 +160,10 @@ class LangChainMigrationGenerationServiceTest {
             }
 
             @Override
-            public Response<AiMessage> generate(List<ChatMessage> messages) {
-                return Response.from(AiMessage.from(response));
+            public ChatResponse chat(java.util.List<ChatMessage> messages) {
+                return ChatResponse.builder()
+                        .aiMessage(AiMessage.from(response))
+                        .build();
             }
         };
     }

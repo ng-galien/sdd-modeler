@@ -232,6 +232,23 @@ class MigrateCommandTest {
     }
 
     @Test
+    void shouldRequireOpenAiApiKeyWhenProviderOpenAi() throws Exception {
+        // Given
+        var cmd = new MigrateCommand();
+        cmd.llmProvider = "openai";
+        cmd.modelName = "gpt-4o-mini";
+
+        // When - createLlmModel is private; call via reflection
+        var method = MigrateCommand.class.getDeclaredMethod("createLlmModel");
+        method.setAccessible(true);
+
+        // Then - should throw IllegalArgumentException for missing OPENAI_API_KEY
+        Exception exception = assertThrows(Exception.class, () -> method.invoke(cmd));
+        String message = exception.getCause() != null ? exception.getCause().getMessage() : exception.getMessage();
+        assertTrue(message.contains("OPENAI_API_KEY is required"));
+    }
+
+    @Test
     void shouldUseCustomModelName() {
         // Given
         var cmd = new MigrateCommand();

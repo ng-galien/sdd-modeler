@@ -97,6 +97,67 @@ Generated files are saved to `build/test-output/`:
 - `functional-test.sql` - Generated DDL
 - `ddl-apply.log` - DDL application output
 - `test1.log` through `test10.log` - Individual test outputs
+- **`functional-test-report.md`** - **Markdown test report with tabular data**
+
+**Markdown Report Contents:**
+
+The functional test script generates a comprehensive Markdown report with:
+
+1. **Metadata & Environment**
+   - Generation timestamp
+   - Model file name
+   - PostgreSQL version
+   - Database type (Docker or local)
+
+2. **DDL Statistics**
+   - Number of tables created
+   - Number of views created
+   - Number of foreign keys
+   - Number of UNIQUE constraints
+
+3. **Test Results with SQL Code Blocks**
+   - Test 1: Entity creation with SQL statement
+   - Test 7: Projection views with **tabular data from database**
+   - Test 10: Data integrity summary with counts
+
+4. **Tabular View Data**
+   - **State Intervals View:** Shows order_id, state_type, start_at, end_at (timeline)
+   - **Current Order States:** Shows active states (where end_at IS NULL)
+   - **Data Integrity Summary:** Row counts for all states and transitions
+
+5. **Summary**
+   - All 10 tests with descriptions
+   - Key SDD validations (acyclic graph, immutability, referential integrity)
+
+**Example Report Section:**
+
+```markdown
+### Test 7: Projection Views
+✅ **State intervals view contains 5 rows**
+
+**State Intervals View:**
+
+\`\`\`
+ order_id | state_type |      start_at       |       end_at        
+----------+------------+---------------------+---------------------
+        1 | PENDING    | 2025-11-17 07:52:49 | 2025-11-17 07:52:49
+        1 | PAID       | 2025-11-17 07:52:49 | 2025-11-17 07:52:49
+        1 | REFUNDED   | 2025-11-17 07:52:49 | 
+        2 | PENDING    | 2025-11-17 07:52:49 | 2025-11-17 07:52:49
+        2 | CANCELLED  | 2025-11-17 07:52:49 | 
+(5 rows)
+\`\`\`
+
+**Current Order States:**
+
+\`\`\`
+ order_id | state_type |           start_at            
+----------+------------+-------------------------------
+        1 | REFUNDED   | 2025-11-17 07:52:49.3526+00
+        2 | CANCELLED  | 2025-11-17 07:52:49.731884+00
+(2 rows)
+\`\`\`
+```
 
 **Exit codes:**
 

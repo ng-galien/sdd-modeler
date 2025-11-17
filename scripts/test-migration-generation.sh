@@ -47,6 +47,9 @@ else
     LLM_PROVIDER="ollama"
     LLM_MODEL="qwen3:8b"
 fi
+
+# Whether the user explicitly passed --llm (avoid overriding explicit choices)
+LLM_PROVIDER_EXPLICIT=false
 OLLAMA_URL="http://localhost:11434"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
@@ -62,7 +65,7 @@ rm -f "$OUTPUT_DIR"/*.sql "$OUTPUT_DIR"/*.md "$OUTPUT_DIR"/*.log
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --llm)
-            LLM_PROVIDER="$2"; shift 2;;
+            LLM_PROVIDER="$2"; LLM_PROVIDER_EXPLICIT=true; shift 2;;
         --model)
             LLM_MODEL="$2"; shift 2;;
         --ollama-url)
@@ -77,7 +80,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # If specified anywhere, and user hasn't explicitly set --llm, prefer OpenAI
-if [[ -n "$OPENAI_API_KEY" && ( -z "$LLM_PROVIDER" || "$LLM_PROVIDER" == "ollama" ) ]]; then
+if [[ -n "$OPENAI_API_KEY" && "$LLM_PROVIDER_EXPLICIT" != "true" && ( -z "$LLM_PROVIDER" || "$LLM_PROVIDER" == "ollama" ) ]]; then
     LLM_PROVIDER="openai"
     LLM_MODEL="gpt-4o-mini"
     echo -e "${YELLOW}Detected OPENAI_API_KEY in environment; defaulting to OpenAI provider. Use --llm to override.${NC}"

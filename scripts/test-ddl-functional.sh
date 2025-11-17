@@ -575,8 +575,41 @@ else
     exit 1
 fi
 
-# Test 10: Data integrity summary
-echo -e "\n${BLUE}Test 10: Data integrity summary${NC}"
+# Test 10: Verify composite FK prevents cross-aggregate transitions
+echo -e "\n${BLUE}Test 10: Verify composite FK prevents cross-aggregate transitions${NC}"
+
+# Try to use order 1's pending state as predecessor for order 2's paid state
+# This should fail because the composite FK (previous_pending_id, order_id) requires:
+# - previous_pending_id must reference a pending state
+# - AND that pending state must have the SAME order_id
+exec_sql -d "$DB_NAME" > "$OUTPUT_DIR/test10.log" 2>&1 <<EOF
+INSERT INTO public_states.order_paid (order_id, previous_pending_id, payment_method, paid_amount)
+VALUES ($ORDER_ID_2, $PENDING_ID, 'credit_card', 49.99);
+EOF
+
+if grep -q "violates foreign key constraint\|there is no unique constraint matching" "$OUTPUT_DIR/test10.log"; then
+    echo -e "${GREEN}✓ Composite FK correctly prevents cross-aggregate transitions${NC}"
+    
+    # Add to report
+    echo "### Test 10: Composite FK Cross-Aggregate Prevention" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+    report_success "Composite foreign keys prevent transitions between different aggregates"
+    report_sql_block "-- Attempt to use order $ORDER_ID's pending state as predecessor for order $ORDER_ID_2's paid state\n-- This violates the composite FK: (previous_pending_id, order_id) -> (id, order_id)\nINSERT INTO public_states.order_paid (order_id, previous_pending_id, payment_method, paid_amount)\nVALUES ($ORDER_ID_2, $PENDING_ID, 'credit_card', 49.99);"
+    echo "**Result:** ❌ Composite FK violation (expected behavior)" >> "$REPORT_FILE"
+    echo '```' >> "$REPORT_FILE"
+    grep -E "ERROR|violates|foreign key|unique constraint" "$OUTPUT_DIR/test10.log" | head -3 >> "$REPORT_FILE"
+    echo '```' >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+    echo "**Explanation:** The composite FK ensures \`previous_pending_id\` references a pending state with the **same** \`order_id\`. Order $ORDER_ID's pending state (id=$PENDING_ID) cannot be used for order $ORDER_ID_2's transitions." >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
+else
+    echo -e "${RED}✗ Composite FK not enforced - cross-aggregate transition was allowed!${NC}"
+    cat "$OUTPUT_DIR/test10.log"
+    exit 1
+fi
+
+# Test 11: Data integrity summary
+echo -e "\n${BLUE}Test 11: Data integrity summary${NC}"
 exec_sql -d "$DB_NAME" -c \
     "SELECT 
         (SELECT COUNT(*) FROM public.orders) as total_orders,
@@ -591,7 +624,7 @@ cat "$OUTPUT_DIR/test10.log"
 echo -e "${GREEN}✓ Data integrity summary generated${NC}"
 
 # Add to report
-echo "### Test 10: Data Integrity Summary" >> "$REPORT_FILE"
+echo "### Test 11: Data Integrity Summary" >> "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 report_success "All data integrity checks passed"
 
@@ -620,11 +653,13 @@ cat >> "$REPORT_FILE" <<'REPORT_FOOTER'
 7. **Projection Views** - Both `intervals` and `current_state` views return correct data
 8. **Timeline Consistency** - State start/end times properly sequenced
 9. **Foreign Key Constraints** - Database enforces referential integrity
-10. **Data Integrity** - All counts match expected values
+10. **Composite FK Integrity** - Prevents cross-aggregate state transitions
+11. **Data Integrity** - All counts match expected values
 
 ### Key Validations
 
 - ✅ **SDD Invariants**: States are immutable facts (UNIQUE on entity_id)
+- ✅ **Aggregate Integrity**: Composite FKs ensure transitions stay within same aggregate
 - ✅ **Graph Structure**: No cyclic transitions possible
 - ✅ **Referential Integrity**: All FKs enforced at database level
 - ✅ **View Correctness**: Projections accurately reflect state timeline
@@ -642,6 +677,7 @@ echo "  ✓ OR transitions (pending → cancelled via source table)"
 echo "  ✓ Projection views working (intervals, current_state)"
 echo "  ✓ State timeline consistency verified"
 echo "  ✓ Foreign key constraints enforced"
+echo "  ✓ Composite FK prevents cross-aggregate transitions"
 echo "  ✓ Data integrity maintained"
 
 echo -e "\n${BLUE}Output files:${NC}"

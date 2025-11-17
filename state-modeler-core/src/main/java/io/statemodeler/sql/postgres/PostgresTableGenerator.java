@@ -1,0 +1,152 @@
+package io.statemodeler.sql.postgres;
+
+import io.statemodeler.core.EntityDef;
+import io.statemodeler.core.ExtensionDef;
+import io.statemodeler.core.StateDef;
+import io.statemodeler.sql.ColumnDefinition;
+import io.statemodeler.sql.TableDefinition;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Generates PostgreSQL table definitions for SDD entities, states, extensions, and OR transition
+ * mapping tables.
+ */
+final class PostgresTableGenerator {
+
+    /**
+     * Generate entity table definition.
+     *
+     * @param entity entity definition
+     * @param schema schema name for entity table
+     * @return table definition for entity
+     */
+    TableDefinition generateEntityTable(EntityDef entity, String schema) {
+        var columns = new ArrayList<ColumnDefinition>();
+
+        // Add ID column
+        columns.add(new ColumnDefinition(
+                entity.id().name(),
+                entity.id().type(),
+                entity.id().nullable(),
+                entity.id().primaryKey(),
+                entity.id().defaultValue(),
+                null,
+                null));
+
+        // Add entity attributes
+        for (var attr : entity.attributes().values()) {
+            columns.add(new ColumnDefinition(
+                    attr.name(), attr.type(), attr.nullable(), attr.primaryKey(), attr.defaultValue(), null, null));
+        }
+
+        return new TableDefinition(
+                entity.table(), schema, columns, List.of(entity.id().name()));
+    }
+
+    /**
+     * Generate state table definition.
+     *
+     * @param entity entity definition
+     * @param state state definition
+     * @param entitySchema schema for entity tables
+     * @param stateSchema schema for state tables
+     * @return table definition for state
+     */
+    TableDefinition generateStateTable(EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
+        var columns = new ArrayList<ColumnDefinition>();
+
+        // Primary key
+        columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
+
+        // Entity reference (FK added later as constraint)
+        columns.add(new ColumnDefinition(entity.name() + "_id", "INTEGER", false, false, null, null, null));
+
+        // Timestamp
+        columns.add(new ColumnDefinition("created_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
+
+        // Previous state references (for transitions)
+        if (!state.initial()) {
+            if (state.hasOrTransitions()) {
+                // OR transitions use mapping table (FK added later as constraint)
+                columns.add(new ColumnDefinition("previous_source_id", "INTEGER", false, false, null, null, null));
+            } else {
+                // Simple transitions (FK added later as constraint)
+                for (var fromState : state.from()) {
+                    columns.add(new ColumnDefinition(
+                            "previous_" + fromState + "_id", "INTEGER", false, false, null, null, null));
+                }
+            }
+        }
+
+        // State-specific attributes
+        for (var attr : state.attributes().values()) {
+            columns.add(new ColumnDefinition(
+                    attr.name(), attr.type(), attr.nullable(), attr.primaryKey(), attr.defaultValue(), null, null));
+        }
+
+        return new TableDefinition(state.table(), stateSchema, columns, List.of("id"));
+    }
+
+    /**
+     * Generate extension table definition.
+     *
+     * @param entity entity definition
+     * @param extension extension definition
+     * @param entitySchema schema for entity tables
+     * @param stateSchema schema for state/extension tables
+     * @return table definition for extension
+     */
+    TableDefinition generateExtensionTable(
+            EntityDef entity, ExtensionDef extension, String entitySchema, String stateSchema) {
+        var columns = new ArrayList<ColumnDefinition>();
+
+        // Primary key references the state table (FK added later as constraint)
+        columns.add(new ColumnDefinition(extension.targetState() + "_id", "INTEGER", false, true, null, null, null));
+
+        // Extension attributes
+        for (var attr : extension.attributes().values()) {
+            columns.add(new ColumnDefinition(
+                    attr.name(), attr.type(), attr.nullable(), attr.primaryKey(), attr.defaultValue(), null, null));
+        }
+
+        // Updated timestamp for mutable extensions
+        columns.add(new ColumnDefinition("updated_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
+
+        return new TableDefinition(extension.table(), stateSchema, columns, List.of(extension.targetState() + "_id"));
+    }
+
+    /**
+     * Generate OR transition mapping table definition.
+     *
+     * @param entity entity definition
+     * @param state state definition with OR transitions
+     * @param entitySchema schema for entity tables
+     * @param stateSchema schema for state tables
+     * @return table definition for OR transition mapping
+     */
+    TableDefinition generateOrTransitionTable(
+            EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
+        var columns = new ArrayList<ColumnDefinition>();
+
+        // Primary key
+        columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
+
+        // Entity reference (required for composite FK)
+        columns.add(new ColumnDefinition(entity.name() + "_id", "INTEGER", false, false, null, null, null));
+
+        // References to possible source states (FK added separately to avoid circular dependency)
+        for (var fromState : state.fromAnyOf()) {
+            columns.add(new ColumnDefinition(
+                    fromState + "_state_id",
+                    "INTEGER",
+                    true, // nullable - only one will be set
+                    false,
+                    null,
+                    null, // No FK here - added later as constraint
+                    null));
+        }
+
+        return new TableDefinition(state.name() + "_source", stateSchema, columns, List.of("id"));
+    }
+}

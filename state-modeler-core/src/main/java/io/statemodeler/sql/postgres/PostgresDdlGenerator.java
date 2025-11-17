@@ -3,7 +3,6 @@ package io.statemodeler.sql.postgres;
 import io.statemodeler.core.*;
 import io.statemodeler.sql.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -16,11 +15,13 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     private final PostgresTableGenerator tableGenerator;
     private final PostgresConstraintGenerator constraintGenerator;
     private final PostgresViewGenerator viewGenerator;
+    private final PostgresIndexGenerator indexGenerator;
 
     public PostgresDdlGenerator() {
         this.tableGenerator = new PostgresTableGenerator();
         this.constraintGenerator = new PostgresConstraintGenerator();
         this.viewGenerator = new PostgresViewGenerator();
+        this.indexGenerator = new PostgresIndexGenerator();
     }
 
     @Override
@@ -100,7 +101,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                     constraints.addAll(fkConstraints);
                     // Generate indexes for FK columns
                     for (var fk : fkConstraints) {
-                        indexes.add(generateIndexForForeignKey(fk, entity, state.name() + "_source"));
+                        indexes.add(indexGenerator.generateIndexForForeignKey(fk, entity, state.name() + "_source"));
                     }
                 }
             }
@@ -113,7 +114,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 for (var fk : fkConstraints) {
                     if (fk.type() == ConstraintDefinition.ConstraintType.FOREIGN_KEY
                             && !fk.name().contains("_" + entity.name() + "_id_fk")) {
-                        indexes.add(generateIndexForForeignKey(fk, entity, state.table()));
+                        indexes.add(indexGenerator.generateIndexForForeignKey(fk, entity, state.table()));
                     }
                 }
             }
@@ -122,7 +123,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 var fk = constraintGenerator.generateExtensionForeignKey(entity, extension, stateSchema);
                 constraints.add(fk);
                 // Generate index for FK column
-                indexes.add(generateIndexForForeignKey(fk, entity, extension.table()));
+                indexes.add(indexGenerator.generateIndexForForeignKey(fk, entity, extension.table()));
             }
 
             // Projection views in state schema (intervals MUST be before current_state)
@@ -172,7 +173,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
 
         // Indexes
         for (var index : plan.indexes()) {
-            ddl.append(renderIndex(index)).append("\n\n");
+            ddl.append(indexGenerator.renderIndex(index)).append("\n\n");
         }
 
         // Views
@@ -181,25 +182,6 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         }
 
         return ddl.toString().trim();
-    }
-
-    private IndexDefinition generateIndexForForeignKey(ConstraintDefinition fk, EntityDef entity, String tableName) {
-        // Extract column names from FK definition: "FOREIGN KEY (col1, col2) REFERENCES ..."
-        // Supports both simple and composite foreign keys
-        var fkDef = fk.definition();
-        var startIdx = fkDef.indexOf('(') + 1;
-        var endIdx = fkDef.indexOf(')');
-        var columnsPart = fkDef.substring(startIdx, endIdx).trim();
-
-        // Split by comma and trim each column name
-        var columns = List.of(columnsPart.split(",")).stream().map(String::trim).toList();
-
-        // Generate index name: idx_tablename_col1_col2
-        var indexName = "idx_" + tableName + "_" + String.join("_", columns);
-        var schema =
-                fk.table().contains(".") ? fk.table().substring(0, fk.table().indexOf('.')) : "public";
-
-        return new IndexDefinition(indexName, tableName, schema, columns, false);
     }
 
     private String renderTable(TableDefinition table) {
@@ -231,15 +213,6 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         }
 
         return def.toString();
-    }
-
-    private String renderIndex(IndexDefinition index) {
-        var ddl = new StringBuilder();
-        ddl.append("CREATE INDEX ").append(index.name());
-        ddl.append(" ON ").append(index.fullTableName());
-        ddl.append(" (").append(String.join(", ", index.columns())).append(");");
-
-        return ddl.toString();
     }
 
     private String renderConstraint(ConstraintDefinition constraint) {

@@ -36,11 +36,17 @@ MODEL_V1="$EXAMPLES_DIR/orders-sdd-model.yaml"
 MODEL_V2="$EXAMPLES_DIR/orders-sdd-model-v2.yaml"
 
 # LLM configuration
-LLM_PROVIDER="ollama"  # default provider: ollama|openai
-LLM_MODEL="qwen3:8b"   # default model
-OLLAMA_URL="http://localhost:11434"
 # Read OPENAI_API_KEY from environment if present, CLI --openai-key overrides
 OPENAI_API_KEY="${OPENAI_API_KEY:-}"
+# Default provider: use OpenAI if API key is present, otherwise use Ollama
+if [[ -n "$OPENAI_API_KEY" ]]; then
+    LLM_PROVIDER="openai"
+    LLM_MODEL="gpt-4o-mini"
+else
+    LLM_PROVIDER="ollama"
+    LLM_MODEL="qwen3:8b"
+fi
+OLLAMA_URL="http://localhost:11434"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  LLM Migration Generation Test Suite      ║${NC}"
@@ -68,6 +74,10 @@ while [[ "$#" -gt 0 ]]; do
             echo "Unknown option: $1"; exit 1;;
     esac
 done
+
+if [[ -n "$OPENAI_API_KEY" && "$LLM_PROVIDER" == "openai" ]]; then
+    echo -e "${YELLOW}Detected OPENAI_API_KEY in environment; defaulting to OpenAI provider. Use --llm to override.${NC}"
+fi
 
 # Validate provider-specific settings and availability
 echo -e "\n${BLUE}Step 1: Checking LLM provider availability (${LLM_PROVIDER})${NC}"

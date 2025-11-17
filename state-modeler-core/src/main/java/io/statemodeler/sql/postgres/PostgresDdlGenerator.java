@@ -280,8 +280,8 @@ public final class PostgresDdlGenerator implements DdlGenerator {
 
         // Add FK to entity table first
         var entityFkName = state.name() + "_source_" + entity.name() + "_id_fk";
-        var entityFkDef = "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + stateSchema.replace("_states", "") + "."
-                + entity.table() + "(id)";
+        var entityFkDef = "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + stateSchema.replace("_states", "")
+                + "." + entity.table() + "(id)";
         constraints.add(new ConstraintDefinition(
                 entityFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, entityFkDef));
 
@@ -290,8 +290,8 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         for (var fromState : state.fromAnyOf()) {
             var sourceState = entity.states().get(fromState);
             var constraintName = state.name() + "_source_" + fromState + "_fk";
-            var fkDefinition = "FOREIGN KEY (" + fromState + "_state_id, " + entity.name() + "_id) REFERENCES " + stateSchema + "."
-                    + sourceState.table() + "(id, " + entity.name() + "_id)";
+            var fkDefinition = "FOREIGN KEY (" + fromState + "_state_id, " + entity.name() + "_id) REFERENCES "
+                    + stateSchema + "." + sourceState.table() + "(id, " + entity.name() + "_id)";
             constraints.add(new ConstraintDefinition(
                     constraintName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDefinition));
         }
@@ -333,15 +333,15 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         // An entity can only have ONE entry in each state table (prevents cyclic transitions)
         var uniqueEntityName = state.table() + "_" + entity.name() + "_id_unique";
         var uniqueEntityDef = "UNIQUE (" + entity.name() + "_id)";
-        constraints.add(
-                new ConstraintDefinition(uniqueEntityName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueEntityDef));
+        constraints.add(new ConstraintDefinition(
+                uniqueEntityName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueEntityDef));
 
         // UNIQUE composite constraint (id, entity_id) to serve as target for composite foreign keys
         // This ensures transitions stay within the same aggregate
         var uniqueCompositeName = state.table() + "_id_" + entity.name() + "_id_unique";
         var uniqueCompositeDef = "UNIQUE (id, " + entity.name() + "_id)";
-        constraints.add(
-                new ConstraintDefinition(uniqueCompositeName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueCompositeDef));
+        constraints.add(new ConstraintDefinition(
+                uniqueCompositeName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueCompositeDef));
 
         return constraints;
     }
@@ -378,8 +378,8 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 // Composite FK to OR mapping table: ensures mapping is for same aggregate
                 // (previous_source_id, entity_id) -> (id, entity_id)
                 var orFkName = state.table() + "_previous_source_id_fk";
-                var orFkDef = "FOREIGN KEY (previous_source_id, " + entity.name() + "_id) REFERENCES " + stateSchema + "." + state.name()
-                        + "_source(id, " + entity.name() + "_id)";
+                var orFkDef = "FOREIGN KEY (previous_source_id, " + entity.name() + "_id) REFERENCES " + stateSchema
+                        + "." + state.name() + "_source(id, " + entity.name() + "_id)";
                 constraints.add(new ConstraintDefinition(
                         orFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, orFkDef));
             } else {
@@ -388,8 +388,8 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 for (var fromState : state.from()) {
                     var fromStateTable = entity.states().get(fromState).table();
                     var prevFkName = state.table() + "_previous_" + fromState + "_id_fk";
-                    var prevFkDef = "FOREIGN KEY (previous_" + fromState + "_id, " + entity.name() + "_id) REFERENCES " + stateSchema + "."
-                            + fromStateTable + "(id, " + entity.name() + "_id)";
+                    var prevFkDef = "FOREIGN KEY (previous_" + fromState + "_id, " + entity.name() + "_id) REFERENCES "
+                            + stateSchema + "." + fromStateTable + "(id, " + entity.name() + "_id)";
                     constraints.add(new ConstraintDefinition(
                             prevFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, prevFkDef));
                 }
@@ -416,12 +416,10 @@ public final class PostgresDdlGenerator implements DdlGenerator {
         var startIdx = fkDef.indexOf('(') + 1;
         var endIdx = fkDef.indexOf(')');
         var columnsPart = fkDef.substring(startIdx, endIdx).trim();
-        
+
         // Split by comma and trim each column name
-        var columns = List.of(columnsPart.split(",")).stream()
-                .map(String::trim)
-                .toList();
-        
+        var columns = List.of(columnsPart.split(",")).stream().map(String::trim).toList();
+
         // Generate index name: idx_tablename_col1_col2
         var indexName = "idx_" + tableName + "_" + String.join("_", columns);
         var schema =

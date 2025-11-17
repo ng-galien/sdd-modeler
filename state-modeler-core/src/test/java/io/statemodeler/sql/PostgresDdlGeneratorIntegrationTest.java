@@ -269,19 +269,27 @@ class PostgresDdlGeneratorIntegrationTest {
         assertFalse(ddl.contains("CREATE INDEX idx_order_paid_order_id ON public_states.order_paid (order_id);"));
 
         // Composite index on order_paid.(previous_pending_id, order_id) for composite FK
-        assertTrue(ddl.contains(
-                "CREATE INDEX idx_order_paid_previous_pending_id_order_id ON public_states.order_paid (previous_pending_id, order_id);"));
+        assertTrue(
+                ddl.contains(
+                        "CREATE INDEX idx_order_paid_previous_pending_id_order_id ON public_states.order_paid (previous_pending_id, order_id);"));
 
         // No index on order_pending.order_id alone - UNIQUE constraints create implicit indexes
         assertFalse(ddl.contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);"));
 
         // Verify UNIQUE constraints are created on entity_id (prevents cyclic transitions)
-        assertTrue(ddl.contains("ALTER TABLE public_states.order_paid ADD CONSTRAINT order_paid_order_id_unique UNIQUE (order_id);"));
-        assertTrue(ddl.contains("ALTER TABLE public_states.order_pending ADD CONSTRAINT order_pending_order_id_unique UNIQUE (order_id);"));
-        
+        assertTrue(ddl.contains(
+                "ALTER TABLE public_states.order_paid ADD CONSTRAINT order_paid_order_id_unique UNIQUE (order_id);"));
+        assertTrue(
+                ddl.contains(
+                        "ALTER TABLE public_states.order_pending ADD CONSTRAINT order_pending_order_id_unique UNIQUE (order_id);"));
+
         // Verify UNIQUE composite constraints (id, entity_id) for composite FK targets
-        assertTrue(ddl.contains("ALTER TABLE public_states.order_paid ADD CONSTRAINT order_paid_id_order_id_unique UNIQUE (id, order_id);"));
-        assertTrue(ddl.contains("ALTER TABLE public_states.order_pending ADD CONSTRAINT order_pending_id_order_id_unique UNIQUE (id, order_id);"));
+        assertTrue(
+                ddl.contains(
+                        "ALTER TABLE public_states.order_paid ADD CONSTRAINT order_paid_id_order_id_unique UNIQUE (id, order_id);"));
+        assertTrue(
+                ddl.contains(
+                        "ALTER TABLE public_states.order_pending ADD CONSTRAINT order_pending_id_order_id_unique UNIQUE (id, order_id);"));
     }
 
     private SddModel createSimpleOrderModel() {

@@ -62,6 +62,7 @@ Tests generated DDL with real PostgreSQL database and data operations. Automatic
 ```
 
 **Requirements:**
+
 - **Option 1**: PostgreSQL client (`psql`) + running PostgreSQL server
 - **Option 2**: Docker (automatically pulls `postgres:16-alpine` if needed)
 
@@ -210,12 +211,139 @@ Test 10: Data integrity summary
 
 ---
 
+### `test-migration-generation.sh`
+
+Tests LLM-based migration generation using Ollama with structured outputs.
+
+**What it tests:**
+
+- ✅ Ollama server availability check
+- ✅ Model verification/auto-pull (qwen2.5:0.5b)
+- ✅ DDL generation for both model versions
+- ✅ SDR repository registration
+- ✅ LLM-based migration generation
+- ✅ Structured outputs (confidence, comments)
+- ✅ Comprehensive Markdown report generation
+
+**Usage:**
+
+```bash
+./scripts/test-migration-generation.sh
+```
+
+**Requirements:**
+
+- Ollama server running at `http://localhost:11434`
+- Model `qwen2.5:0.5b` (automatically pulled if missing)
+
+**How it works:**
+
+1. Checks Ollama server availability
+2. Verifies qwen2.5:0.5b model (pulls if needed)
+3. Generates DDL for orders v1 and v2 models
+4. Registers both versions in SDR repository
+5. Generates migration using Ollama LLM
+6. Extracts confidence score and comments from logs
+7. Creates comprehensive Markdown report
+8. Opens report automatically (macOS)
+
+**Output:**
+Generated files are saved to `build/test-output/`:
+
+- `migration-v1.sql` - DDL for orders v1
+- `migration-v2.sql` - DDL for orders v2
+- `migration-v1-to-v2.sql` - LLM-generated migration script
+- `migration.log` - Full migration generation logs
+- **`migration-report.md`** - **Comprehensive Markdown report**
+
+**Markdown Report Contents:**
+
+1. **Metadata**
+   - Generation timestamp
+   - Source/target versions
+   - LLM model used
+   - Generation time
+
+2. **DDL for Both Versions** (collapsible)
+   - Complete DDL for v1 (source)
+   - Complete DDL for v2 (target)
+
+3. **Generated Migration Script**
+   - Full migration DDL from Ollama
+   - ALTER TABLE statements
+   - Comments explaining changes
+
+4. **LLM Analysis**
+   - **Confidence Score** (0.0 - 1.0)
+   - **Comments/Reasoning** from LLM
+
+5. **Full Logs** (collapsible)
+   - Complete CLI output
+   - Debug information
+
+6. **File Locations**
+   - Paths to all generated files
+
+**Graceful Degradation:**
+
+- Exits with code 0 (not failure) if Ollama is unavailable
+- Displays helpful message about installing Ollama
+- Safe to run in CI where Ollama may not be present
+
+**Example output:**
+
+```text
+=== LLM Migration Generation Test ===
+
+🔍 Checking Ollama availability...
+✓ Ollama server is running at http://localhost:11434
+
+🔍 Checking for model qwen2.5:0.5b...
+✓ Model qwen2.5:0.5b is available
+
+📂 Setting up test environment...
+✓ Test output directory ready: build/test-output
+
+Step 1: Generate DDL for orders v1
+✓ DDL generated successfully: migration-v1.sql
+
+Step 2: Generate DDL for orders v2
+✓ DDL generated successfully: migration-v2.sql
+
+Step 3: Register v1 in SDR repository
+✓ Registered: orders:1.0
+
+Step 4: Register v2 in SDR repository
+✓ Registered: orders:2.0
+
+Step 5: Generate migration using Ollama
+⏱ Generating migration with LLM (this may take a few seconds)...
+✓ Migration generated successfully: migration-v1-to-v2.sql
+  Generation time: 12.5 seconds
+  Confidence: 0.85
+  LLM Comments: Migration adds new tables and constraints...
+
+📄 Creating comprehensive Markdown report...
+✓ Report created: migration-report.md
+
+🎉 All tests passed!
+📖 Opening report in default viewer...
+```
+
+**Exit codes:**
+
+- `0` - All tests passed OR Ollama unavailable (test skipped)
+- `1` - Test failed (migration generation error)
+
+---
+
 ## Requirements
 
 - Bash shell (macOS/Linux)
 - Java 21+ (managed by Gradle toolchain)
 - Gradle wrapper (included in project)
 - **For functional tests**: PostgreSQL client (`psql`) **OR** Docker
+- **For migration tests**: Ollama server with qwen2.5:0.5b model
 
 ## Adding New Tests
 

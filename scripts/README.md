@@ -88,7 +88,7 @@ export POSTGRES_PORT=5432            # default: 5432
    - Cleans up container on exit
 4. Creates temporary test database
 5. Applies generated DDL
-6. Runs 10 functional tests with real data
+6. Runs 11 functional tests with real data
 7. Cleans up database and container
 
 **Output:**
@@ -96,7 +96,7 @@ Generated files are saved to `build/test-output/`:
 
 - `functional-test.sql` - Generated DDL
 - `ddl-apply.log` - DDL application output
-- `test1.log` through `test10.log` - Individual test outputs
+- `test1.log` through `test11.log` - Individual test outputs
 - **`functional-test-report.md`** - **Markdown test report with tabular data**
 
 **Markdown Report Contents:**
@@ -126,7 +126,7 @@ The functional test script generates a comprehensive Markdown report with:
    - **Data Integrity Summary:** Row counts for all states and transitions
 
 5. **Summary**
-   - All 10 tests with descriptions
+   - All 11 tests with descriptions
    - Key SDD validations (acyclic graph, immutability, referential integrity)
 
 **Example Report Section:**

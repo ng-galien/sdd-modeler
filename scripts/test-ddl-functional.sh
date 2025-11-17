@@ -420,8 +420,8 @@ sleep 0.1  # 100ms delay for distinct timestamps
 
 # Create cancelled_source mapping
 exec_sql -d "$DB_NAME" > "$OUTPUT_DIR/test6-source.log" 2>&1 <<EOF
-INSERT INTO public_states.cancelled_source (pending_state_id)
-VALUES ($PENDING_ID_2) RETURNING id;
+INSERT INTO public_states.cancelled_source (pending_state_id, order_id)
+VALUES ($PENDING_ID_2, $ORDER_ID_2) RETURNING id;
 EOF
 SOURCE_ID=$(grep -E "^\s+[0-9]+\s*$" "$OUTPUT_DIR/test6-source.log" | tr -d ' ')
 

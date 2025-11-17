@@ -84,7 +84,7 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             // 2a. FK from OR mapping tables to entity and state tables
             for (var state : entity.states().values()) {
                 if (state.hasOrTransitions()) {
-                    var fkConstraints = generateOrTransitionForeignKeys(entity, state, stateSchema);
+                    var fkConstraints = generateOrTransitionForeignKeys(entity, state, entitySchema, stateSchema);
                     constraints.addAll(fkConstraints);
                     // Generate indexes for FK columns
                     for (var fk : fkConstraints) {
@@ -274,14 +274,14 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     }
 
     private List<ConstraintDefinition> generateOrTransitionForeignKeys(
-            EntityDef entity, StateDef state, String stateSchema) {
+            EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
         var constraints = new ArrayList<ConstraintDefinition>();
         var tableName = stateSchema + "." + state.name() + "_source";
 
         // Add FK to entity table first
         var entityFkName = state.name() + "_source_" + entity.name() + "_id_fk";
-        var entityFkDef = "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + stateSchema.replace("_states", "")
-                + "." + entity.table() + "(id)";
+        var entityFkDef =
+                "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
         constraints.add(new ConstraintDefinition(
                 entityFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, entityFkDef));
 

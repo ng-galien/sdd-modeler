@@ -37,7 +37,8 @@ MODEL_V2="$EXAMPLES_DIR/orders-sdd-model-v2.yaml"
 
 # LLM configuration
 # Read OPENAI_API_KEY from environment if present, CLI --openai-key overrides
-OPENAI_API_KEY="${OPENAI_API_KEY:-}"
+# Accept several common names for env vars for convenience
+OPENAI_API_KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-${OPENAI_APIKEY:-}}}"
 # Default provider: use OpenAI if API key is present, otherwise use Ollama
 if [[ -n "$OPENAI_API_KEY" ]]; then
     LLM_PROVIDER="openai"
@@ -75,7 +76,10 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
-if [[ -n "$OPENAI_API_KEY" && "$LLM_PROVIDER" == "openai" ]]; then
+# If specified anywhere, and user hasn't explicitly set --llm, prefer OpenAI
+if [[ -n "$OPENAI_API_KEY" && ( -z "$LLM_PROVIDER" || "$LLM_PROVIDER" == "ollama" ) ]]; then
+    LLM_PROVIDER="openai"
+    LLM_MODEL="gpt-4o-mini"
     echo -e "${YELLOW}Detected OPENAI_API_KEY in environment; defaulting to OpenAI provider. Use --llm to override.${NC}"
 fi
 

@@ -43,6 +43,9 @@ REPORT_FILE="$OUTPUT_DIR/functional-test-report.md"
 
 echo -e "${BLUE}=== DDL Functional Test Suite ===${NC}\n"
 
+# Create output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
 # Initialize report
 cat > "$REPORT_FILE" <<EOF
 # DDL Functional Test Report

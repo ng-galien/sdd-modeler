@@ -117,8 +117,7 @@
 **Important**: The `migrate` command requires LangChain4j dependencies at runtime:
 
 - `dev.langchain4j:langchain4j:0.36.2` (core)
-- `dev.langchain4j:langchain4j-jlama:0.36.2` (for `--llm jlama`)
-- `dev.langchain4j:langchain4j-ollama:0.36.2` (for `--llm ollama`)
+- `dev.langchain4j:langchain4j-ollama:0.36.2` (for Ollama LLM provider)
 
 These dependencies are **already included** in the Gradle build, so `./gradlew run` will work.
 
@@ -129,9 +128,8 @@ ERROR: LangChain4j dependencies not found
   The 'migrate' command requires LangChain4j libraries.
   Please ensure the following dependencies are available:
     - dev.langchain4j:langchain4j:0.36.2
-    - dev.langchain4j:langchain4j-jlama:0.36.2 (for jlama provider)
-    - dev.langchain4j:langchain4j-ollama:0.36.2 (for ollama provider)
-  Missing class: dev/langchain4j/model/jlama/JlamaChatModel
+    - dev.langchain4j:langchain4j-ollama:0.36.2
+  Missing class: ...
 ```
 
 Other commands (`validate`, `sql`, `diagram`, `register`, `list`, `show`, `delete`, `diff`) work without LangChain4j dependencies.

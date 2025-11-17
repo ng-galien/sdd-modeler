@@ -20,7 +20,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * Tests for LangChainMigrationGenerationService.
  *
  * <p>NOTE: These tests use lambda mocks instead of real LLM calls.
- * To test with a real LLM, replace mockModel with an actual Ollama/Jlama instance.
+ * To test with a real LLM, replace mockModel with an actual Ollama instance.
  */
 class LangChainMigrationGenerationServiceTest {
 

@@ -76,7 +76,7 @@ A Java library and CLI tool for implementing State-Driven Design (SDD) with auto
 - **LLM-based migration scripts**: Automatic SQL migration generation using LangChain4j
 - **DDL comparison service**: Structural diff analysis between model versions
 - **Migration caching**: Persisted migrations to avoid regeneration costs
-- **Multiple LLM providers**: Support for Jlama (in-process) and Ollama (server-based)
+- **Ollama integration**: Server-based LLM for intelligent migration generation
 - **Intelligent prompts**: PostgreSQL-specific patterns with safety guidelines
 
 ## 📖 Example: E-Commerce Order Model
@@ -189,7 +189,7 @@ See `instructions/examples/` for complete examples.
 - **Validation**: Vavr (functional error accumulation)
 - **CLI**: Picocli
 - **Repository**: H2 Database 2.2.224 (embedded, in-memory for tests)
-- **AI Integration**: LangChain4j 0.36.2 (Jlama, Ollama)
+- **AI Integration**: LangChain4j 0.36.2 (Ollama)
 - **Hashing**: SHA-256 for cryptographic integrity
 - **Testing**: JUnit 5 (196 tests, ~87% coverage)
 
@@ -238,11 +238,11 @@ cd sdd-modeler
 # Compare DDL between two versions
 ./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
 
-# Generate migration with Jlama (downloads model on first use)
+# Generate migration with Ollama (requires Ollama server running)
 ./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0"
 
-# Use Ollama with custom model
-./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --llm ollama --model llama3.2"
+# Use custom Ollama model
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --model llama3.2"
 
 # Force regeneration and save to file
 ./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --force -o migration.sql"

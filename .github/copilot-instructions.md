@@ -43,7 +43,7 @@ io.statemodeler.migration     // ✅ MigrationGenerationService, LangChainMigrat
 # Compare DDL between versions
 ./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
 
-# Generate migration with Jlama
+# Generate migration with Ollama (requires Ollama server running)
 ./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 -o migration.sql"
 
 # Code formatting (REQUIRED before commit - CI enforces this)
@@ -137,7 +137,7 @@ Follow these patterns from `instructions/examples/orders-sdd-ddl.sql`:
 - JSON Schema generation: Using victools/jsonschema-generator (auto-generated during build)
 - **SDR Repository**: H2-based persistence with in-memory test optimization (~3x faster)
 - **DDL Comparison**: Structural diff analysis with DdlComparisonService
-- **Migration Generation**: LangChain4j integration (Jlama, Ollama) with intelligent prompting
+- **Migration Generation**: LangChain4j integration (Ollama) with intelligent prompting
 - **Migration Persistence**: Cache layer for LLM-generated migrations
 
 **⏳ TODO Priority:**

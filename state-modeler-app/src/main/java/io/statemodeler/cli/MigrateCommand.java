@@ -55,13 +55,13 @@ public class MigrateCommand implements Callable<Integer> {
 
     @Option(
             names = {"--llm"},
-            description = "LLM provider: jlama (default), ollama",
-            defaultValue = "jlama")
+            description = "LLM provider (only ollama supported)",
+            defaultValue = "ollama")
     String llmProvider;
 
     @Option(
             names = {"--model"},
-            description = "LLM model name (default: TinyLlama-1.1B-Chat-v1.0-Jlama-Q4 for jlama, llama3.2 for ollama)")
+            description = "LLM model name (default: llama3.2)")
     String modelName;
 
     @Option(
@@ -132,8 +132,7 @@ public class MigrateCommand implements Callable<Integer> {
                 System.err.println("  The 'migrate' command requires LangChain4j libraries.");
                 System.err.println("  Please ensure the following dependencies are available:");
                 System.err.println("    - dev.langchain4j:langchain4j:0.36.2");
-                System.err.println("    - dev.langchain4j:langchain4j-jlama:0.36.2 (for jlama provider)");
-                System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2 (for ollama provider)");
+                System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2");
                 System.err.println("  Missing class: " + e.getMessage());
                 return 1;
             }
@@ -222,11 +221,7 @@ public class MigrateCommand implements Callable<Integer> {
      * Get default model name for provider.
      */
     private String getDefaultModelName() {
-        return switch (llmProvider.toLowerCase()) {
-            case "jlama" -> "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4";
-            case "ollama" -> "llama3.2";
-            default -> "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4";
-        };
+        return "llama3.2";
     }
 
     /**

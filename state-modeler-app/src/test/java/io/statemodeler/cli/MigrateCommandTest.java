@@ -17,8 +17,7 @@ import picocli.CommandLine;
 /**
  * Tests for {@link MigrateCommand}.
  *
- * <p>Note: Tests requiring actual LLM execution are disabled as they need either:
- * - Jlama model download (~1GB+)
+ * <p>Note: Tests requiring actual LLM execution are disabled as they need:
  * - Ollama server running locally
  * These tests validate CLI argument parsing, repository integration, and error handling.
  */
@@ -220,15 +219,15 @@ class MigrateCommandTest {
     }
 
     @Test
-    void shouldUseDefaultModelNameForJlama() {
+    void shouldUseDefaultModelName() {
         // Given - model name not specified, should use default
         var cmd = new MigrateCommand();
-        cmd.llmProvider = "jlama";
+        cmd.llmProvider = "ollama";
         cmd.modelName = null; // Not specified
 
         // When/Then - verify command initializes (can't test full execution without LLM)
         assertNotNull(cmd);
-        assertEquals("jlama", cmd.llmProvider);
+        assertEquals("ollama", cmd.llmProvider);
         assertNull(cmd.modelName); // Will use default in createLlmModel()
     }
 

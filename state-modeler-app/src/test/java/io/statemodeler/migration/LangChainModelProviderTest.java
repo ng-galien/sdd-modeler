@@ -46,9 +46,4 @@ class LangChainModelProviderTest {
     // The provider is tested indirectly through:
     // 1. LangChainMigrationGenerationServiceTest (uses mock ChatLanguageModel)
     // 2. Integration tests with real Ollama server (optional)
-    // void shouldCreateJlamaModel() {
-    //     var provider = new LangChainModelProvider();
-    //     var model = provider.createModel("jlama", "model-name", 0.7);
-    //     assertNotNull(model); // Requires langchain4j-jlama JAR at runtime
-    // }
 }

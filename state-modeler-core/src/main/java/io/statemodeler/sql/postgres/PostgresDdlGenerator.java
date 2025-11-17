@@ -15,10 +15,12 @@ public final class PostgresDdlGenerator implements DdlGenerator {
     private static final String DIALECT = "postgres";
     private final PostgresTableGenerator tableGenerator;
     private final PostgresConstraintGenerator constraintGenerator;
+    private final PostgresViewGenerator viewGenerator;
 
     public PostgresDdlGenerator() {
         this.tableGenerator = new PostgresTableGenerator();
         this.constraintGenerator = new PostgresConstraintGenerator();
+        this.viewGenerator = new PostgresViewGenerator();
     }
 
     @Override
@@ -135,8 +137,8 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                         if (!p1IsIntervals && p2IsIntervals) return 1;
                         return p1.name().compareTo(p2.name()); // stable sort for same kind
                     })
-                    .forEach(projection ->
-                            views.add(generateProjectionView(entity, projection, entitySchema, stateSchema)));
+                    .forEach(projection -> views.add(
+                            viewGenerator.generateProjectionView(entity, projection, entitySchema, stateSchema)));
         }
 
         return new SqlPlan(tables, views, constraints, indexes);
@@ -198,133 +200,6 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 fk.table().contains(".") ? fk.table().substring(0, fk.table().indexOf('.')) : "public";
 
         return new IndexDefinition(indexName, tableName, schema, columns, false);
-    }
-
-    private ViewDefinition generateProjectionView(
-            EntityDef entity, ProjectionDef projection, String entitySchema, String stateSchema) {
-        return switch (projection.kind()) {
-            case INTERVALS -> generateIntervalsView(entity, projection, entitySchema, stateSchema);
-            case CURRENT_STATE -> generateCurrentStateView(entity, projection, stateSchema);
-        };
-    }
-
-    private ViewDefinition generateIntervalsView(
-            EntityDef entity, ProjectionDef projection, String entitySchema, String stateSchema) {
-        var sql = new StringBuilder();
-        var entityIdColumn = entity.name() + "_id";
-        var unionParts = new ArrayList<String>();
-
-        // Generate a UNION ALL part for each state
-        for (var stateEntry : entity.states().entrySet()) {
-            var stateName = stateEntry.getKey();
-            var state = stateEntry.getValue();
-            var stateTable = state.table();
-            var stateAlias = stateName.substring(0, Math.min(3, stateName.length()));
-
-            var part = new StringBuilder();
-            part.append("SELECT\n");
-            part.append("    ")
-                    .append("e.")
-                    .append(entity.id().name())
-                    .append(" AS ")
-                    .append(entityIdColumn)
-                    .append(",\n");
-            part.append("    '").append(stateName.toUpperCase()).append("' AS state_type,\n");
-            part.append("    ").append(stateAlias).append(".created_at AS start_at,\n");
-
-            // Calculate end_at based on transitions FROM this state
-            var endAtClauses = new ArrayList<String>();
-
-            // Find all states that can follow this state (simple transitions)
-            for (var nextState : entity.states().values()) {
-                if (nextState.from().contains(stateName)) {
-                    var minClause = String.format(
-                            "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
-                            stateSchema, nextState.table(), stateName, stateAlias);
-                    endAtClauses.add(minClause);
-                }
-            }
-
-            // Find states that can follow via OR transitions
-            for (var nextState : entity.states().values()) {
-                if (nextState.hasOrTransitions() && nextState.fromAnyOf().contains(stateName)) {
-                    var sourceTable = nextState.name() + "_source";
-                    var sourceColumn = stateName + "_state_id";
-                    var minClause = String.format(
-                            "(SELECT MIN(ns.created_at) FROM %s.%s ns JOIN %s.%s src ON src.id = ns.previous_source_id WHERE src.%s = %s.id)",
-                            stateSchema, nextState.table(), stateSchema, sourceTable, sourceColumn, stateAlias);
-                    endAtClauses.add(minClause);
-                }
-            }
-
-            if (endAtClauses.isEmpty()) {
-                // Final state - no transitions out
-                part.append("    NULL::TIMESTAMPTZ AS end_at\n");
-            } else {
-                // Calculate minimum of all possible next states
-                part.append("    COALESCE(\n");
-                part.append("        LEAST(");
-                part.append(String.join(", ", endAtClauses));
-                part.append("),\n");
-                part.append("        NULL\n");
-                part.append("    ) AS end_at\n");
-            }
-
-            part.append("FROM ")
-                    .append(entitySchema)
-                    .append(".")
-                    .append(entity.table())
-                    .append(" e\n");
-            part.append("JOIN ")
-                    .append(stateSchema)
-                    .append(".")
-                    .append(stateTable)
-                    .append(" ")
-                    .append(stateAlias)
-                    .append(" ON ")
-                    .append(stateAlias)
-                    .append(".")
-                    .append(entityIdColumn)
-                    .append(" = e.")
-                    .append(entity.id().name());
-
-            unionParts.add(part.toString());
-        }
-
-        sql.append(String.join("\n\nUNION ALL\n\n", unionParts));
-
-        return new ViewDefinition(projection.viewName(), stateSchema, sql.toString());
-    }
-
-    private ViewDefinition generateCurrentStateView(EntityDef entity, ProjectionDef projection, String schema) {
-        // Current state view is simple: filter intervals where end_at IS NULL
-        var intervalsViewName = findIntervalsViewName(entity);
-        if (intervalsViewName == null) {
-            // Fallback if no intervals view found
-            intervalsViewName = entity.name() + "_state_intervals";
-        }
-
-        var sql = new StringBuilder();
-        sql.append("SELECT\n");
-        sql.append("    ").append(entity.name()).append("_id,\n");
-        sql.append("    state_type,\n");
-        sql.append("    start_at\n");
-        sql.append("FROM ").append(schema).append(".").append(intervalsViewName).append("\n");
-        sql.append("WHERE end_at IS NULL");
-
-        return new ViewDefinition(projection.viewName(), schema, sql.toString());
-    }
-
-    /**
-     * Find the intervals view name for an entity (if defined in projections).
-     */
-    private String findIntervalsViewName(EntityDef entity) {
-        for (var projection : entity.projections().values()) {
-            if (projection.kind() == ProjectionDef.ProjectionKind.INTERVALS) {
-                return projection.viewName();
-            }
-        }
-        return null;
     }
 
     private String renderTable(TableDefinition table) {

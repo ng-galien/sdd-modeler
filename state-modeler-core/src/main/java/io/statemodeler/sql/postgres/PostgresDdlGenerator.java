@@ -83,9 +83,12 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             for (var state : entity.states().values()) {
                 var fkConstraints = generateStateForeignKeys(entity, state, entitySchema, stateSchema);
                 constraints.addAll(fkConstraints);
-                // Generate indexes for FK columns
+                // Generate indexes for FK columns (skip entity_id FK - UNIQUE constraint creates implicit index)
                 for (var fk : fkConstraints) {
-                    indexes.add(generateIndexForForeignKey(fk, entity, state.table()));
+                    if (fk.type() == ConstraintDefinition.ConstraintType.FOREIGN_KEY
+                            && !fk.name().contains("_" + entity.name() + "_id_fk")) {
+                        indexes.add(generateIndexForForeignKey(fk, entity, state.table()));
+                    }
                 }
             }
             // 3. FK from extension tables to state tables
@@ -308,6 +311,13 @@ public final class PostgresDdlGenerator implements DdlGenerator {
                 "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
         constraints.add(new ConstraintDefinition(
                 entityFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, entityFkDef));
+
+        // UNIQUE constraint on entity_id to enforce SDD invariant:
+        // An entity can only have ONE entry in each state table (prevents cyclic transitions)
+        var uniqueName = state.table() + "_" + entity.name() + "_id_unique";
+        var uniqueDef = "UNIQUE (" + entity.name() + "_id)";
+        constraints.add(
+                new ConstraintDefinition(uniqueName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueDef));
 
         // FK to previous states
         if (!state.initial()) {
@@ -533,9 +543,12 @@ public final class PostgresDdlGenerator implements DdlGenerator {
             case FOREIGN_KEY ->
                 "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " "
                         + constraint.definition() + ";";
-            case UNIQUE, PRIMARY_KEY ->
+            case UNIQUE ->
+                "ALTER TABLE " + constraint.table() + " ADD CONSTRAINT " + constraint.name() + " "
+                        + constraint.definition() + ";";
+            case PRIMARY_KEY ->
                 throw new IllegalStateException(
-                        "UNIQUE and PRIMARY_KEY constraints should be defined inline in CREATE TABLE, not via ALTER TABLE");
+                        "PRIMARY_KEY constraints should be defined inline in CREATE TABLE, not via ALTER TABLE");
         };
     }
 

@@ -264,16 +264,20 @@ class PostgresDdlGeneratorIntegrationTest {
         var generator = DdlGenerators.forDialect("postgres");
         var ddl = generator.generateDdl(model);
 
-        // Then - verify indexes are created for FK columns
-        // Index on order_paid.order_id (FK to orders)
-        assertTrue(ddl.contains("CREATE INDEX idx_order_paid_order_id ON public_states.order_paid (order_id);"));
+        // Then - verify indexes are created for FK columns (except entity_id which has UNIQUE constraint)
+        // No index on order_paid.order_id - UNIQUE constraint creates implicit index
+        assertFalse(ddl.contains("CREATE INDEX idx_order_paid_order_id ON public_states.order_paid (order_id);"));
 
         // Index on order_paid.previous_pending_id (FK to order_pending)
         assertTrue(ddl.contains(
                 "CREATE INDEX idx_order_paid_previous_pending_id ON public_states.order_paid (previous_pending_id);"));
 
-        // Index on order_pending.order_id (FK to orders)
-        assertTrue(ddl.contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);"));
+        // No index on order_pending.order_id - UNIQUE constraint creates implicit index
+        assertFalse(ddl.contains("CREATE INDEX idx_order_pending_order_id ON public_states.order_pending (order_id);"));
+
+        // Verify UNIQUE constraints are created on entity_id
+        assertTrue(ddl.contains("ALTER TABLE public_states.order_paid ADD CONSTRAINT order_paid_order_id_unique UNIQUE (order_id);"));
+        assertTrue(ddl.contains("ALTER TABLE public_states.order_pending ADD CONSTRAINT order_pending_order_id_unique UNIQUE (order_id);"));
     }
 
     private SddModel createSimpleOrderModel() {

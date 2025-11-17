@@ -244,18 +244,18 @@ else
     exit 1
 fi
 
-# Test 5: Data shows multiple state entries (SDD allows re-entry)
-echo -e "\n${BLUE}Test 5: Verify SDD allows multiple state entries${NC}"
-# Note: SDD does not enforce transition rules at DB level - this is app responsibility
-# We can insert into pending again, but we can verify the data is consistent
-if exec_sql -d "$DB_NAME" > "$OUTPUT_DIR/test5.log" 2>&1 <<EOF
+# Test 5: Verify UNIQUE constraint blocks duplicate state entries
+echo -e "\n${BLUE}Test 5: Verify UNIQUE constraint prevents duplicate state entries${NC}"
+# With UNIQUE constraint on entity_id, trying to insert the same order in pending again should fail
+exec_sql -d "$DB_NAME" > "$OUTPUT_DIR/test5.log" 2>&1 <<EOF
 INSERT INTO public_states.order_pending (order_id, pending_reason)
-VALUES ($ORDER_ID, 'Re-entry allowed by SDD');
+VALUES ($ORDER_ID, 'Duplicate entry attempt');
 EOF
-then
-    echo -e "${GREEN}✓ SDD allows re-entry into states (as expected)${NC}"
+
+if grep -q "violates unique constraint\|duplicate key value" "$OUTPUT_DIR/test5.log"; then
+    echo -e "${GREEN}✓ UNIQUE constraint correctly prevents duplicate state entries${NC}"
 else
-    echo -e "${RED}✗ State insertion failed unexpectedly${NC}"
+    echo -e "${RED}✗ UNIQUE constraint not enforced (duplicate entry was allowed)${NC}"
     cat "$OUTPUT_DIR/test5.log"
     exit 1
 fi

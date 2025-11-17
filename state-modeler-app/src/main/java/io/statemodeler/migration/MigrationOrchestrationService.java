@@ -77,16 +77,22 @@ public class MigrationOrchestrationService {
         String textDiff = formatDiff(comparison);
 
         // Step 2: Generate migration script via LLM
-        var scriptResult = migrationGenerator.generateMigrationScript(fromSdr.ddl(), toSdr.ddl(), textDiff, dialect);
-        if (scriptResult.isFailure()) {
-            return Try.failure(scriptResult.getCause());
+        var migrationResult = migrationGenerator.generateMigrationScript(fromSdr.ddl(), toSdr.ddl(), textDiff, dialect);
+        if (migrationResult.isFailure()) {
+            return Try.failure(migrationResult.getCause());
         }
 
-        String migrationScript = scriptResult.get();
+        MigrationResult llmResult = migrationResult.get();
 
         // Step 3: Create and persist migration
-        var migration =
-                new SdrMigration(fromSdr.schemaHash(), toSdr.schemaHash(), migrationScript, dialect, Instant.now());
+        var migration = new SdrMigration(
+                fromSdr.schemaHash(),
+                toSdr.schemaHash(),
+                llmResult.migrationScript(),
+                llmResult.confidence(),
+                llmResult.comments(),
+                dialect,
+                Instant.now());
 
         return repository.saveMigration(migration).map(v -> migration);
     }

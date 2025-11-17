@@ -1,9 +1,9 @@
 package io.statemodeler.migration;
 
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,47 +11,33 @@ import org.slf4j.LoggerFactory;
 /**
  * LangChain4j-based implementation of {@link MigrationGenerationService}.
  *
- * <p>Uses a local LLM (via Jlama or Ollama) to generate SQL migration scripts
- * from DDL differences.
- *
- * <p>Usage example:
- * <pre>
- * // With Ollama
- * ChatModelProvider provider = new LangChainModelProvider();
- * var model = provider.createModel("ollama", "llama3.2", 0.7);
- * var service = new LangChainMigrationGenerationService(model);
- *
- * // With Jlama
- * var model = provider.createModel("jlama", "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4", 0.2);
- * var service = new LangChainMigrationGenerationService(model);
- *
- * // Generate migration
- * var result = service.generateMigrationScript(oldDdl, newDdl, diff, "postgres");
- * result.onSuccess(script -> System.out.println(script));
- * result.onFailure(error -> System.err.println("Failed: " + error.getMessage()));
- * </pre>
+ * <p>Uses Ollama LLM with AiServices for structured outputs to generate SQL migration scripts
+ * from DDL differences. Returns a {@link MigrationResult} containing the script, confidence,
+ * and explanatory comments.
  */
 public class LangChainMigrationGenerationService implements MigrationGenerationService {
 
     private static final Logger logger = LoggerFactory.getLogger(LangChainMigrationGenerationService.class);
 
-    private final ChatLanguageModel chatModel;
+    private final MigrationAssistant assistant;
 
     /**
-     * Constructs the service with a configured LangChain4j chat model.
+     * Creates the service with a configured LangChain4j chat model.
      *
-     * @param chatModel the LLM to use for generation (Jlama or Ollama)
+     * @param chatModel the LLM to use for generation (must support structured outputs)
      * @throws IllegalArgumentException if chatModel is null
      */
-    public LangChainMigrationGenerationService(ChatLanguageModel chatModel) {
+    public LangChainMigrationGenerationService(ChatModel chatModel) {
         if (chatModel == null) {
             throw new IllegalArgumentException("chatModel cannot be null");
         }
-        this.chatModel = chatModel;
+        this.assistant = AiServices.builder(MigrationAssistant.class)
+                .chatModel(chatModel)
+                .build();
     }
 
     @Override
-    public Try<String> generateMigrationScript(String oldDdl, String newDdl, String textDiff, String dialect) {
+    public Try<MigrationResult> generateMigrationScript(String oldDdl, String newDdl, String textDiff, String dialect) {
 
         return Try.of(() -> {
             // Validate inputs
@@ -71,19 +57,28 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
             logger.debug("Building migration prompt for dialect: {}", dialect);
             String prompt = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
 
-            logger.info("Calling LLM to generate migration script...");
-            ChatRequest request =
-                    ChatRequest.builder().messages(UserMessage.from(prompt)).build();
-            ChatResponse response = chatModel.chat(request);
+            logger.info("Calling LLM to generate migration script with structured output...");
 
-            String migrationScript = response.aiMessage().text();
-
-            if (migrationScript == null || migrationScript.isBlank()) {
-                throw new IllegalStateException("LLM returned empty migration script");
+            try {
+                MigrationResult result = assistant.generateMigration(prompt, dialect);
+                logger.info(
+                        "Migration generated successfully - confidence: {}, script length: {} chars",
+                        result.confidence(),
+                        result.migrationScript().length());
+                return result;
+            } catch (Exception e) {
+                logger.error("Error during LLM call", e);
+                // Rethrow original exception to preserve message for tests and callers
+                throw e;
             }
-
-            logger.info("Migration script generated successfully ({} chars)", migrationScript.length());
-            return migrationScript;
         });
+    }
+
+    /**
+     * AI service interface for migration generation.
+     * LangChain4j automatically handles the structured output mapping.
+     */
+    interface MigrationAssistant {
+        MigrationResult generateMigration(@UserMessage String prompt, @V("dialect") String dialect);
     }
 }

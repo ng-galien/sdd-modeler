@@ -76,7 +76,7 @@ A Java library and CLI tool for implementing State-Driven Design (SDD) with auto
 - **LLM-based migration scripts**: Automatic SQL migration generation using LangChain4j
 - **DDL comparison service**: Structural diff analysis between model versions
 - **Migration caching**: Persisted migrations to avoid regeneration costs
-- **Multiple LLM providers**: Support for Jlama (in-process) and Ollama (server-based)
+- **Ollama integration**: Server-based LLM for intelligent migration generation
 - **Intelligent prompts**: PostgreSQL-specific patterns with safety guidelines
 
 ## 📖 Example: E-Commerce Order Model
@@ -164,7 +164,7 @@ CREATE VIEW public_states.current_order_states AS
   SELECT * FROM public_states.order_state_intervals WHERE end_at IS NULL;
 ```
 
-See `instructions/examples/` for complete examples.
+See `scripts/examples/` for complete examples used by the test scripts and utilities (canonical fixtures for testing and demos).
 
 ## 🏗️ Architecture
 
@@ -189,7 +189,7 @@ See `instructions/examples/` for complete examples.
 - **Validation**: Vavr (functional error accumulation)
 - **CLI**: Picocli
 - **Repository**: H2 Database 2.2.224 (embedded, in-memory for tests)
-- **AI Integration**: LangChain4j 0.36.2 (Jlama, Ollama)
+- **AI Integration**: LangChain4j 0.36.2 (Ollama)
 - **Hashing**: SHA-256 for cryptographic integrity
 - **Testing**: JUnit 5 (196 tests, ~87% coverage)
 
@@ -238,11 +238,11 @@ cd sdd-modeler
 # Compare DDL between two versions
 ./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
 
-# Generate migration with Jlama (downloads model on first use)
+# Generate migration with Ollama (requires Ollama server running)
 ./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0"
 
-# Use Ollama with custom model
-./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --llm ollama --model llama3.2"
+# Use custom Ollama model
+./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --model llama3.2"
 
 # Force regeneration and save to file
 ./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --force -o migration.sql"
@@ -293,7 +293,7 @@ cd sdd-modeler
 ## 📚 Documentation
 
 - **[Architecture Guide](instructions/ARCHITECTURE.md)**: Detailed design principles and package structure
-- **[Examples](instructions/examples/)**: Complete working examples with explanations
+- **[Examples](scripts/examples/)**: Complete working examples with explanations
 - **[Development Guide](DEV_README.md)**: Build commands, coding standards, contribution guidelines
 - **[JSON Schema](sdd-model-schema.json)**: Auto-generated schema for IDE validation
 

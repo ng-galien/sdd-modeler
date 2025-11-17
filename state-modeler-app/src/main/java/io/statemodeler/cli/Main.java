@@ -19,6 +19,7 @@ import picocli.CommandLine.Command;
             RegisterCommand.class,
             ListCommand.class,
             ShowCommand.class,
+            ShowMigrationCommand.class,
             DeleteCommand.class,
             MigrateCommand.class
         })

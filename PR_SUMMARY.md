@@ -213,7 +213,7 @@ return "yes".equalsIgnoreCase(response.trim());
 
 ```bash
 # Register the example model
-./gradlew :state-modeler-app:run --args="register instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
 
 # List all models
 ./gradlew :state-modeler-app:run --args="list"

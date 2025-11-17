@@ -25,8 +25,8 @@ public interface MigrationGenerationService {
      * @param newDdl the target/future DDL schema (cannot be null)
      * @param textDiff the unified diff between old and new DDL (cannot be null)
      * @param dialect the SQL dialect (e.g., "postgres", "mysql") (cannot be null)
-     * @return Try containing the generated SQL migration script, or Failure if generation fails
+     * @return Try containing the MigrationResult with script, confidence, and comments, or Failure if generation fails
      * @throws IllegalArgumentException if any parameter is null
      */
-    Try<String> generateMigrationScript(String oldDdl, String newDdl, String textDiff, String dialect);
+    Try<MigrationResult> generateMigrationScript(String oldDdl, String newDdl, String textDiff, String dialect);
 }

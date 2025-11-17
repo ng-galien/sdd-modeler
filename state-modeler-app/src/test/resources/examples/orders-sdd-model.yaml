@@ -4,9 +4,6 @@ name: orders-sdd-example
 database:
   dialect: postgres
   schema: public
-  # state_schema: public_states  # Optional: defaults to <schema>_states (here: public_states)
-  # Separate schema for state tables, extensions, OR transitions, and projections
-  # to reinforce the State-Driven Design ADT
 
 entities:
   order:

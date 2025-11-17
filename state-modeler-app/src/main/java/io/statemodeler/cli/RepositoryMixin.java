@@ -86,7 +86,7 @@ public class RepositoryMixin {
      * being called. This allows test repositories to be reused across multiple command invocations
      * without being prematurely closed by try-with-resources blocks.
      */
-    private static class NonClosingRepositoryWrapper implements SdrRepository, AutoCloseable {
+    private static class NonClosingRepositoryWrapper implements SdrRepository {
         private final H2SdrRepository delegate;
 
         NonClosingRepositoryWrapper(H2SdrRepository delegate) {

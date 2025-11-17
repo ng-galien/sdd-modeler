@@ -1,6 +1,9 @@
 package io.statemodeler.cli;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import io.statemodeler.cli.dto.MigrationJsonOutput;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
@@ -12,6 +15,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+// Locale not needed when using Jackson for JSON serialization
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -54,14 +58,19 @@ public class MigrateCommand implements Callable<Integer> {
     File outputFile;
 
     @Option(
+            names = {"--output-json", "-j"},
+            description = "Write migration JSON output to file (default: none)")
+    File outputJson;
+
+    @Option(
             names = {"--llm"},
-            description = "LLM provider: jlama (default), ollama",
-            defaultValue = "jlama")
+            description = "LLM provider (ollama|openai)",
+            defaultValue = "ollama")
     String llmProvider;
 
     @Option(
             names = {"--model"},
-            description = "LLM model name (default: TinyLlama-1.1B-Chat-v1.0-Jlama-Q4 for jlama, llama3.2 for ollama)")
+            description = "LLM model name (default: llama3.2)")
     String modelName;
 
     @Option(
@@ -117,6 +126,13 @@ public class MigrateCommand implements Callable<Integer> {
                     System.err.println("INFO: Migration already exists (use --force to regenerate)");
                     var migration = existingResult.get().get();
                     outputMigration(migration.migrationScript());
+                    if (outputJson != null) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        var dto = new MigrationJsonOutput(
+                                migration.confidence(), migration.comments(), migration.migrationScript());
+                        objectMapper.writeValue(outputJson, dto);
+                        System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
+                    }
                     return 0;
                 }
             }
@@ -124,7 +140,7 @@ public class MigrateCommand implements Callable<Integer> {
             // Create LLM-based migration service
             System.err.println("INFO: Generating migration using " + llmProvider + " LLM...");
 
-            ChatLanguageModel llmModel;
+            ChatModel llmModel;
             try {
                 llmModel = createLlmModel();
             } catch (NoClassDefFoundError e) {
@@ -132,8 +148,8 @@ public class MigrateCommand implements Callable<Integer> {
                 System.err.println("  The 'migrate' command requires LangChain4j libraries.");
                 System.err.println("  Please ensure the following dependencies are available:");
                 System.err.println("    - dev.langchain4j:langchain4j:0.36.2");
-                System.err.println("    - dev.langchain4j:langchain4j-jlama:0.36.2 (for jlama provider)");
-                System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2 (for ollama provider)");
+                System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2");
+                System.err.println("    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
                 System.err.println("  Missing class: " + e.getMessage());
                 return 1;
             }
@@ -160,6 +176,14 @@ public class MigrateCommand implements Callable<Integer> {
 
             // Output migration script
             outputMigration(migration.migrationScript());
+
+            if (outputJson != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                var dto = new MigrationJsonOutput(
+                        migration.confidence(), migration.comments(), migration.migrationScript());
+                objectMapper.writeValue(outputJson, dto);
+                System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
+            }
 
             return 0;
 
@@ -188,14 +212,13 @@ public class MigrateCommand implements Callable<Integer> {
         if (version != null) {
             return repository.findByNameAndVersion(name, version);
         } else {
-            // Find latest version by name
-            return repository.findByName(name).map(metadataList -> {
-                if (metadataList.isEmpty()) {
-                    return Optional.empty();
+            // Find latest version by name: get metadata list and fetch full record via hash
+            return repository.findByName(name).flatMap(metadataList -> {
+                if (metadataList == null || metadataList.isEmpty()) {
+                    return Try.success(Optional.empty());
                 }
-                // Get most recent (first in DESC order)
                 String hash = metadataList.get(0).schemaHash();
-                return repository.findByHash(hash).get();
+                return repository.findByHash(hash);
             });
         }
     }
@@ -210,26 +233,39 @@ public class MigrateCommand implements Callable<Integer> {
     /**
      * Create LLM model based on provider.
      */
-    private ChatLanguageModel createLlmModel() {
+    private ChatModel createLlmModel() {
         String effectiveModelName = modelName != null ? modelName : getDefaultModelName();
-        ChatModelProvider provider = new LangChainModelProvider();
+        // Default timeout
+        final int timeoutSeconds = 300;
 
-        return switch (llmProvider.toLowerCase()) {
-            case "jlama" -> provider.createModel("jlama", effectiveModelName, 0.7);
-            case "ollama" -> provider.createModel("ollama", effectiveModelName, 0.7, "http://localhost:11434", 300);
-            default -> throw new IllegalArgumentException("Unsupported LLM provider: " + llmProvider);
-        };
+        // Currently support 'ollama' and 'openai'
+        if (llmProvider == null || llmProvider.isBlank() || llmProvider.equalsIgnoreCase("ollama")) {
+            ChatModelProvider provider = new LangChainModelProvider();
+            return provider.createModel(effectiveModelName, 0.7, "http://localhost:11434", timeoutSeconds);
+        }
+        if (llmProvider.equalsIgnoreCase("openai")) {
+            // Use OpenAI provider
+            var apiKey = System.getenv("OPENAI_API_KEY");
+            if (apiKey == null || apiKey.isBlank()) {
+                throw new IllegalArgumentException("OPENAI_API_KEY is required for OpenAI provider");
+            }
+            return OpenAiChatModel.builder()
+                    .apiKey(apiKey)
+                    .modelName(effectiveModelName)
+                    .logRequests(true)
+                    .logResponses(true)
+                    .strictJsonSchema(true)
+                    .build();
+        }
+
+        throw new IllegalArgumentException("Unsupported LLM provider: " + llmProvider);
     }
 
     /**
      * Get default model name for provider.
      */
     private String getDefaultModelName() {
-        return switch (llmProvider.toLowerCase()) {
-            case "jlama" -> "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4";
-            case "ollama" -> "llama3.2";
-            default -> "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4";
-        };
+        return "llama3.2";
     }
 
     /**

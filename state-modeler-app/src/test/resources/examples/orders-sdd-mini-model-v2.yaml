@@ -1,0 +1,41 @@
+version: 0.1
+name: orders-sdd-mini-example-v2
+
+database:
+  dialect: postgres
+  schema: public
+
+entities:
+  order:
+    table: orders
+    id:
+      name: id
+      type: serial
+      primary_key: true
+    attributes:
+      total_amount:
+        type: numeric(12,2)
+        nullable: false
+      created_at:
+        type: timestamptz
+        default: now()
+
+    states:
+      pending:
+        initial: true
+        table: order_pending
+        attributes:
+          pending_reason:
+            type: text
+            nullable: false
+
+      paid:
+        from: [pending]
+        table: order_paid
+        attributes:
+          paid_amount:
+            type: numeric(12,2)
+            nullable: false
+          payment_method:
+            type: text
+            nullable: false

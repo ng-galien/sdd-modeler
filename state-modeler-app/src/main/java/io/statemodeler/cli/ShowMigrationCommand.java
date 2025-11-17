@@ -1,0 +1,141 @@
+package io.statemodeler.cli;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.statemodeler.cli.dto.MigrationJsonOutput;
+import io.statemodeler.cli.dto.SdrSummary;
+import io.statemodeler.cli.dto.ShowMigrationJsonOutput;
+import io.statemodeler.comparison.DdlComparison;
+import io.statemodeler.comparison.DdlComparisonService;
+import io.statemodeler.repository.SdrMigration;
+import io.statemodeler.sdr.SdrRecord;
+import io.vavr.control.Try;
+import java.io.File;
+// Files import not needed with Jackson ObjectMapper JSON serialization
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+/**
+ * CLI command to retrieve migration information between two SDR versions.
+ *
+ * Usage: sdd-modeler show-migration <from> <to> [--output-json output.json]
+ */
+@Command(
+        name = "show-migration",
+        description = "Retrieve migration info (orig/new ddl, diff, migration JSON)",
+        mixinStandardHelpOptions = true)
+public class ShowMigrationCommand implements Callable<Integer> {
+
+    @Parameters(index = "0", description = "Source SDR hash or name:version")
+    String fromIdentifier;
+
+    @Parameters(index = "1", description = "Target SDR hash or name:version")
+    String toIdentifier;
+
+    @Option(
+            names = {"--output-json", "-j"},
+            description = "Write JSON output to file (default: stdout)")
+    File outputJson;
+
+    @Mixin
+    RepositoryMixin repositoryMixin;
+
+    @Override
+    public Integer call() {
+        try (var repository = repositoryMixin.createRepository()) {
+            // Resolve from and to SDRs
+            var fromResult = findSdr(repository, fromIdentifier);
+            if (fromResult.isFailure()) {
+                System.err.println("ERROR: Failed to retrieve source SDR");
+                System.err.println("  " + fromResult.getCause().getMessage());
+                return 1;
+            }
+            var fromOpt = fromResult.get();
+            if (fromOpt.isEmpty()) {
+                System.err.println("ERROR: Source SDR not found: " + fromIdentifier);
+                return 1;
+            }
+            SdrRecord fromSdr = fromOpt.get();
+
+            var toResult = findSdr(repository, toIdentifier);
+            if (toResult.isFailure()) {
+                System.err.println("ERROR: Failed to retrieve target SDR");
+                System.err.println("  " + toResult.getCause().getMessage());
+                return 1;
+            }
+            var toOpt = toResult.get();
+            if (toOpt.isEmpty()) {
+                System.err.println("ERROR: Target SDR not found: " + toIdentifier);
+                return 1;
+            }
+            SdrRecord toSdr = toOpt.get();
+
+            // Use services
+            var comparisonService = new DdlComparisonService();
+
+            // Compute diff
+            DdlComparison comparison = comparisonService.compare(fromSdr.ddl(), toSdr.ddl());
+            String textDiff = comparison.diff().isEmpty() ? "" : String.join("\n", comparison.diff());
+
+            // Find persisted migration via repository
+            var migrationResult = repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
+            if (migrationResult.isFailure()) {
+                System.err.println("ERROR: Failed to fetch migration from repository");
+                System.err.println("  " + migrationResult.getCause().getMessage());
+                return 1;
+            }
+            Optional<SdrMigration> maybeMigration = migrationResult.get();
+
+            var original = new SdrSummary(fromSdr.schemaHash(), fromSdr.ddl());
+            var newSdrSummary = new SdrSummary(toSdr.schemaHash(), toSdr.ddl());
+            MigrationJsonOutput migrationOutput = null;
+            if (maybeMigration.isPresent()) {
+                var m = maybeMigration.get();
+                migrationOutput = new MigrationJsonOutput(m.confidence(), m.comments(), m.migrationScript());
+            }
+
+            var output = new ShowMigrationJsonOutput(original, newSdrSummary, textDiff, migrationOutput);
+
+            if (outputJson != null) {
+                var mapper = new ObjectMapper();
+                mapper.writeValue(outputJson, output);
+                System.err.println("Wrote JSON to " + outputJson.getAbsolutePath());
+            } else {
+                var mapper = new ObjectMapper();
+                System.out.println(mapper.writeValueAsString(output));
+            }
+
+            return 0;
+        } catch (Exception e) {
+            System.err.println("ERROR: Unexpected error");
+            System.err.println("  " + e.getMessage());
+            e.printStackTrace();
+            return 1;
+        }
+    }
+
+    private Try<Optional<SdrRecord>> findSdr(io.statemodeler.repository.SdrRepository repository, String identifier) {
+        if (!identifier.contains(":")) {
+            return repository.findByHash(identifier);
+        }
+        String[] parts = identifier.split(":", 2);
+        String name = parts[0];
+        String version = parts.length > 1 ? parts[1] : null;
+        if (version != null) {
+            return repository.findByNameAndVersion(name, version);
+        }
+        // No version provided: find the most recent metadata and then load the full record
+        return repository.findByName(name).flatMap(list -> {
+            if (list == null || list.isEmpty()) {
+                return Try.success(Optional.empty());
+            }
+            String hash = list.get(0).schemaHash();
+            return repository.findByHash(hash);
+        });
+    }
+
+    // jsonEscape removed; Jackson ObjectMapper handles JSON serialization safely
+}

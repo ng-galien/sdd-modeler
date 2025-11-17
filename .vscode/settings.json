@@ -1,3 +1,4 @@
 {
-    "cSpell.language": "en,fr"
+    "cSpell.language": "en,fr",
+    "java.debug.settings.onBuildFailureProceed": true
 }

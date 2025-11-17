@@ -36,8 +36,11 @@ MODEL_V1="$EXAMPLES_DIR/orders-sdd-model.yaml"
 MODEL_V2="$EXAMPLES_DIR/orders-sdd-model-v2.yaml"
 
 # LLM configuration
-LLM_MODEL="qwen3:8b"
+LLM_PROVIDER="ollama"  # default provider: ollama|openai
+LLM_MODEL="qwen3:8b"   # default model
 OLLAMA_URL="http://localhost:11434"
+# Read OPENAI_API_KEY from environment if present, CLI --openai-key overrides
+OPENAI_API_KEY="${OPENAI_API_KEY:-}"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  LLM Migration Generation Test Suite      ║${NC}"
@@ -48,30 +51,63 @@ echo -e "${YELLOW}📂 Setting up test environment...${NC}"
 mkdir -p "$OUTPUT_DIR"
 rm -f "$OUTPUT_DIR"/*.sql "$OUTPUT_DIR"/*.md "$OUTPUT_DIR"/*.log
 
-# Check if Ollama is available
-echo -e "\n${BLUE}Step 1: Checking Ollama availability${NC}"
-if ! curl -s "$OLLAMA_URL/api/version" > /dev/null 2>&1; then
-    echo -e "${RED}✗ Ollama server not available at $OLLAMA_URL${NC}"
-    echo -e "${YELLOW}  Please start Ollama with: ollama serve${NC}"
-    echo -e "${YELLOW}  Skipping LLM migration test${NC}"
-    exit 0  # Exit successfully (test skipped, not failed)
-fi
-echo -e "${GREEN}✓ Ollama server is running${NC}"
+# Parse CLI args (allow overriding provider/model/urls/keys)
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --llm)
+            LLM_PROVIDER="$2"; shift 2;;
+        --model)
+            LLM_MODEL="$2"; shift 2;;
+        --ollama-url)
+            OLLAMA_URL="$2"; shift 2;;
+        --openai-key)
+            OPENAI_API_KEY="$2"; shift 2;;
+        -h|--help)
+            echo "Usage: $0 [--llm ollama|openai] [--model <model>] [--ollama-url <url>] [--openai-key <key>]"; exit 0;;
+        *)
+            echo "Unknown option: $1"; exit 1;;
+    esac
+done
 
-# Check if model is available
-echo -e "\n${BLUE}Step 2: Checking if model '$LLM_MODEL' is available${NC}"
-if ! curl -s "$OLLAMA_URL/api/tags" | grep -q "\"name\":\"$LLM_MODEL\""; then
-    echo -e "${YELLOW}⚠ Model '$LLM_MODEL' not found${NC}"
-    echo -e "${YELLOW}  Attempting to pull model...${NC}"
-    if ! ollama pull "$LLM_MODEL" > "$OUTPUT_DIR/model-pull.log" 2>&1; then
-        echo -e "${RED}✗ Failed to pull model '$LLM_MODEL'${NC}"
-        echo -e "${YELLOW}  Please run: ollama pull $LLM_MODEL${NC}"
+# Validate provider-specific settings and availability
+echo -e "\n${BLUE}Step 1: Checking LLM provider availability (${LLM_PROVIDER})${NC}"
+if [[ "$LLM_PROVIDER" == "ollama" ]]; then
+    if ! curl -s "$OLLAMA_URL/api/version" > /dev/null 2>&1; then
+        echo -e "${RED}✗ Ollama server not available at $OLLAMA_URL${NC}"
+        echo -e "${YELLOW}  Please start Ollama with: ollama serve${NC}"
         echo -e "${YELLOW}  Skipping LLM migration test${NC}"
         exit 0
     fi
-    echo -e "${GREEN}✓ Model '$LLM_MODEL' pulled successfully${NC}"
+    echo -e "${GREEN}✓ Ollama server is running${NC}"
+elif [[ "$LLM_PROVIDER" == "openai" ]]; then
+    # If not provided via CLI, fallback to environment variable
+    if [[ -z "$OPENAI_API_KEY" ]]; then
+        echo -e "${YELLOW}⚠ OPENAI_API_KEY not set; tests requiring OpenAI will be skipped unless provided via --openai-key or env var.${NC}"
+        echo -e "${YELLOW}  Skipping OpenAI migration test${NC}"
+        exit 0
+    fi
+    export OPENAI_API_KEY
+    echo -e "${GREEN}✓ OPENAI_API_KEY is set${NC}"
 else
-    echo -e "${GREEN}✓ Model '$LLM_MODEL' is available${NC}"
+    echo -e "${RED}✗ Unsupported LLM provider: ${LLM_PROVIDER}${NC}"; exit 1
+fi
+
+if [[ "$LLM_PROVIDER" == "ollama" ]]; then
+    # Check if model is available on Ollama server
+    echo -e "\n${BLUE}Step 2: Checking if model '$LLM_MODEL' is available${NC}"
+    if ! curl -s "$OLLAMA_URL/api/tags" | grep -q "\"name\":\"$LLM_MODEL\""; then
+        echo -e "${YELLOW}⚠ Model '$LLM_MODEL' not found${NC}"
+        echo -e "${YELLOW}  Attempting to pull model...${NC}"
+        if ! ollama pull "$LLM_MODEL" > "$OUTPUT_DIR/model-pull.log" 2>&1; then
+            echo -e "${RED}✗ Failed to pull model '$LLM_MODEL'${NC}"
+            echo -e "${YELLOW}  Please run: ollama pull $LLM_MODEL${NC}"
+            echo -e "${YELLOW}  Skipping LLM migration test${NC}"
+            exit 0
+        fi
+        echo -e "${GREEN}✓ Model '$LLM_MODEL' pulled successfully${NC}"
+    else
+        echo -e "${GREEN}✓ Model '$LLM_MODEL' is available${NC}"
+    fi
 fi
 
 # Generate DDL for both versions
@@ -115,11 +151,12 @@ V2_HASH=$(grep -o "hash: [a-f0-9]*" "$OUTPUT_DIR/register-v2.log" | head -1 | cu
 echo -e "${GREEN}  ✓ Registered with hash: $V2_HASH${NC}"
 
 # Generate migration with LLM
-echo -e "\n${BLUE}Step 5: Generating migration with Ollama (${LLM_MODEL})${NC}"
+echo -e "\n${BLUE}Step 5: Generating migration with ${LLM_PROVIDER} (${LLM_MODEL})${NC}"
 echo -e "${YELLOW}  This may take 30-60 seconds depending on model size...${NC}"
 
 START_TIME=$(date +%s)
-if "$GRADLE" -q :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --model $LLM_MODEL -o $OUTPUT_DIR/migration.sql" > "$OUTPUT_DIR/migrate.log" 2>&1; then
+MIGRATE_ARGS=("migrate" "orders:1.0" "orders:2.0" "--llm" "$LLM_PROVIDER" "--model" "$LLM_MODEL" "-o" "$OUTPUT_DIR/migration.sql")
+if "$GRADLE" -q :state-modeler-app:run --args="${MIGRATE_ARGS[*]}" > "$OUTPUT_DIR/migrate.log" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     echo -e "${GREEN}✓ Migration generated successfully in ${DURATION}s${NC}"

@@ -2,7 +2,11 @@ package io.statemodeler.migration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class MigrationPromptBuilderTest {
 
@@ -34,60 +38,27 @@ class MigrationPromptBuilderTest {
         assertTrue(prompt.contains("Avoid data loss"));
     }
 
-    @Test
-    void shouldThrowExceptionWhenOldDdlIsNull() {
-        // Given
-        String newDdl = "CREATE TABLE test (id INT);";
-        String textDiff = "diff";
-        String dialect = "postgres";
-
+    @ParameterizedTest(name = "{3}")
+    @MethodSource("provideNullParameterCases")
+    void shouldThrowExceptionWhenParameterIsNull(
+            String oldDdl, String newDdl, String textDiff, String dialect, String expectedMessage) {
         // When/Then
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> MigrationPromptBuilder.buildPrompt(null, newDdl, textDiff, dialect));
-        assertEquals("oldDdl cannot be null", exception.getMessage());
+                () -> MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect));
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    @Test
-    void shouldThrowExceptionWhenNewDdlIsNull() {
-        // Given
-        String oldDdl = "CREATE TABLE test (id INT);";
-        String textDiff = "diff";
-        String dialect = "postgres";
+    static Stream<Arguments> provideNullParameterCases() {
+        String validDdl = "CREATE TABLE test (id INT);";
+        String validDiff = "diff";
+        String validDialect = "postgres";
 
-        // When/Then
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> MigrationPromptBuilder.buildPrompt(oldDdl, null, textDiff, dialect));
-        assertEquals("newDdl cannot be null", exception.getMessage());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTextDiffIsNull() {
-        // Given
-        String oldDdl = "CREATE TABLE test (id INT);";
-        String newDdl = "CREATE TABLE test (id BIGINT);";
-        String dialect = "postgres";
-
-        // When/Then
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, null, dialect));
-        assertEquals("textDiff cannot be null", exception.getMessage());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenDialectIsNull() {
-        // Given
-        String oldDdl = "CREATE TABLE test (id INT);";
-        String newDdl = "CREATE TABLE test (id BIGINT);";
-        String textDiff = "diff";
-
-        // When/Then
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, null));
-        assertEquals("dialect cannot be null", exception.getMessage());
+        return Stream.of(
+                Arguments.of(null, validDdl, validDiff, validDialect, "oldDdl cannot be null"),
+                Arguments.of(validDdl, null, validDiff, validDialect, "newDdl cannot be null"),
+                Arguments.of(validDdl, validDdl, null, validDialect, "textDiff cannot be null"),
+                Arguments.of(validDdl, validDdl, validDiff, null, "dialect cannot be null"));
     }
 
     @Test

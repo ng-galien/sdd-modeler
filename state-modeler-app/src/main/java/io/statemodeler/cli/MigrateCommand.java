@@ -1,7 +1,9 @@
 package io.statemodeler.cli;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import io.statemodeler.cli.dto.MigrationJsonOutput;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
@@ -13,6 +15,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+// Locale not needed when using Jackson for JSON serialization
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -53,6 +56,11 @@ public class MigrateCommand implements Callable<Integer> {
             names = {"--output", "-o"},
             description = "Output file path (default: stdout)")
     File outputFile;
+
+    @Option(
+            names = {"--output-json", "-j"},
+            description = "Write migration JSON output to file (default: none)")
+    File outputJson;
 
     @Option(
             names = {"--llm"},
@@ -118,6 +126,13 @@ public class MigrateCommand implements Callable<Integer> {
                     System.err.println("INFO: Migration already exists (use --force to regenerate)");
                     var migration = existingResult.get().get();
                     outputMigration(migration.migrationScript());
+                    if (outputJson != null) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        var dto = new MigrationJsonOutput(
+                                migration.confidence(), migration.comments(), migration.migrationScript());
+                        objectMapper.writeValue(outputJson, dto);
+                        System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
+                    }
                     return 0;
                 }
             }
@@ -162,6 +177,14 @@ public class MigrateCommand implements Callable<Integer> {
             // Output migration script
             outputMigration(migration.migrationScript());
 
+            if (outputJson != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                var dto = new MigrationJsonOutput(
+                        migration.confidence(), migration.comments(), migration.migrationScript());
+                objectMapper.writeValue(outputJson, dto);
+                System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
+            }
+
             return 0;
 
         } catch (Exception e) {
@@ -189,14 +212,13 @@ public class MigrateCommand implements Callable<Integer> {
         if (version != null) {
             return repository.findByNameAndVersion(name, version);
         } else {
-            // Find latest version by name
-            return repository.findByName(name).map(metadataList -> {
-                if (metadataList.isEmpty()) {
-                    return Optional.empty();
+            // Find latest version by name: get metadata list and fetch full record via hash
+            return repository.findByName(name).flatMap(metadataList -> {
+                if (metadataList == null || metadataList.isEmpty()) {
+                    return Try.success(Optional.empty());
                 }
-                // Get most recent (first in DESC order)
                 String hash = metadataList.get(0).schemaHash();
-                return repository.findByHash(hash).get();
+                return repository.findByHash(hash);
             });
         }
     }

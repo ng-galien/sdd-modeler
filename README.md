@@ -164,7 +164,7 @@ CREATE VIEW public_states.current_order_states AS
   SELECT * FROM public_states.order_state_intervals WHERE end_at IS NULL;
 ```
 
-See `instructions/examples/` for complete examples.
+See `scripts/examples/` for complete examples used by the test scripts and utilities (canonical fixtures for testing and demos).
 
 ## 🏗️ Architecture
 
@@ -293,7 +293,7 @@ cd sdd-modeler
 ## 📚 Documentation
 
 - **[Architecture Guide](instructions/ARCHITECTURE.md)**: Detailed design principles and package structure
-- **[Examples](instructions/examples/)**: Complete working examples with explanations
+- **[Examples](scripts/examples/)**: Complete working examples with explanations
 - **[Development Guide](DEV_README.md)**: Build commands, coding standards, contribution guidelines
 - **[JSON Schema](sdd-model-schema.json)**: Auto-generated schema for IDE validation
 

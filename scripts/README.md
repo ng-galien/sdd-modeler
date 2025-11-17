@@ -228,13 +228,14 @@ Tests LLM-based migration generation using Ollama with structured outputs.
 **Usage:**
 
 ```bash
-./scripts/test-migration-generation.sh
+./scripts/test-migration-generation.sh [--mini] [--llm ollama|openai] [--model <model>] [--ollama-url <url>] [--openai-key <key>]
 ```
 
 **Requirements:**
 
 - Ollama server running at `http://localhost:11434`
 - Model `qwen2.5:0.5b` (automatically pulled if missing)
+- `jq` installed (used for parsing/creating LLM JSON responses)
 
 **How it works:**
 
@@ -248,13 +249,19 @@ Tests LLM-based migration generation using Ollama with structured outputs.
 8. Opens report automatically (macOS)
 
 **Output:**
-Generated files are saved to `build/test-output/`:
+Generated files are saved to `build/test-migration-output/`:
 
-- `migration-v1.sql` - DDL for orders v1
-- `migration-v2.sql` - DDL for orders v2
-- `migration-v1-to-v2.sql` - LLM-generated migration script
-- `migration.log` - Full migration generation logs
-- **`migration-report.md`** - **Comprehensive Markdown report**
+Use `--mini` to run the script with a smaller sample schema for a more readable report.
+
+Typical outputs saved to `build/test-migration-output/`:
+
+- `orders-v1.sql` - DDL for orders v1
+- `orders-v2.sql` - DDL for orders v2
+- `migration.sql` - LLM-generated migration script
+- `migrate.log` - Full migration generation logs
+- `llm-response.json` - Parsed LLM structured response (confidence, comments, migrationScript)
+- `orders-ddl-udiff.txt` - Unified DDL diff (context 3 lines)
+- `migration-report.md` - **Compact Markdown report with DDL preview, diff, and JSON LLM response**
 
 **Markdown Report Contents:**
 

@@ -5,7 +5,7 @@
  Quick references:
  - CLI & App: `state-modeler-app` (Picocli commands: validate, sql, diagram, register, list, show, delete, diff, migrate)
  - Core: `state-modeler-core` (model records, DSL loaders, validators, SQL plan, PostgreSQL DDL generation)
- - Examples: `instructions/examples/` (model + expected DDL + diagram)
+ - Examples: `scripts/examples/` (model + expected DDL + diagram)
 
  Key guidance for AI agents working in this repository:
  1. Prefer Java 21 records for DTOs (see `io.statemodeler.core.*`). Keep inline null checks in record constructors and use `IllegalArgumentException` for validation errors.
@@ -23,7 +23,7 @@
  - `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (Table/Constraint/Index/View generators)
  - `state-modeler-app/src/main/java/io/statemodeler/cli/` (Picocli command implementations)
  - `state-modeler-app/src/main/java/io/statemodeler/migration/` (LLM migration support)
- - `instructions/ARCHITECTURE.md`, `instructions/examples/*` for domain and SQL examples
+ - `instructions/ARCHITECTURE.md`, `scripts/examples/*` (or `state-modeler-app/src/test/resources/examples/*`) for domain and SQL examples
 
  Quick build/test commands (copyable):
  ```bash
@@ -33,12 +33,12 @@
  ./gradlew jacocoTestReport
 
  # Run CLI commands (validate / sql / migrate)
- ./gradlew :state-modeler-app:run --args="validate instructions/examples/orders-sdd-model.yaml"
- ./gradlew :state-modeler-app:run --args="sql instructions/examples/orders-sdd-model.yaml -o output.sql"
+ ./gradlew :state-modeler-app:run --args="validate scripts/examples/orders-sdd-model.yaml"
+ ./gradlew :state-modeler-app:run --args="sql scripts/examples/orders-sdd-model.yaml -o output.sql"
  ./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 -o migration.sql"
  ```
 
- If you need to change SQL generation patterns, update Postgres*Generator classes and verify expected DDL output by comparing to `instructions/examples/` examples and adding integration tests to `state-modeler-core`.
+ If you need to change SQL generation patterns, update Postgres*Generator classes and verify expected DDL output by comparing to `scripts/examples/` or `state-modeler-app/src/test/resources/examples/` examples and adding integration tests to `state-modeler-core`.
 
  When in doubt:
  - Read `instructions/ARCHITECTURE.md` and the `orders-sdd-*` examples first

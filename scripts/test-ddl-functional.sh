@@ -23,7 +23,22 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-EXAMPLES_DIR="$PROJECT_ROOT/instructions/examples"
+SCRIPTS_EXAMPLES_DIR="$PROJECT_ROOT/scripts/examples"
+TEST_EXAMPLES_DIR="$PROJECT_ROOT/state-modeler-app/src/test/resources/examples"
+EXAMPLES_DIR="$SCRIPTS_EXAMPLES_DIR"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --examples-doc)
+            EXAMPLES_DIR="$PROJECT_ROOT/instructions/examples"; shift 1;;
+        --examples-test)
+            EXAMPLES_DIR="$TEST_EXAMPLES_DIR"; shift 1;;
+        -h|--help)
+            echo "Usage: $0 [--examples-doc] [--examples-test] ..."; exit 0;;
+        *)
+            shift 1;;
+    esac
+done
 OUTPUT_DIR="$PROJECT_ROOT/build/test-output"
 GRADLE="$PROJECT_ROOT/gradlew"
 

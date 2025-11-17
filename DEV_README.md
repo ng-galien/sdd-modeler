@@ -30,28 +30,41 @@
 ./gradlew :state-modeler-app:run
 
 # Validate a model
-./gradlew :state-modeler-app:run --args="validate instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="validate scripts/examples/orders-sdd-model.yaml"
 
+./gradlew :state-modeler-app:run --args="validate scripts/examples/orders-sdd-model.yaml"
+ 
 # Generate SQL DDL
-./gradlew :state-modeler-app:run --args="sql instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="sql scripts/examples/orders-sdd-model.yaml"
 
+./gradlew :state-modeler-app:run --args="sql scripts/examples/orders-sdd-model.yaml"
+ 
 # Generate SQL to file
-./gradlew :state-modeler-app:run --args="sql instructions/examples/orders-sdd-model.yaml -o output.sql"
+./gradlew :state-modeler-app:run --args="sql scripts/examples/orders-sdd-model.yaml -o output.sql"
 
+./gradlew :state-modeler-app:run --args="sql scripts/examples/orders-sdd-model.yaml -o output.sql"
+ 
 # Generate Mermaid state diagram
-./gradlew :state-modeler-app:run --args="diagram instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml"
 
+./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml"
+ 
 # Generate diagram to file
-./gradlew :state-modeler-app:run --args="diagram instructions/examples/orders-sdd-model.yaml -o diagram.mmd"
+./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml -o diagram.mmd"
 
+./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml -o diagram.mmd"
+ 
 # Generate diagram for specific entity
-./gradlew :state-modeler-app:run --args="diagram instructions/examples/orders-sdd-model.yaml --entity order"
+./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml --entity order"
 
+./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml --entity order"
+ 
 # === SDR Repository Management ===
 
 # Register a model in the repository
-./gradlew :state-modeler-app:run --args="register instructions/examples/orders-sdd-model.yaml"
+./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
 
+./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
 # Register with custom name and version
 ./gradlew :state-modeler-app:run --args="register model.yaml --name my-model --version 2.0.0"
 
@@ -164,7 +177,7 @@ sdd-modeler/
 │           ├── SdrMetadata.java       # Metadata record
 │           ├── RepositoryConfig.java  # Path resolution
 │           └── RepositoryMixin.java   # Picocli mixin
-└── instructions/examples/       # Reference model & expected outputs
+└── scripts/examples/       # Reference model & expected outputs used by scripts/tests
     ├── orders-sdd-model.yaml    # Sample SDD model
     ├── orders-sdd-ddl.sql       # Expected SQL output
     └── orders-sdd-diagram.mmd   # Mermaid state diagram

@@ -214,11 +214,8 @@ public class MigrateCommand implements Callable<Integer> {
         String effectiveModelName = modelName != null ? modelName : getDefaultModelName();
         ChatModelProvider provider = new LangChainModelProvider();
 
-        return switch (llmProvider.toLowerCase()) {
-            case "jlama" -> provider.createModel("jlama", effectiveModelName, 0.7);
-            case "ollama" -> provider.createModel("ollama", effectiveModelName, 0.7, "http://localhost:11434", 300);
-            default -> throw new IllegalArgumentException("Unsupported LLM provider: " + llmProvider);
-        };
+        // Only Ollama supported now
+        return provider.createModel(effectiveModelName, 0.7, "http://localhost:11434", 300);
     }
 
     /**

@@ -23,9 +23,11 @@ class MigrationOrchestrationServiceTest {
         // Use in-memory database for faster tests
         repository = H2SdrRepository.createInMemory("test-orchestration-" + System.nanoTime());
 
-        // Create a simple mock migration generator
-        mockMigrationGenerator = (oldDdl, newDdl, textDiff, dialect) -> io.vavr.control.Try.success(
-                "-- Migration from v1 to v2\nALTER TABLE users ADD COLUMN email VARCHAR(255);");
+        // Create a simple mock migration generator that returns MigrationResult
+        mockMigrationGenerator = (oldDdl, newDdl, textDiff, dialect) -> io.vavr.control.Try.success(new MigrationResult(
+                0.9,
+                "-- Migration from v1 to v2\nALTER TABLE users ADD COLUMN email VARCHAR(255);",
+                "Added email column to users table"));
 
         var comparisonService = new DdlComparisonService();
         service = new MigrationOrchestrationService(mockMigrationGenerator, comparisonService, repository);

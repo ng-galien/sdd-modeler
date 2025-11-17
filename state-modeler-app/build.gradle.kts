@@ -30,9 +30,8 @@ dependencies {
     // Diff algorithm for DDL comparison
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")
     
-    // LangChain4j for LLM-based migration script generation
+    // LangChain4j for LLM-based migration script generation (Ollama only)
     implementation("dev.langchain4j:langchain4j:0.36.2")
-    implementation("dev.langchain4j:langchain4j-jlama:0.36.2")
     implementation("dev.langchain4j:langchain4j-ollama:0.36.2")
     
     // SLF4J for logging

@@ -1,8 +1,14 @@
 package io.statemodeler.migration;
 
+import static dev.langchain4j.model.chat.request.ResponseFormatType.JSON;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.request.ResponseFormat;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.chat.request.json.JsonSchema;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.vavr.control.Try;
 import org.slf4j.Logger;
@@ -11,24 +17,23 @@ import org.slf4j.LoggerFactory;
 /**
  * LangChain4j-based implementation of {@link MigrationGenerationService}.
  *
- * <p>Uses a local LLM (via Jlama or Ollama) to generate SQL migration scripts
- * from DDL differences.
+ * <p>Uses Ollama LLM with JSON Schema structured outputs to generate SQL migration scripts
+ * from DDL differences. Returns a {@link MigrationResult} containing the script, confidence,
+ * and explanatory comments.
  *
  * <p>Usage example:
  * <pre>
- * // With Ollama
  * ChatModelProvider provider = new LangChainModelProvider();
- * var model = provider.createModel("ollama", "llama3.2", 0.7);
+ * var model = provider.createModel("llama3.2", 0.7);
  * var service = new LangChainMigrationGenerationService(model);
  *
- * // With Jlama
- * var model = provider.createModel("jlama", "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4", 0.2);
- * var service = new LangChainMigrationGenerationService(model);
- *
- * // Generate migration
+ * // Generate migration with structured output
  * var result = service.generateMigrationScript(oldDdl, newDdl, diff, "postgres");
- * result.onSuccess(script -> System.out.println(script));
- * result.onFailure(error -> System.err.println("Failed: " + error.getMessage()));
+ * result.onSuccess(migrationResult -> {
+ *     System.out.println("Confidence: " + migrationResult.confidence());
+ *     System.out.println("Script: " + migrationResult.migrationScript());
+ *     System.out.println("Comments: " + migrationResult.comments());
+ * });
  * </pre>
  */
 public class LangChainMigrationGenerationService implements MigrationGenerationService {
@@ -36,11 +41,12 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
     private static final Logger logger = LoggerFactory.getLogger(LangChainMigrationGenerationService.class);
 
     private final ChatLanguageModel chatModel;
+    private final ObjectMapper objectMapper;
 
     /**
      * Constructs the service with a configured LangChain4j chat model.
      *
-     * @param chatModel the LLM to use for generation (Jlama or Ollama)
+     * @param chatModel the LLM to use for generation (must support JSON Schema)
      * @throws IllegalArgumentException if chatModel is null
      */
     public LangChainMigrationGenerationService(ChatLanguageModel chatModel) {
@@ -48,10 +54,11 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
             throw new IllegalArgumentException("chatModel cannot be null");
         }
         this.chatModel = chatModel;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
-    public Try<String> generateMigrationScript(String oldDdl, String newDdl, String textDiff, String dialect) {
+    public Try<MigrationResult> generateMigrationScript(String oldDdl, String newDdl, String textDiff, String dialect) {
 
         return Try.of(() -> {
             // Validate inputs
@@ -71,19 +78,50 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
             logger.debug("Building migration prompt for dialect: {}", dialect);
             String prompt = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
 
-            logger.info("Calling LLM to generate migration script...");
-            ChatRequest request =
-                    ChatRequest.builder().messages(UserMessage.from(prompt)).build();
+            // Define JSON Schema for structured output
+            JsonSchema jsonSchema = JsonSchema.builder()
+                    .name("MigrationResult")
+                    .rootElement(JsonObjectSchema.builder()
+                            .addNumberProperty(
+                                    "confidence",
+                                    "LLM's confidence in the migration script (0.0 = no confidence, 1.0 = full confidence)")
+                            .addStringProperty(
+                                    "migrationScript",
+                                    "SQL DDL migration script to transform from old schema to new schema")
+                            .addStringProperty(
+                                    "comments",
+                                    "LLM's explanation and reasoning about the migration, including potential risks")
+                            .required("confidence", "migrationScript", "comments")
+                            .build())
+                    .build();
+
+            ResponseFormat responseFormat =
+                    ResponseFormat.builder().type(JSON).jsonSchema(jsonSchema).build();
+
+            logger.info("Calling LLM to generate migration script with structured output...");
+            ChatRequest request = ChatRequest.builder()
+                    .messages(UserMessage.from(prompt))
+                    .responseFormat(responseFormat)
+                    .build();
+
             ChatResponse response = chatModel.chat(request);
+            String jsonOutput = response.aiMessage().text();
 
-            String migrationScript = response.aiMessage().text();
-
-            if (migrationScript == null || migrationScript.isBlank()) {
-                throw new IllegalStateException("LLM returned empty migration script");
+            if (jsonOutput == null || jsonOutput.isBlank()) {
+                throw new IllegalStateException("LLM returned empty response");
             }
 
-            logger.info("Migration script generated successfully ({} chars)", migrationScript.length());
-            return migrationScript;
+            logger.debug("LLM JSON output: {}", jsonOutput);
+
+            // Parse JSON into MigrationResult
+            MigrationResult migrationResult = objectMapper.readValue(jsonOutput, MigrationResult.class);
+
+            logger.info(
+                    "Migration generated successfully - confidence: {}, script length: {} chars",
+                    migrationResult.confidence(),
+                    migrationResult.migrationScript().length());
+
+            return migrationResult;
         });
     }
 }

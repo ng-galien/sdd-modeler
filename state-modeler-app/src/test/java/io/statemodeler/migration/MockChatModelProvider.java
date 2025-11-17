@@ -13,7 +13,7 @@ import dev.langchain4j.model.output.Response;
  *
  * <pre>{@code
  * ChatModelProvider mockProvider = new MockChatModelProvider("-- Mock migration script");
- * ChatLanguageModel model = mockProvider.createModel("mock", "test-model", 0.0);
+ * ChatLanguageModel model = mockProvider.createModel("test-model", 0.0);
  * String response = model.generate("prompt");
  * assertEquals("-- Mock migration script", response);
  * }</pre>
@@ -37,13 +37,12 @@ public final class MockChatModelProvider implements ChatModelProvider {
     }
 
     @Override
-    public ChatLanguageModel createModel(String provider, String modelName, double temperature) {
+    public ChatLanguageModel createModel(String modelName, double temperature) {
         return new MockChatLanguageModel(mockResponse);
     }
 
     @Override
-    public ChatLanguageModel createModel(
-            String provider, String modelName, double temperature, String baseUrl, int timeoutSeconds) {
+    public ChatLanguageModel createModel(String modelName, double temperature, String baseUrl, int timeoutSeconds) {
         return new MockChatLanguageModel(mockResponse);
     }
 

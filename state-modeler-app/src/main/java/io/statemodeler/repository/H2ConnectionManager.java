@@ -42,6 +42,8 @@ final class H2ConnectionManager {
                 from_hash VARCHAR(64) NOT NULL,
                 to_hash VARCHAR(64) NOT NULL,
                 migration_script CLOB NOT NULL,
+                confidence DOUBLE NOT NULL,
+                comments CLOB NOT NULL,
                 dialect VARCHAR(50) NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (from_hash, to_hash),

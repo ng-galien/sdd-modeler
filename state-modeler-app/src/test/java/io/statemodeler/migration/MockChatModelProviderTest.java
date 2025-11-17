@@ -17,7 +17,7 @@ class MockChatModelProviderTest {
         var provider = new MockChatModelProvider();
 
         // When
-        var model = provider.createModel("mock", "test-model", 0.0);
+        var model = provider.createModel("test-model", 0.0);
 
         // Then
         assertNotNull(model);
@@ -34,7 +34,7 @@ class MockChatModelProviderTest {
         var provider = new MockChatModelProvider(customResponse);
 
         // When
-        var model = provider.createModel("mock", "test-model", 0.0);
+        var model = provider.createModel("test-model", 0.0);
 
         // Then
         assertNotNull(model);
@@ -42,11 +42,11 @@ class MockChatModelProviderTest {
     }
 
     @Test
-    void shouldReturnSameResponseForAllPrompts() {
+    void shouldReturnSameResponseForAllModelNames() {
         // Given
         String expectedResponse = "-- Deterministic response";
         var provider = new MockChatModelProvider(expectedResponse);
-        var model = provider.createModel("mock", "test", 0.5);
+        var model = provider.createModel("test", 0.5);
 
         // When/Then - all prompts return same response
         assertEquals(expectedResponse, model.generate("prompt 1"));
@@ -60,7 +60,7 @@ class MockChatModelProviderTest {
         var provider = new MockChatModelProvider("test response");
 
         // When - use full parameter version
-        var model = provider.createModel("mock", "model-name", 0.7, "http://localhost:8080", 120);
+        var model = provider.createModel("model-name", 0.7, "http://localhost:8080", 120);
 
         // Then
         assertNotNull(model);
@@ -68,18 +68,18 @@ class MockChatModelProviderTest {
     }
 
     @Test
-    void shouldIgnoreProviderAndModelNameParameters() {
+    void shouldIgnoreModelNameAndTemperatureParameters() {
         // Given - mock provider ignores provider/model name
         var provider = new MockChatModelProvider("fixed response");
 
         // When - different providers and models all work
-        var jlamaModel = provider.createModel("jlama", "some-model", 0.0);
-        var ollamaModel = provider.createModel("ollama", "other-model", 1.0);
-        var unknownModel = provider.createModel("unknown", "test", 0.5);
+        var model1 = provider.createModel("some-model", 0.0);
+        var model2 = provider.createModel("other-model", 1.0);
+        var model3 = provider.createModel("test", 0.5);
 
         // Then - all return same mock response
-        assertEquals("fixed response", jlamaModel.generate("test"));
-        assertEquals("fixed response", ollamaModel.generate("test"));
-        assertEquals("fixed response", unknownModel.generate("test"));
+        assertEquals("fixed response", model1.generate("test"));
+        assertEquals("fixed response", model2.generate("test"));
+        assertEquals("fixed response", model3.generate("test"));
     }
 }

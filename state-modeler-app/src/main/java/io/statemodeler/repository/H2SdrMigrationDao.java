@@ -48,16 +48,18 @@ final class H2SdrMigrationDao {
 
         return Try.withResources(connectionManager::getConnection).of(conn -> {
             String sql = """
-                    INSERT INTO sdr_migrations (from_hash, to_hash, migration_script, dialect, created_at)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO sdr_migrations (from_hash, to_hash, migration_script, confidence, comments, dialect, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """;
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, migration.fromHash());
                 stmt.setString(2, migration.toHash());
                 stmt.setString(3, migration.migrationScript());
-                stmt.setString(4, migration.dialect());
-                stmt.setTimestamp(5, Timestamp.from(migration.createdAt()));
+                stmt.setDouble(4, migration.confidence());
+                stmt.setString(5, migration.comments());
+                stmt.setString(6, migration.dialect());
+                stmt.setTimestamp(7, Timestamp.from(migration.createdAt()));
 
                 int rowsAffected = stmt.executeUpdate();
                 if (rowsAffected == 0) {
@@ -86,7 +88,7 @@ final class H2SdrMigrationDao {
 
         return Try.withResources(connectionManager::getConnection).of(conn -> {
             String sql = """
-                    SELECT from_hash, to_hash, migration_script, dialect, created_at
+                    SELECT from_hash, to_hash, migration_script, confidence, comments, dialect, created_at
                     FROM sdr_migrations
                     WHERE from_hash = ? AND to_hash = ?
                     """;
@@ -118,7 +120,7 @@ final class H2SdrMigrationDao {
 
         return Try.withResources(connectionManager::getConnection).of(conn -> {
             String sql = """
-                    SELECT from_hash, to_hash, migration_script, dialect, created_at
+                    SELECT from_hash, to_hash, migration_script, confidence, comments, dialect, created_at
                     FROM sdr_migrations
                     WHERE from_hash = ?
                     ORDER BY created_at DESC
@@ -144,7 +146,7 @@ final class H2SdrMigrationDao {
 
         return Try.withResources(connectionManager::getConnection).of(conn -> {
             String sql = """
-                    SELECT from_hash, to_hash, migration_script, dialect, created_at
+                    SELECT from_hash, to_hash, migration_script, confidence, comments, dialect, created_at
                     FROM sdr_migrations
                     WHERE to_hash = ?
                     ORDER BY created_at DESC
@@ -201,6 +203,8 @@ final class H2SdrMigrationDao {
                 rs.getString("from_hash"),
                 rs.getString("to_hash"),
                 rs.getString("migration_script"),
+                rs.getDouble("confidence"),
+                rs.getString("comments"),
                 rs.getString("dialect"),
                 rs.getTimestamp("created_at").toInstant());
     }

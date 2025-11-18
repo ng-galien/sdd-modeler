@@ -35,69 +35,63 @@ public class SqlCommand implements Callable<Integer> {
     private Path outputFile;
 
     @Override
-    public Integer call() throws Exception {
+    public Integer call() {
         logger.info("Generating SQL for model file: {}", modelFile);
         logger.info("Dialect: {}", dialect);
 
-        try {
-            // Check if dialect is supported
-            if (!DdlGenerators.isSupported(dialect)) {
-                logger.error("Error: Unsupported SQL dialect '{}'", dialect);
-                logger.error("Supported dialects: {}", String.join(", ", DdlGenerators.getSupportedDialects()));
-                return 1;
-            }
-
-            // Check if model file exists
-            if (!Files.exists(modelFile)) {
-                logger.error("Error: Model file does not exist: {}", modelFile);
-                return 1;
-            }
-
-            // Load and validate the model
-            var loader = ModelLoader.forFile(modelFile);
-            var loadResult = loader.loadFromFile(modelFile);
-
-            if (loadResult.isFailure()) {
-                logger.error("✗ Failed to parse model file:");
-                logger.error("  {}", loadResult.getCause().getMessage());
-                return 1;
-            }
-
-            var model = loadResult.get();
-            logger.info("✓ Model parsed successfully: {}", model.name());
-
-            // Validate the model before generating SQL
-            var validator = ModelValidators.getInstance();
-            var validationResult = validator.validate(model);
-
-            if (validationResult.isInvalid()) {
-                logger.error("✗ Model validation failed:");
-                for (var error : validationResult.getError()) {
-                    logger.error("  • {}", error.message());
-                }
-                return 1;
-            }
-
-            // Generate DDL
-            var generator = DdlGenerators.forDialect(dialect);
-            var ddlStatements = generator.generateDdl(model);
-
-            var output = String.join(";\n", ddlStatements) + ";\n";
-
-            // Write to file or stdout
-            if (outputFile != null) {
-                Files.writeString(outputFile, output);
-                logger.info("✓ DDL written to: {}", outputFile);
-            } else {
-                System.out.println();
-                System.out.println("-- Generated DDL for " + model.name());
-                System.out.println(output);
-            }
-
-            return 0;
-        } catch (Exception e) {
-            logger.error("Error generating SQL: {}", e.getMessage());
+        if (!DdlGenerators.isSupported(dialect)) {
+            logger.error("Error: Unsupported SQL dialect '{}'", dialect);
+            logger.error("Supported dialects: {}", String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
+         // Check if model file exists
+        if (!Files.exists(modelFile)) {
+            logger.error("Error: Model file does not exist: {}", modelFile);
+            return 1;
+        }
+
+        return io.vavr.control.Try.of(() -> modelFile)
+                .map(f -> ModelLoader.forFile(f))
+                .flatMap(loader -> loader.loadFromFile(modelFile))
+                .fold(
+                        throwable -> {
+                            logger.error("✗ Failed to parse model file:");
+                            logger.error("  {}", throwable.getMessage());
+                            return 1;
+                        },
+                        model -> {
+                            logger.info("✓ Model parsed successfully: {}", model.name());
+                            var validationResult = ModelValidators.getInstance().validate(model);
+                            if (validationResult.isInvalid()) {
+                                logger.error("✗ Model validation failed:");
+                                for (var error : validationResult.getError()) {
+                                    logger.error("  • {}", error.message());
+                                }
+                                return 1;
+                            }
+
+                            // Generate DDL
+                            var generator = DdlGenerators.forDialect(dialect);
+                            var ddlStatements = generator.generateDdl(model);
+                            var output = String.join(";\n", ddlStatements) + ";\n";
+
+                            // Write to file or stdout
+                            if (outputFile != null) {
+                                var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile, output));
+                                if (writeResult.isFailure()) {
+                                    logger.error(
+                                            "Error writing DDL output: {}",
+                                            writeResult.getCause().getMessage());
+                                    return 1;
+                                }
+                                logger.info("✓ DDL written to: {}", outputFile);
+                            } else {
+                                System.out.println();
+                                System.out.println("-- Generated DDL for " + model.name());
+                                System.out.println(output);
+                            }
+
+                            return 0;
+                        });
     }
 }

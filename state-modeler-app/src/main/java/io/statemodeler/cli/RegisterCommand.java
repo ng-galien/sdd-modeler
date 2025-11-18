@@ -58,80 +58,74 @@ public class RegisterCommand implements Callable<Integer> {
     public Integer call() {
         System.out.println("Registering SDD model: " + modelFile);
 
-        // 0. Read file content
-        String modelSource;
-        String contentType;
-        try {
-            modelSource = Files.readString(modelFile);
-            contentType = modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
-        } catch (Exception e) {
-            System.err.println("ERROR: Failed to read model file");
-            System.err.println("  " + e.getMessage());
-            return 1;
-        }
+        // Read -> load -> validate -> create -> save using Vavr Try flows
+        return io.vavr.control.Try.of(() -> {
+                String modelSource = Files.readString(modelFile);
+                String contentType = modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
+                var model = loader.loadFromFile(modelFile).get();
+                return new java.util.AbstractMap.SimpleEntry<>(model, new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType));
+            })
+                .fold(
+                throwable -> {
+                            System.err.println("ERROR: Failed to parse model file");
+                            System.err.println("  " + throwable.getMessage());
+                            return 1;
+                        },
+                entry -> {
+                    var model = entry.getKey();
+                    var pair = entry.getValue();
+                    String modelSource = pair.getKey();
+                    String contentType = pair.getValue();
+                    System.out.println("  Loaded model: " + model.name());
+                    var validationResult = validator.validate(model);
+                            if (validationResult.isInvalid()) {
+                                System.err.println("ERROR: Model validation failed");
+                                validationResult.getError().forEach(err -> System.err.println("  - " + err.message()));
+                                return 1;
+                            }
 
-        // 1. Load and validate model
-        var loadResult = loader.loadFromFile(modelFile);
-        if (loadResult.isFailure()) {
-            System.err.println("ERROR: Failed to parse model file");
-            System.err.println("  " + loadResult.getCause().getMessage());
-            return 1;
-        }
+                            System.out.println("  Validation: PASSED");
 
-        var model = loadResult.get();
-        System.out.println("  Loaded model: " + model.name());
+                                String sqlDialect = model.database().dialect();
+                                var sdr = sdrFactory.create(modelSource, contentType, sqlDialect);
 
-        // 2. Validate model
-        var validationResult = validator.validate(model);
-        if (validationResult.isInvalid()) {
-            System.err.println("ERROR: Model validation failed");
-            validationResult.getError().forEach(err -> System.err.println("  - " + err.message()));
-            return 1;
-        }
+                            System.out.println("  Schema hash: " + sdr.schemaHash());
+                            System.out.println("  DDL hash: " + sdr.ddlHash());
 
-        System.out.println("  Validation: PASSED");
+                            String finalName = resolveName(model.name());
+                            String finalVersion = resolveVersion(model.version());
 
-        // 3. Create SDR
-        String sqlDialect = model.database().dialect();
-        var sdr = sdrFactory.create(modelSource, contentType, sqlDialect);
-
-        System.out.println("  Schema hash: " + sdr.schemaHash());
-        System.out.println("  DDL hash: " + sdr.ddlHash());
-
-        // 4. Resolve name and version
-        String finalName = resolveName(model.name());
-        String finalVersion = resolveVersion(model.version());
-
-        // 5. Save to repository
-        try (var repository = repositoryMixin.createRepository()) {
-            var saveResult = repository.save(sdr, finalName, finalVersion);
-
-            if (saveResult.isFailure()) {
-                Throwable cause = saveResult.getCause();
-                if (cause instanceof IllegalArgumentException
-                        && cause.getMessage().contains("already exists")) {
-                    System.err.println("ERROR: SDR already registered");
-                    System.err.println("  An SDR with hash " + sdr.schemaHash() + " already exists in the repository");
-                    System.err.println("  Use 'sdd-modeler list' to view registered SDRs");
-                    return 2;
-                }
-                System.err.println("ERROR: Failed to save SDR to repository");
-                System.err.println("  " + cause.getMessage());
-                return 1;
-            }
-
-            System.out.println("\n✓ Successfully registered SDR");
-            System.out.println("  Name: " + finalName);
-            System.out.println("  Version: " + finalVersion);
-            System.out.println("  Hash: " + sdr.schemaHash());
-
-            return 0;
-
-        } catch (Exception e) {
-            System.err.println("ERROR: Repository error");
-            System.err.println("  " + e.getMessage());
-            return 1;
-        }
+                            // Save to repository; use Try to flatten nested Try from repository.save
+                            return io.vavr.control.Try.of(() -> {
+                                        try (var repo = repositoryMixin.createRepository()) {
+                                            return repo.save(sdr, finalName, finalVersion);
+                                        }
+                                    })
+                                    .flatMap(x -> x)
+                                    .fold(
+                                                    saveErr -> {
+                                                        Throwable cause = saveErr instanceof IllegalArgumentException ? saveErr : saveErr.getCause();
+                                                        if (cause instanceof IllegalArgumentException
+                                                                && cause.getMessage().contains("already exists")) {
+                                                    System.err.println("ERROR: SDR already registered");
+                                                    System.err.println("  An SDR with hash " + sdr.schemaHash()
+                                                            + " already exists in the repository");
+                                                    System.err.println(
+                                                            "  Use 'sdd-modeler list' to view registered SDRs");
+                                                    return 2;
+                                                }
+                                                System.err.println("ERROR: Failed to save SDR to repository");
+                                                System.err.println("  " + cause.getMessage());
+                                                return 1;
+                                            },
+                                            ignored -> {
+                                                System.out.println("\n✓ Successfully registered SDR");
+                                                System.out.println("  Name: " + finalName);
+                                                System.out.println("  Version: " + finalVersion);
+                                                System.out.println("  Hash: " + sdr.schemaHash());
+                                                return 0;
+                                            });
+                        });
     }
 
     /**

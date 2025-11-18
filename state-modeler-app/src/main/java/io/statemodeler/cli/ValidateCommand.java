@@ -22,47 +22,36 @@ public class ValidateCommand implements Callable<Integer> {
     private Path modelFile;
 
     @Override
-    public Integer call() throws Exception {
+    public Integer call() {
         logger.info("Validating model file: {}", modelFile);
-
-        try {
-            // Check if model file exists
-            if (!Files.exists(modelFile)) {
-                logger.error("Error: Model file does not exist: {}", modelFile);
-                return 1;
-            }
-
-            // Load model using appropriate loader based on file extension
-            var loader = ModelLoader.forFile(modelFile);
-            var loadResult = loader.loadFromFile(modelFile);
-
-            if (loadResult.isFailure()) {
-                logger.error("✗ Failed to parse model file:");
-                logger.error("  {}", loadResult.getCause().getMessage());
-                return 1;
-            }
-
-            var model = loadResult.get();
-            logger.info("✓ Model parsed successfully: {}", model.name());
-
-            // Validate the loaded model
-            var validator = ModelValidators.getInstance();
-            var validationResult = validator.validate(model);
-
-            if (validationResult.isInvalid()) {
-                logger.error("✗ Model validation failed:");
-                for (var error : validationResult.getError()) {
-                    logger.error("  • {}", error.message());
-                }
-                return 1;
-            }
-
-            logger.info("✓ Model validation passed");
-            return 0;
-
-        } catch (Exception e) {
-            logger.error("Error validating model: {}", e.getMessage());
+        if (!Files.exists(modelFile)) {
+            logger.error("Error: Model file does not exist: {}", modelFile);
             return 1;
         }
+
+        return io.vavr.control.Try.of(() -> modelFile)
+                // create loader and load model
+                .map(f -> ModelLoader.forFile(f))
+                .flatMap(loader -> loader.loadFromFile(modelFile))
+                // handle load/validate result
+                .fold(
+                        throwable -> {
+                            logger.error("✗ Failed to parse model file:");
+                            logger.error("  {}", throwable.getMessage());
+                            return 1;
+                        },
+                        model -> {
+                            logger.info("✓ Model parsed successfully: {}", model.name());
+                            var validationResult = ModelValidators.getInstance().validate(model);
+                            if (validationResult.isInvalid()) {
+                                logger.error("✗ Model validation failed:");
+                                for (var error : validationResult.getError()) {
+                                    logger.error("  • {}", error.message());
+                                }
+                                return 1;
+                            }
+                            logger.info("✓ Model validation passed");
+                            return 0;
+                        });
     }
 }

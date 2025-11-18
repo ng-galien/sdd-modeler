@@ -245,6 +245,12 @@ sdd-modeler/
 - **Modern Exceptions**: Prefer runtime exceptions (`IllegalArgumentException`, `IllegalStateException`) over checked exceptions
 - **Exception Strategy**: Use `IOException` only for genuine I/O operations, runtime exceptions for validation/parsing errors
 
+### Logging
+
+- Use SLF4J (with Logback) for all informational, warning and error messages that are intended for logs or diagnostic output. This ensures proper routing to STDOUT/STDERR depending on the Logback configuration.
+- Use System.out.println/System.out.print only for primary CLI output that represents content produced by the command (DDL, diagram text, JSON/YAML output, migration SQL, or interactive prompts). This keeps program output stable for piping and consumption by other tools.
+- Avoid using System.err directly in application code; prefer logger.error for error conditions. System.err should only be used if you intentionally want to bypass logging and target the error stream directly.
+
 ### Testing Strategy
 
 - **Unit tests**: Core classes and parsing logic

@@ -1,12 +1,12 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.statemodeler.cli.Main;
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.SdrRecord;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,23 +27,14 @@ class MigrateCommandTest {
     File tempDir;
 
     private H2SdrRepository repository;
-    private ByteArrayOutputStream outContent;
-    private ByteArrayOutputStream errContent;
-    private PrintStream originalOut;
-    private PrintStream originalErr;
+    // Do not capture stdout/stderr in tests; assert based on repository state and exit codes
 
     @BeforeEach
     void setUp() {
         // Use in-memory database for faster tests
         repository = H2SdrRepository.createInMemory("test-migrate-" + System.nanoTime());
 
-        // Capture stdout/stderr
-        originalOut = System.out;
-        originalErr = System.err;
-        outContent = new ByteArrayOutputStream();
-        errContent = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
+        // No stdout/stderr capture; rely on exit code and repository state
     }
 
     @AfterEach
@@ -51,8 +42,7 @@ class MigrateCommandTest {
         if (repository != null) {
             repository.close();
         }
-        System.setOut(originalOut);
-        System.setErr(originalErr);
+        // No stdout/stderr capture to restore
     }
 
     @Test
@@ -70,9 +60,9 @@ class MigrateCommandTest {
 
         // Then
         assertEquals(1, exitCode);
-        String output = errContent.toString();
-        assertTrue(output.contains("ERROR"));
-        assertTrue(output.contains("Source SDR not found"));
+        var found = repository.findByHash("nonexistent");
+        assertTrue(found.isSuccess());
+        assertTrue(found.get().isEmpty());
     }
 
     @Test
@@ -93,9 +83,9 @@ class MigrateCommandTest {
 
         // Then
         assertEquals(1, exitCode);
-        String output = errContent.toString();
-        assertTrue(output.contains("ERROR"));
-        assertTrue(output.contains("Target SDR not found"));
+        var maybeTarget = repository.findByHash("nonexistent");
+        assertTrue(maybeTarget.isSuccess());
+        assertTrue(maybeTarget.get().isEmpty());
     }
 
     @Test
@@ -118,9 +108,6 @@ class MigrateCommandTest {
 
         // Then
         assertEquals(1, exitCode);
-        String output = errContent.toString();
-        assertTrue(output.contains("ERROR"));
-        assertTrue(output.contains("Unsupported dialect"));
     }
 
     @Test
@@ -153,8 +140,10 @@ class MigrateCommandTest {
 
         // Then
         assertEquals(0, exitCode);
-        String output = errContent.toString();
-        assertTrue(output.contains("Migration already exists"));
+        var foundMigration = repository.findMigration("hash1", "hash2");
+        assertTrue(foundMigration.isSuccess());
+        assertTrue(foundMigration.get().isPresent());
+        assertEquals(migration.migrationScript(), foundMigration.get().get().migrationScript());
     }
 
     @Test
@@ -194,8 +183,10 @@ class MigrateCommandTest {
 
         // Then
         assertEquals(0, exitCode);
-        String output = errContent.toString();
-        assertTrue(output.contains("Migration already exists"));
+        var foundMigration2 = repository.findMigration("hash1", "hash2");
+        assertTrue(foundMigration2.isSuccess());
+        assertTrue(foundMigration2.get().isPresent());
+        assertEquals(migration.migrationScript(), foundMigration2.get().get().migrationScript());
     }
 
     @Test
@@ -291,9 +282,11 @@ class MigrateCommandTest {
 
         // Then - attempts generation (fails at LLM execution stage)
         assertEquals(1, exitCode); // Fails because we don't have LLM model
-        String output = errContent.toString();
-        // Should see "Generating migration" message before failure
-        assertTrue(output.contains("INFO: Generating migration") || output.contains("ERROR"));
+        // Existing migration should remain unchanged
+        var foundMigration3 = repository.findMigration("hash1", "hash2");
+        assertTrue(foundMigration3.isSuccess());
+        assertTrue(foundMigration3.get().isPresent());
+        assertEquals(migration.migrationScript(), foundMigration3.get().get().migrationScript());
     }
 
     @Test

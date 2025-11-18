@@ -1,13 +1,10 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import io.statemodeler.cli.CliTestHelper;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
@@ -16,23 +13,6 @@ class DiffCommandTest {
 
     @TempDir
     Path tempDir;
-
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
-
-    @BeforeEach
-    void setUpStreams() {
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
-    }
-
-    @AfterEach
-    void restoreStreams() {
-        System.setOut(originalOut);
-        System.setErr(originalErr);
-    }
 
     @Test
     void shouldShowDiffBetweenTwoModels() throws Exception {
@@ -98,16 +78,18 @@ class DiffCommandTest {
 
         var command = new DiffCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
-
-        // Then
-        assertEquals(0, exitCode);
-        var output = outContent.toString();
-        assertTrue(output.contains("✓ Current model parsed"));
-        assertTrue(output.contains("✓ Future model parsed"));
-        assertTrue(output.contains("DDL Diff:"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // Then
+                    assertEquals(0, result.exitCode());
+                    var output = result.out();
+                    assertTrue(output.contains("✓ Current model parsed"));
+                    assertTrue(output.contains("✓ Future model parsed"));
+                    assertTrue(output.contains("DDL Diff:"));
+                },
+                currentFile.toString(),
+                futureFile.toString());
     }
 
     @Test
@@ -147,14 +129,15 @@ class DiffCommandTest {
 
         var command = new DiffCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
-
-        // Then
-        assertEquals(0, exitCode);
-        var output = outContent.toString();
-        assertTrue(output.contains("✓ No differences found - DDL schemas are identical"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    var output = result.out();
+                    assertTrue(output.contains("✓ No differences found - DDL schemas are identical"));
+                },
+                currentFile.toString(),
+                futureFile.toString());
     }
 
     @Test
@@ -165,6 +148,7 @@ class DiffCommandTest {
 
         var command = new DiffCommand();
         var cmd = new CommandLine(command);
+        // No capture required here; only assert exit code
 
         // When
         var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
@@ -336,14 +320,17 @@ class DiffCommandTest {
 
         var command = new DiffCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString(), "--dialect", "mysql");
-
-        // Then
-        assertEquals(1, exitCode);
-        var errorOutput = errContent.toString();
-        assertTrue(errorOutput.contains("Unsupported SQL dialect"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    String errorOutput = result.err();
+                    assertTrue(errorOutput.contains("Unsupported SQL dialect"));
+                },
+                currentFile.toString(),
+                futureFile.toString(),
+                "--dialect",
+                "mysql");
     }
 
     @Test
@@ -380,14 +367,15 @@ class DiffCommandTest {
 
         var command = new DiffCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        var errorOutput = errContent.toString();
-        assertTrue(errorOutput.contains("Failed to parse current model"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    String errorOutput = result.err();
+                    assertTrue(errorOutput.contains("Failed to parse current model"));
+                },
+                currentFile.toString(),
+                futureFile.toString());
     }
 
     @Test
@@ -424,13 +412,14 @@ class DiffCommandTest {
 
         var command = new DiffCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(currentFile.toString(), futureFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        var errorOutput = errContent.toString();
-        assertTrue(errorOutput.contains("Failed to parse future model"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    String errorOutput = result.err();
+                    assertTrue(errorOutput.contains("Failed to parse future model"));
+                },
+                currentFile.toString(),
+                futureFile.toString());
     }
 }

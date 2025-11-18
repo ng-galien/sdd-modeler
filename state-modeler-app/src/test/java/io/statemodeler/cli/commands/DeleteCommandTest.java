@@ -1,8 +1,9 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.SdrRecord;
 import java.io.ByteArrayInputStream;

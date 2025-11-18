@@ -1,9 +1,10 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.statemodeler.cli.dto.MigrationJsonOutput;
-import io.statemodeler.cli.dto.SdrSummary;
-import io.statemodeler.cli.dto.ShowMigrationJsonOutput;
+import io.statemodeler.cli.RepositoryMixin;
+import io.statemodeler.cli.dto.MigrationDto;
+import io.statemodeler.cli.dto.SdrSummaryDto;
+import io.statemodeler.cli.dto.ShowMigrationDto;
 import io.statemodeler.comparison.DdlComparison;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.repository.SdrMigration;
@@ -13,6 +14,8 @@ import java.io.File;
 // Files import not needed with Jackson ObjectMapper JSON serialization
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -28,6 +31,7 @@ import picocli.CommandLine.Parameters;
         description = "Retrieve migration info (orig/new ddl, diff, migration JSON)",
         mixinStandardHelpOptions = true)
 public class ShowMigrationCommand implements Callable<Integer> {
+    private static final Logger logger = LoggerFactory.getLogger(ShowMigrationCommand.class);
 
     @Parameters(index = "0", description = "Source SDR hash or name:version")
     String fromIdentifier;
@@ -49,26 +53,26 @@ public class ShowMigrationCommand implements Callable<Integer> {
             // Resolve from and to SDRs
             var fromResult = findSdr(repository, fromIdentifier);
             if (fromResult.isFailure()) {
-                System.err.println("ERROR: Failed to retrieve source SDR");
-                System.err.println("  " + fromResult.getCause().getMessage());
+                logger.error("ERROR: Failed to retrieve source SDR");
+                logger.error("  {}", fromResult.getCause().getMessage());
                 return 1;
             }
             var fromOpt = fromResult.get();
             if (fromOpt.isEmpty()) {
-                System.err.println("ERROR: Source SDR not found: " + fromIdentifier);
+                logger.error("ERROR: Source SDR not found: {}", fromIdentifier);
                 return 1;
             }
             SdrRecord fromSdr = fromOpt.get();
 
             var toResult = findSdr(repository, toIdentifier);
             if (toResult.isFailure()) {
-                System.err.println("ERROR: Failed to retrieve target SDR");
-                System.err.println("  " + toResult.getCause().getMessage());
+                logger.error("ERROR: Failed to retrieve target SDR");
+                logger.error("  {}", toResult.getCause().getMessage());
                 return 1;
             }
             var toOpt = toResult.get();
             if (toOpt.isEmpty()) {
-                System.err.println("ERROR: Target SDR not found: " + toIdentifier);
+                logger.error("ERROR: Target SDR not found: {}", toIdentifier);
                 return 1;
             }
             SdrRecord toSdr = toOpt.get();
@@ -83,26 +87,26 @@ public class ShowMigrationCommand implements Callable<Integer> {
             // Find persisted migration via repository
             var migrationResult = repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
             if (migrationResult.isFailure()) {
-                System.err.println("ERROR: Failed to fetch migration from repository");
-                System.err.println("  " + migrationResult.getCause().getMessage());
+                logger.error("ERROR: Failed to fetch migration from repository");
+                logger.error("  {}", migrationResult.getCause().getMessage());
                 return 1;
             }
             Optional<SdrMigration> maybeMigration = migrationResult.get();
 
-            var original = new SdrSummary(fromSdr.schemaHash(), fromSdr.ddl());
-            var newSdrSummary = new SdrSummary(toSdr.schemaHash(), toSdr.ddl());
-            MigrationJsonOutput migrationOutput = null;
+            var original = new SdrSummaryDto(fromSdr.schemaHash(), fromSdr.ddl());
+            var newSdrSummary = new SdrSummaryDto(toSdr.schemaHash(), toSdr.ddl());
+            MigrationDto migrationOutput = null;
             if (maybeMigration.isPresent()) {
                 var m = maybeMigration.get();
-                migrationOutput = new MigrationJsonOutput(m.confidence(), m.comments(), m.migrationScript());
+                migrationOutput = new MigrationDto(m.confidence(), m.comments(), m.migrationScript());
             }
 
-            var output = new ShowMigrationJsonOutput(original, newSdrSummary, textDiff, migrationOutput);
+            var output = new ShowMigrationDto(original, newSdrSummary, textDiff, migrationOutput);
 
             if (outputJson != null) {
                 var mapper = new ObjectMapper();
                 mapper.writeValue(outputJson, output);
-                System.err.println("Wrote JSON to " + outputJson.getAbsolutePath());
+                logger.info("Wrote JSON to {}", outputJson.getAbsolutePath());
             } else {
                 var mapper = new ObjectMapper();
                 System.out.println(mapper.writeValueAsString(output));
@@ -110,8 +114,8 @@ public class ShowMigrationCommand implements Callable<Integer> {
 
             return 0;
         } catch (Exception e) {
-            System.err.println("ERROR: Unexpected error");
-            System.err.println("  " + e.getMessage());
+            logger.error("ERROR: Unexpected error");
+            logger.error("  {}", e.getMessage());
             e.printStackTrace();
             return 1;
         }

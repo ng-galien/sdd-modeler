@@ -39,7 +39,7 @@ public class RepositoryMixin {
             description =
                     "Path to SDR repository database (default: ~/.sdd-modeler/repository, env: SDD_REPOSITORY_PATH)",
             paramLabel = "<path>")
-    String repositoryPath;
+    public String repositoryPath;
 
     /**
      * Pre-created repository for testing purposes.
@@ -48,7 +48,7 @@ public class RepositoryMixin {
      * instead of creating a new one. This allows tests to inject in-memory repositories without
      * them being closed by command try-with-resources blocks.
      */
-    H2SdrRepository testRepository;
+    public H2SdrRepository testRepository;
 
     /**
      * Creates a new {@link SdrRepository} instance using the configured path.

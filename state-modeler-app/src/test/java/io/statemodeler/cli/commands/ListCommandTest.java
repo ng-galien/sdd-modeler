@@ -1,16 +1,17 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.statemodeler.cli.CliTestHelper;
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.DefaultSdrFactory;
 import io.statemodeler.sdr.SdrFactory;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 /**
  * Tests for {@link ListCommand}.
@@ -44,25 +45,22 @@ class ListCommandTest {
         command.limit = 0;
         command.repositoryMixin = createMixin();
 
-        // Capture output
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(output.contains("NAME"), "Should have table header");
-        assertTrue(output.contains("VERSION"), "Should have VERSION column");
-        assertTrue(output.contains("HASH"), "Should have HASH column");
-        assertTrue(output.contains("model1"), "Should list model1");
-        assertTrue(output.contains("model2"), "Should list model2");
-        assertTrue(output.contains("Total: 2 SDR(s)"), "Should show total count");
+        // When / Then
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(output.contains("NAME"), "Should have table header");
+                    assertTrue(output.contains("VERSION"), "Should have VERSION column");
+                    assertTrue(output.contains("HASH"), "Should have HASH column");
+                    assertTrue(output.contains("model1"), "Should list model1");
+                    assertTrue(output.contains("model2"), "Should list model2");
+                    assertTrue(output.contains("Total: 2 SDR(s)"), "Should show total count");
+                },
+                "--format",
+                "table");
     }
 
     @Test
@@ -75,22 +73,20 @@ class ListCommandTest {
         command.limit = 0;
         command.repositoryMixin = createMixin();
 
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(output.contains("\"sdrs\""), "Should have sdrs array");
-        assertTrue(output.contains("\"name\""), "Should have name field");
-        assertTrue(output.contains("\"json-model\""), "Should contain model name");
-        assertTrue(output.contains("\"total\""), "Should have total field");
+        // When / Then
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(output.contains("\"sdrs\""), () -> "Should have sdrs array; actual: " + output);
+                    assertTrue(output.contains("\"name\""), () -> "Should have name field; actual: " + output);
+                    assertTrue(output.contains("\"json-model\""), () -> "Should contain model name; actual: " + output);
+                    assertTrue(output.contains("\"total\""), () -> "Should have total field; actual: " + output);
+                },
+                "--format",
+                "json");
     }
 
     @Test
@@ -103,22 +99,19 @@ class ListCommandTest {
         command.limit = 0;
         command.repositoryMixin = createMixin();
 
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(output.contains("sdrs:"), "Should have sdrs key");
-        assertTrue(output.contains("name:"), "Should have name field");
-        assertTrue(output.contains("yaml-model"), "Should contain model name");
-        assertTrue(output.contains("total:"), "Should have total field");
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(output.contains("sdrs:"), () -> "Should have sdrs key; actual: " + output);
+                    assertTrue(output.contains("name:"), () -> "Should have name field; actual: " + output);
+                    assertTrue(output.contains("yaml-model"), () -> "Should contain model name; actual: " + output);
+                    assertTrue(output.contains("total:"), () -> "Should have total field; actual: " + output);
+                },
+                "--format",
+                "yaml");
     }
 
     @Test
@@ -129,21 +122,18 @@ class ListCommandTest {
         command.limit = 0;
         command.repositoryMixin = createMixin();
 
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(
-                output.contains("No SDRs registered") || output.contains("Total: 0"),
-                "Should indicate empty repository");
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(
+                            output.contains("No SDRs registered") || output.contains("Total: 0"),
+                            "Should indicate empty repository");
+                },
+                "--format",
+                "table");
     }
 
     @Test
@@ -158,19 +148,19 @@ class ListCommandTest {
         command.limit = 3;
         command.repositoryMixin = createMixin();
 
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(output.contains("Total: 3 SDR(s)"), "Should limit to 3 results");
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(
+                            output.contains("Total: 3 SDR(s)"), () -> "Should limit to 3 results; actual: " + output);
+                },
+                "--format",
+                "table",
+                "--limit",
+                "3");
     }
 
     @Test
@@ -217,19 +207,16 @@ class ListCommandTest {
         command.limit = 0;
         command.repositoryMixin = createMixin();
 
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(output.contains("..."), "Should truncate long names with ellipsis");
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(output.contains("..."), "Should truncate long names with ellipsis");
+                },
+                "--format",
+                "table");
     }
 
     @Test
@@ -242,20 +229,20 @@ class ListCommandTest {
         command.limit = 0;
         command.repositoryMixin = createMixin();
 
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
-        int exitCode = command.call();
-
-        // Then
-        System.setOut(originalOut);
-        assertEquals(0, exitCode);
-
-        String output = outContent.toString();
-        assertTrue(output.contains("\"name\""), "Should have proper JSON structure");
-        assertTrue(output.contains("model-with-newline"), "Should contain model name");
+        var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out();
+                    assertTrue(
+                            output.contains("\"name\""), () -> "Should have proper JSON structure; actual: " + output);
+                    assertTrue(
+                            output.contains("model-with-newline"),
+                            () -> "Should contain model name; actual: " + output);
+                },
+                "--format",
+                "json");
     }
 
     private void registerTestSdr(String modelName, String modelVersion) {

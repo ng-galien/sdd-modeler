@@ -1,8 +1,11 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.RepositoryMixin;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -23,6 +26,7 @@ import picocli.CommandLine.Parameters;
  */
 @Command(name = "delete", description = "Delete a registered SDR", mixinStandardHelpOptions = true)
 public class DeleteCommand implements Callable<Integer> {
+    private static final Logger logger = LoggerFactory.getLogger(DeleteCommand.class);
 
     @Parameters(index = "0", description = "SDR hash to delete")
     String hash;
@@ -38,7 +42,7 @@ public class DeleteCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         if (hash == null || hash.isBlank()) {
-            System.err.println("ERROR: Hash cannot be empty");
+            logger.error("ERROR: Hash cannot be empty");
             return 1;
         }
 
@@ -47,16 +51,16 @@ public class DeleteCommand implements Callable<Integer> {
             var findResult = repository.findByHash(hash);
 
             if (findResult.isFailure()) {
-                System.err.println("ERROR: Failed to retrieve SDR");
-                System.err.println("  " + findResult.getCause().getMessage());
+                logger.error("ERROR: Failed to retrieve SDR");
+                logger.error("  {}", findResult.getCause().getMessage());
                 return 1;
             }
 
             var sdrOpt = findResult.get();
             if (sdrOpt.isEmpty()) {
-                System.err.println("ERROR: SDR not found");
-                System.err.println("  Hash: " + hash);
-                System.err.println("  Use 'sdd-modeler list' to view registered SDRs");
+                logger.error("ERROR: SDR not found");
+                logger.error("  Hash: {}", hash);
+                logger.error("  Use 'sdd-modeler list' to view registered SDRs");
                 return 1;
             }
 
@@ -66,7 +70,7 @@ public class DeleteCommand implements Callable<Integer> {
             var metadataResult = repository.findByHash(hash);
             if (metadataResult.isFailure() || metadataResult.get().isEmpty()) {
                 // Shouldn't happen since we just found it, but handle anyway
-                System.err.println("ERROR: Failed to retrieve SDR metadata");
+                logger.error("ERROR: Failed to retrieve SDR metadata");
                 return 1;
             }
 
@@ -88,15 +92,15 @@ public class DeleteCommand implements Callable<Integer> {
             var deleteResult = repository.delete(hash);
 
             if (deleteResult.isFailure()) {
-                System.err.println("ERROR: Failed to delete SDR");
-                System.err.println("  " + deleteResult.getCause().getMessage());
+                logger.error("ERROR: Failed to delete SDR");
+                logger.error("  {}", deleteResult.getCause().getMessage());
                 return 1;
             }
 
             boolean deleted = deleteResult.get();
             if (!deleted) {
-                System.err.println("ERROR: SDR not found during deletion");
-                System.err.println("  Hash: " + hash);
+                logger.error("ERROR: SDR not found during deletion");
+                logger.error("  Hash: {}", hash);
                 return 1;
             }
 
@@ -106,8 +110,8 @@ public class DeleteCommand implements Callable<Integer> {
             return 0;
 
         } catch (Exception e) {
-            System.err.println("ERROR: Repository error");
-            System.err.println("  " + e.getMessage());
+            logger.error("ERROR: Repository error");
+            logger.error("  {}", e.getMessage());
             return 1;
         }
     }
@@ -121,7 +125,7 @@ public class DeleteCommand implements Callable<Integer> {
                     && (response.trim().equalsIgnoreCase("yes")
                             || response.trim().equalsIgnoreCase("y"));
         } catch (Exception e) {
-            System.err.println("\nERROR: Failed to read confirmation");
+            logger.error("\nERROR: Failed to read confirmation");
             return false;
         }
     }

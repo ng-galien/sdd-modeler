@@ -214,9 +214,7 @@ Si `state_schema` est omis, la valeur par défaut est `<schema>_states` :
       schéma entité (`schema`), tables d'états/extensions/OR transitions/projections
       dans le schéma d'états (`stateSchema` ou `<schema>_states` par défaut).
     - Génère automatiquement `CREATE SCHEMA IF NOT EXISTS` pour les schémas nécessaires.
-    - **Génération automatique d'index** : crée un index pour chaque colonne de 
-      foreign key (nommage : `idx_<table>_<column>`). Améliore les performances 
-      des JOINs sur les tables d'états, extensions et transitions OR.
+    - **Génération automatique d'index** : crée un index pour chaque colonne de  foreign key (nommage : `idx_<table>_<column>`). Améliore les performances des JOINs sur les tables d'états, extensions et transitions OR.
     - `PostgresTypeValidator` — valide que les types d'attributs sont des types
       PostgreSQL valides (TEXT, INTEGER, BIGINT, NUMERIC(p,s), TIMESTAMPTZ, JSONB, etc.).
       Supporte les types paramétrés et arrays. Validation case-insensitive.

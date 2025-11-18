@@ -1,13 +1,10 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import io.statemodeler.cli.CliTestHelper;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
@@ -16,23 +13,6 @@ class SqlCommandTest {
 
     @TempDir
     Path tempDir;
-
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
-
-    @BeforeEach
-    void setUpStreams() {
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
-    }
-
-    @AfterEach
-    void restoreStreams() {
-        System.setOut(originalOut);
-        System.setErr(originalErr);
-    }
 
     @Test
     void shouldGenerateSqlToStdout() throws Exception {
@@ -69,17 +49,20 @@ class SqlCommandTest {
 
         var command = new SqlCommand();
         var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // When
+                    var exitCode = cmd.execute(modelFile.toString());
 
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(0, exitCode);
-        var output = outContent.toString();
-        assertTrue(output.contains("✓ Model parsed successfully"));
-        assertTrue(output.contains("-- Generated DDL for test-model"));
-        assertTrue(output.contains("CREATE TABLE public.orders"));
-        assertTrue(output.contains("CREATE TABLE public_states.order_pending"));
+                    // Then
+                    assertEquals(0, exitCode);
+                    var output = result.out();
+                    assertTrue(output.contains("-- Generated DDL for test-model"));
+                    assertTrue(output.contains("CREATE TABLE public.orders"));
+                    assertTrue(output.contains("CREATE TABLE public_states.order_pending"));
+                },
+                modelFile.toString());
     }
 
     @Test
@@ -110,18 +93,27 @@ class SqlCommandTest {
 
         var command = new SqlCommand();
         var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // When
+                    var exitCode = cmd.execute(modelFile.toString(), "-o", outputFile.toString());
 
-        // When
-        var exitCode = cmd.execute(modelFile.toString(), "-o", outputFile.toString());
+                    // Then
+                    assertEquals(0, exitCode);
 
-        // Then
-        assertEquals(0, exitCode);
-        assertTrue(outContent.toString().contains("✓ DDL written to"));
-
-        var generatedSql = Files.readString(outputFile);
-        assertTrue(generatedSql.contains("CREATE TABLE"));
-        assertTrue(generatedSql.contains("orders"));
-        assertTrue(generatedSql.contains("order_pending"));
+                    try {
+                        var generatedSql = Files.readString(outputFile);
+                        assertTrue(generatedSql.contains("CREATE TABLE"));
+                        assertTrue(generatedSql.contains("orders"));
+                        assertTrue(generatedSql.contains("order_pending"));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                modelFile.toString(),
+                "-o",
+                outputFile.toString());
     }
 
     @Test
@@ -150,13 +142,19 @@ class SqlCommandTest {
 
         var command = new SqlCommand();
         var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // When
+                    var exitCode = cmd.execute(modelFile.toString(), "--dialect", "mysql");
 
-        // When
-        var exitCode = cmd.execute(modelFile.toString(), "--dialect", "mysql");
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("Error: Unsupported SQL dialect 'mysql'"));
+                    // Then
+                    assertEquals(1, exitCode);
+                    assertTrue(result.err().contains("Error: Unsupported SQL dialect 'mysql'"));
+                },
+                modelFile.toString(),
+                "--dialect",
+                "mysql");
     }
 
     @Test
@@ -188,13 +186,17 @@ class SqlCommandTest {
 
         var command = new SqlCommand();
         var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // When
+                    var exitCode = cmd.execute(modelFile.toString());
 
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("✗ Model validation failed"));
+                    // Then
+                    assertEquals(1, exitCode);
+                    assertTrue(result.err().contains("✗ Model validation failed"));
+                },
+                modelFile.toString());
     }
 
     @Test
@@ -204,12 +206,16 @@ class SqlCommandTest {
 
         var command = new SqlCommand();
         var cmd = new CommandLine(command);
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // When
+                    var exitCode = cmd.execute(nonExistentFile.toString());
 
-        // When
-        var exitCode = cmd.execute(nonExistentFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("Error: Model file does not exist"));
+                    // Then
+                    assertEquals(1, exitCode);
+                    assertTrue(result.err().contains("Error: Model file does not exist"));
+                },
+                nonExistentFile.toString());
     }
 }

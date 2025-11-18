@@ -1,10 +1,14 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.SdrMetadata;
+import java.io.PrintWriter;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -16,6 +20,7 @@ import picocli.CommandLine.Option;
  */
 @Command(name = "list", description = "List registered SDRs in the repository", mixinStandardHelpOptions = true)
 public class ListCommand implements Callable<Integer> {
+    private static final Logger logger = LoggerFactory.getLogger(ListCommand.class);
 
     @Option(
             names = {"--format", "-f"},
@@ -34,13 +39,19 @@ public class ListCommand implements Callable<Integer> {
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+    // Output writer for CLI content printing. Default to System.out; tests can override.
+    PrintWriter output = new PrintWriter(System.out, true);
+
+    public void setOutput(PrintWriter output) {
+        this.output = output;
+    }
 
     @Override
     public Integer call() {
         // Validate format
         if (!isValidFormat(format)) {
-            System.err.println("ERROR: Invalid format '" + format + "'");
-            System.err.println("  Supported formats: table, json, yaml");
+            logger.error("ERROR: Invalid format '{}'", format);
+            logger.error("  Supported formats: table, json, yaml");
             return 1;
         }
 
@@ -49,8 +60,8 @@ public class ListCommand implements Callable<Integer> {
             var result = limit > 0 ? repository.findRecent(limit) : repository.listAll();
 
             if (result.isFailure()) {
-                System.err.println("ERROR: Failed to list SDRs");
-                System.err.println("  " + result.getCause().getMessage());
+                logger.error("ERROR: Failed to list SDRs");
+                logger.error("  {}", result.getCause().getMessage());
                 return 1;
             }
 
@@ -73,8 +84,8 @@ public class ListCommand implements Callable<Integer> {
             return 0;
 
         } catch (Exception e) {
-            System.err.println("ERROR: Repository error");
-            System.err.println("  " + e.getMessage());
+            logger.error("ERROR: Repository error");
+            logger.error("  {}", e.getMessage());
             return 1;
         }
     }
@@ -86,18 +97,18 @@ public class ListCommand implements Callable<Integer> {
 
     private void printTable(List<SdrMetadata> sdrs) {
         if (sdrs.isEmpty()) {
-            System.out.println("No SDRs registered in repository");
+            output.println("No SDRs registered in repository");
             return;
         }
 
         // Print header
-        System.out.println(
+        output.println(
                 String.format("%-40s %-20s %-12s %-12s %s", "NAME", "VERSION", "HASH", "SDR VERSION", "CREATED AT"));
-        System.out.println("-".repeat(110));
+        output.println("-".repeat(110));
 
         // Print rows
         for (SdrMetadata sdr : sdrs) {
-            System.out.println(String.format(
+            output.println(String.format(
                     "%-40s %-20s %-12s %-12s %s",
                     truncate(sdr.modelName(), 40),
                     truncate(sdr.modelVersion(), 20),
@@ -106,23 +117,23 @@ public class ListCommand implements Callable<Integer> {
                     DATE_FORMATTER.format(sdr.createdAt())));
         }
 
-        System.out.println("\nTotal: " + sdrs.size() + " SDR(s)");
+        output.println("\nTotal: " + sdrs.size() + " SDR(s)");
     }
 
     private void printJson(List<SdrMetadata> sdrs) {
-        System.out.println("{");
-        System.out.println("  \"sdrs\": [");
+        output.println("{");
+        output.println("  \"sdrs\": [");
 
         for (int i = 0; i < sdrs.size(); i++) {
             SdrMetadata sdr = sdrs.get(i);
-            System.out.println("    {");
-            System.out.println("      \"name\": \"" + escapeJson(sdr.modelName()) + "\",");
-            System.out.println("      \"version\": \"" + escapeJson(sdr.modelVersion()) + "\",");
-            System.out.println("      \"hash\": \"" + sdr.schemaHash() + "\",");
-            System.out.println("      \"sdrVersion\": \"" + sdr.sdrVersion() + "\",");
-            System.out.println("      \"buildFingerprint\": \"" + sdr.buildFingerprint() + "\",");
-            System.out.println("      \"createdAt\": \"" + sdr.createdAt() + "\"");
-            System.out.print("    }");
+            output.println("    {");
+            output.println("      \"name\": \"" + escapeJson(sdr.modelName()) + "\",");
+            output.println("      \"version\": \"" + escapeJson(sdr.modelVersion()) + "\",");
+            output.println("      \"hash\": \"" + sdr.schemaHash() + "\",");
+            output.println("      \"sdrVersion\": \"" + sdr.sdrVersion() + "\",");
+            output.println("      \"buildFingerprint\": \"" + sdr.buildFingerprint() + "\",");
+            output.println("      \"createdAt\": \"" + sdr.createdAt() + "\"");
+            output.print("    }");
             if (i < sdrs.size() - 1) {
                 System.out.println(",");
             } else {
@@ -130,28 +141,28 @@ public class ListCommand implements Callable<Integer> {
             }
         }
 
-        System.out.println("  ],");
-        System.out.println("  \"total\": " + sdrs.size());
-        System.out.println("}");
+        output.println("  ],");
+        output.println("  \"total\": " + sdrs.size());
+        output.println("}");
     }
 
     private void printYaml(List<SdrMetadata> sdrs) {
-        System.out.println("sdrs:");
+        output.println("sdrs:");
 
         if (sdrs.isEmpty()) {
-            System.out.println("  []");
+            output.println("  []");
         } else {
             for (SdrMetadata sdr : sdrs) {
-                System.out.println("  - name: \"" + escapeYaml(sdr.modelName()) + "\"");
-                System.out.println("    version: \"" + escapeYaml(sdr.modelVersion()) + "\"");
-                System.out.println("    hash: \"" + sdr.schemaHash() + "\"");
-                System.out.println("    sdrVersion: \"" + sdr.sdrVersion() + "\"");
-                System.out.println("    buildFingerprint: \"" + sdr.buildFingerprint() + "\"");
-                System.out.println("    createdAt: \"" + sdr.createdAt() + "\"");
+                output.println("  - name: \"" + escapeYaml(sdr.modelName()) + "\"");
+                output.println("    version: \"" + escapeYaml(sdr.modelVersion()) + "\"");
+                output.println("    hash: \"" + sdr.schemaHash() + "\"");
+                output.println("    sdrVersion: \"" + sdr.sdrVersion() + "\"");
+                output.println("    buildFingerprint: \"" + sdr.buildFingerprint() + "\"");
+                output.println("    createdAt: \"" + sdr.createdAt() + "\"");
             }
         }
 
-        System.out.println("total: " + sdrs.size());
+        output.println("total: " + sdrs.size());
     }
 
     private String truncate(String str, int maxLength) {

@@ -1,7 +1,8 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.statemodeler.cli.RepositoryMixin;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

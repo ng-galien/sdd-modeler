@@ -1,4 +1,4 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import io.statemodeler.diagram.DiagramGenerators;
 import io.statemodeler.dsl.ModelLoader;

@@ -1,5 +1,6 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.RepositoryMixin;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;

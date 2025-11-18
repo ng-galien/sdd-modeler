@@ -1,5 +1,15 @@
 package io.statemodeler.cli;
 
+import io.statemodeler.cli.commands.DeleteCommand;
+import io.statemodeler.cli.commands.DiagramCommand;
+import io.statemodeler.cli.commands.DiffCommand;
+import io.statemodeler.cli.commands.ListCommand;
+import io.statemodeler.cli.commands.MigrateCommand;
+import io.statemodeler.cli.commands.RegisterCommand;
+import io.statemodeler.cli.commands.ShowCommand;
+import io.statemodeler.cli.commands.ShowMigrationCommand;
+import io.statemodeler.cli.commands.SqlCommand;
+import io.statemodeler.cli.commands.ValidateCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 

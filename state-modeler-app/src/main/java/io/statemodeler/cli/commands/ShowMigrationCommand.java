@@ -1,9 +1,10 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.statemodeler.cli.dto.MigrationJsonOutput;
-import io.statemodeler.cli.dto.SdrSummary;
-import io.statemodeler.cli.dto.ShowMigrationJsonOutput;
+import io.statemodeler.cli.RepositoryMixin;
+import io.statemodeler.cli.dto.MigrationDto;
+import io.statemodeler.cli.dto.SdrSummaryDto;
+import io.statemodeler.cli.dto.ShowMigrationDto;
 import io.statemodeler.comparison.DdlComparison;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.repository.SdrMigration;
@@ -89,15 +90,15 @@ public class ShowMigrationCommand implements Callable<Integer> {
             }
             Optional<SdrMigration> maybeMigration = migrationResult.get();
 
-            var original = new SdrSummary(fromSdr.schemaHash(), fromSdr.ddl());
-            var newSdrSummary = new SdrSummary(toSdr.schemaHash(), toSdr.ddl());
-            MigrationJsonOutput migrationOutput = null;
+            var original = new SdrSummaryDto(fromSdr.schemaHash(), fromSdr.ddl());
+            var newSdrSummary = new SdrSummaryDto(toSdr.schemaHash(), toSdr.ddl());
+            MigrationDto migrationOutput = null;
             if (maybeMigration.isPresent()) {
                 var m = maybeMigration.get();
-                migrationOutput = new MigrationJsonOutput(m.confidence(), m.comments(), m.migrationScript());
+                migrationOutput = new MigrationDto(m.confidence(), m.comments(), m.migrationScript());
             }
 
-            var output = new ShowMigrationJsonOutput(original, newSdrSummary, textDiff, migrationOutput);
+            var output = new ShowMigrationDto(original, newSdrSummary, textDiff, migrationOutput);
 
             if (outputJson != null) {
                 var mapper = new ObjectMapper();

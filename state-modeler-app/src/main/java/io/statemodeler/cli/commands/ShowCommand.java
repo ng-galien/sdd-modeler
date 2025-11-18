@@ -1,5 +1,6 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.sdr.SdrRecord;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;

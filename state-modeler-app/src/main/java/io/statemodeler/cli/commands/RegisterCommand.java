@@ -1,5 +1,6 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.dsl.YamlModelLoader;
 import io.statemodeler.sdr.DefaultSdrFactory;
 import io.statemodeler.sdr.SdrFactory;
@@ -60,24 +61,26 @@ public class RegisterCommand implements Callable<Integer> {
 
         // Read -> load -> validate -> create -> save using Vavr Try flows
         return io.vavr.control.Try.of(() -> {
-                String modelSource = Files.readString(modelFile);
-                String contentType = modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
-                var model = loader.loadFromFile(modelFile).get();
-                return new java.util.AbstractMap.SimpleEntry<>(model, new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType));
-            })
+                    String modelSource = Files.readString(modelFile);
+                    String contentType =
+                            modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
+                    var model = loader.loadFromFile(modelFile).get();
+                    return new java.util.AbstractMap.SimpleEntry<>(
+                            model, new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType));
+                })
                 .fold(
-                throwable -> {
+                        throwable -> {
                             System.err.println("ERROR: Failed to parse model file");
                             System.err.println("  " + throwable.getMessage());
                             return 1;
                         },
-                entry -> {
-                    var model = entry.getKey();
-                    var pair = entry.getValue();
-                    String modelSource = pair.getKey();
-                    String contentType = pair.getValue();
-                    System.out.println("  Loaded model: " + model.name());
-                    var validationResult = validator.validate(model);
+                        entry -> {
+                            var model = entry.getKey();
+                            var pair = entry.getValue();
+                            String modelSource = pair.getKey();
+                            String contentType = pair.getValue();
+                            System.out.println("  Loaded model: " + model.name());
+                            var validationResult = validator.validate(model);
                             if (validationResult.isInvalid()) {
                                 System.err.println("ERROR: Model validation failed");
                                 validationResult.getError().forEach(err -> System.err.println("  - " + err.message()));
@@ -86,8 +89,8 @@ public class RegisterCommand implements Callable<Integer> {
 
                             System.out.println("  Validation: PASSED");
 
-                                String sqlDialect = model.database().dialect();
-                                var sdr = sdrFactory.create(modelSource, contentType, sqlDialect);
+                            String sqlDialect = model.database().dialect();
+                            var sdr = sdrFactory.create(modelSource, contentType, sqlDialect);
 
                             System.out.println("  Schema hash: " + sdr.schemaHash());
                             System.out.println("  DDL hash: " + sdr.ddlHash());
@@ -103,10 +106,12 @@ public class RegisterCommand implements Callable<Integer> {
                                     })
                                     .flatMap(x -> x)
                                     .fold(
-                                                    saveErr -> {
-                                                        Throwable cause = saveErr instanceof IllegalArgumentException ? saveErr : saveErr.getCause();
-                                                        if (cause instanceof IllegalArgumentException
-                                                                && cause.getMessage().contains("already exists")) {
+                                            saveErr -> {
+                                                Throwable cause = saveErr instanceof IllegalArgumentException
+                                                        ? saveErr
+                                                        : saveErr.getCause();
+                                                if (cause instanceof IllegalArgumentException
+                                                        && cause.getMessage().contains("already exists")) {
                                                     System.err.println("ERROR: SDR already registered");
                                                     System.err.println("  An SDR with hash " + sdr.schemaHash()
                                                             + " already exists in the repository");

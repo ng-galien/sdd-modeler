@@ -1,4 +1,4 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.dsl.ModelLoader;
@@ -56,7 +56,6 @@ public class DiffCommand implements Callable<Integer> {
         }
 
         return io.vavr.control.Try.of(() -> {
-
                     var currentLoader = ModelLoader.forFile(currentModelFile);
                     var currentLoadResult = currentLoader.loadFromFile(currentModelFile);
                     if (currentLoadResult.isFailure()) {

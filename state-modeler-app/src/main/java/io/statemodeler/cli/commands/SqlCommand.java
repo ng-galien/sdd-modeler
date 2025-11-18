@@ -1,4 +1,4 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
@@ -44,7 +44,7 @@ public class SqlCommand implements Callable<Integer> {
             logger.error("Supported dialects: {}", String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
-         // Check if model file exists
+        // Check if model file exists
         if (!Files.exists(modelFile)) {
             logger.error("Error: Model file does not exist: {}", modelFile);
             return 1;

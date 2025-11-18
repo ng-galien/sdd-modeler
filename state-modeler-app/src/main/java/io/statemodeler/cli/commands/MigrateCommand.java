@@ -1,9 +1,10 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import io.statemodeler.cli.dto.MigrationJsonOutput;
+import io.statemodeler.cli.RepositoryMixin;
+import io.statemodeler.cli.dto.MigrationDto;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
@@ -126,7 +127,7 @@ public class MigrateCommand implements Callable<Integer> {
                                 outputMigration(migration.migrationScript());
                                 if (outputJson != null) {
                                     ObjectMapper objectMapper = new ObjectMapper();
-                                    var dto = new MigrationJsonOutput(
+                                    var dto = new MigrationDto(
                                             migration.confidence(), migration.comments(), migration.migrationScript());
                                     objectMapper.writeValue(outputJson, dto);
                                     System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
@@ -164,7 +165,7 @@ public class MigrateCommand implements Callable<Integer> {
 
                         if (outputJson != null) {
                             ObjectMapper objectMapper = new ObjectMapper();
-                            var dto = new MigrationJsonOutput(
+                            var dto = new MigrationDto(
                                     migration.confidence(), migration.comments(), migration.migrationScript());
                             objectMapper.writeValue(outputJson, dto);
                             System.err.println("  JSON Output: " + outputJson.getAbsolutePath());

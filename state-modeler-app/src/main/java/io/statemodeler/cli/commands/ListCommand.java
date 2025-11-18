@@ -1,5 +1,6 @@
-package io.statemodeler.cli;
+package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.SdrMetadata;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;

@@ -1,54 +1,57 @@
 # Copilot Instructions — sdd-modeler
 
-This repository contains a Java 21 multi-module library + CLI for State-Driven Design (SDD). It converts YAML/JSON SDD models to an internal model and renders production-ready PostgreSQL DDL. It also supports LLM-driven migration generation via LangChain4j.
+Purpose: Short, actionable guidance to make AI coding agents productive in this Java multi-module repository. Keep changes small and test-driven; follow the project's conventions.
 
-Quick references
-- `state-modeler-core`: model records, DSL loaders, validation, SqlPlan generation and Postgres DDL generators
-- `state-modeler-app`: Picocli CLI (validate, sql, register, list, show, delete, diff, migrate), SDR repository using H2, and migration orchestration
-- `scripts/examples/`: canonical examples and expected DDL used by test scripts
+Big picture
+- Two main modules:
+	- `state-modeler-core`: Model definitions (records), loaders (YAML/JSON), validation, SqlPlan and PostgreSQL DDL generators.
+	- `state-modeler-app`: Picocli-based CLI, an H2 SDR repository, persistence DAOs, and LLM-driven migration orchestration (LangChain4j).
+- Flow: YAML/JSON model -> internal SddModel -> SqlPlan -> Postgres DDL -> SdrRecord (schema + DDL + hashes) -> optional migration.
 
-Essential patterns (do not deviate without reason)
-- Use Java 21 records for domain objects; validate inputs in compact constructors and throw `IllegalArgumentException` for invalid inputs.
-- Use Vavr (`Try`, `Validation`) for IO and validation flows; avoid mixing `Try` with unchecked exceptions where `Try`/`Validation` is expected.
-- SQL generation patterns: entity vs state schema separation, append-only state tables (no UPDATE), `previous_<state>_id` for previous-state references, `idx_<table>_<column>` index naming, and `<state>_source` for `from_any_of` OR transitions (with CHECK constraints).
-- No `status` column: current state is derived from `state_intervals` / `current_state` projections/views.
+Developer workflows
+- Build & run: `./gradlew build` and `./gradlew test` (root) or run a single module: `./gradlew :state-modeler-core:test`.
+- Formatting: `./gradlew spotlessApply` (CI enforces Spotless). Run `./gradlew spotlessCheck` to validate.
+- CLI quick runs: `./gradlew :state-modeler-app:run --args="validate|sql|diagram|register|list|show|delete|diff|migrate ..."`.
+- Generate JSON Schema for distribution: `./gradlew :state-modeler-core:generateJsonSchema` and `./gradlew distributeSchema` to copy to repo root.
 
-LLM & migration notes
-- LangChain4j is used for structured LLM outputs; `LangChainMigrationGenerationService` builds prompts via `MigrationPromptBuilder` and uses a typed assistant interface for structured JSON outputs.
-- `ChatModelProvider` abstracts ChatModel creation. `LangChainModelProvider` wires Ollama (default). The CLI supports OpenAI via `OpenAiChatModel` when `OPENAI_API_KEY` is set.
-- For unit tests, prefer mocking `ChatModelProvider` or using `MockChatModelProvider` rather than mocking `ChatModel` directly.
+Conventions & patterns (must follow)
+- Java toolchain: Gradle uses Java 21 (toolchain configured in `build.gradle.kts`). Prefer records for DTOs and domain objects.
+- Validation: Use Vavr (`io.vavr.control.Try`, `Validation`) and prefer `Try`/`Validation` over throwing runtime exceptions unless validation is appropriate in a compact record constructor.
+- Records must validate inputs in compact constructors (throw `IllegalArgumentException` for invalid values). See `SdrRecord`, `EntityDef`.
+- SQL generation: separate entity schema vs state schema; state tables are append-only (no UPDATE), `previous_<state>_id` links for previous-state relations, `idx_<table>_<column>` for indexes; `from_any_of` generates `<state>_source` mapping tables with `CHECK` constraints.
+- No `status` column: rely on `state_intervals` / `current_state` views for current state derivation.
 
-Common workflows and commands
-- Build + test: `./gradlew build`, `./gradlew test`, `./gradlew jacocoTestReport`.
-- Format: `./gradlew spotlessApply` (CI enforces Spotless)
-- CLI examples (via Gradle wrapper):
-  - `./gradlew :state-modeler-app:run --args="validate scripts/examples/orders-sdd-model.yaml"`
-  - `./gradlew :state-modeler-app:run --args="sql scripts/examples/orders-sdd-model.yaml -o output.sql"`
-  - `./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml -n orders -v 1.0"`
-  - `./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --llm ollama --model qwen3:8b -o migration.sql"`
-- Migration test script: `scripts/test-migration-generation.sh` (supports `--mini`, `--llm [ollama|openai]`, `--model`, `--ollama-url`, `--openai-key`)
+Where to change behavior (key files)
+- Core & SQL generation: `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (generate table/constraint/index/view order via `PostgresDdlGenerator` -> `PostgresTableGenerator`, `PostgresConstraintGenerator`, `PostgresIndexGenerator`, `PostgresViewGenerator`).
+- DSL, model, validation: `state-modeler-core/src/main/java/io/statemodeler/dsl` and `.../core` (`SddModel`, `EntityDef`, `StateDef`, `AttributeDef`).
+- SDR factory: `state-modeler-core/src/main/java/io/statemodeler/sdr/DefaultSdrFactory.java` and `SdrRecord.java` (canonicalization & hashing). Use `DefaultSdrFactory` to create SdrRecord objects.
+- CLI & repository: `state-modeler-app/src/main/java/io/statemodeler/cli/**` (commands) and `state-modeler-app/src/main/java/io/statemodeler/repository/**` (H2 repo + DAOs).
+- LLM & migration: `state-modeler-app/src/main/java/io/statemodeler/migration/**`. Test-friendly `ChatModelProvider` abstraction with `LangChainModelProvider` (Ollama) and `MockChatModelProvider` in tests.
 
-Where to edit code
-- SQL generators: `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (`PostgresDdlGenerator`, `PostgresTableGenerator`, `PostgresConstraintGenerator`, `PostgresIndexGenerator`, `PostgresViewGenerator`)
-- CLI: `state-modeler-app/src/main/java/io/statemodeler/cli/` (`MigrateCommand`, `SqlCommand`, etc.)
-- LLM & migration code: `state-modeler-app/src/main/java/io/statemodeler/migration/` (`ChatModelProvider`, `LangChainModelProvider`, `LangChainMigrationGenerationService`, `MigrationPromptBuilder`, `MigrationOrchestrationService`)
-- SDR persistence: `state-modeler-app/src/main/java/io/statemodeler/repository/` (H2 repo, DAOs, `H2ConnectionManager`)
+Testing & snapshots
+- Use `scripts/examples/` and `state-modeler-app/src/test/resources/examples/` for canonical model fixtures and expected SQL snapshots. Add tests when you change DDL output.
+- CLI tests use Picocli test harness under `state-modeler-app/src/test/java/`.
+- Run aggregated coverage: `./gradlew jacocoAggregatedReport` or `./gradlew jacocoAggregatedCoverageVerification`.
 
-Testing notes & recommendations
-- Prefer mocking `ChatModelProvider` to swap the LLM provider in tests, and keep `MockChatModelProvider` up to date on LangChain4j changes.
-- Add integration/snapshot tests for SQL generation using `scripts/examples` and `state-modeler-app/src/test/resources/examples/` fixtures.
-- CLI tests live under `state-modeler-app/src/test/java/` and use the Picocli test harness.
+LLM and Runtime Notes
+- `migrate` command depends on LangChain4j runtime; the default provider is Ollama (`LangChainModelProvider`). OpenAI is supported via `OPENAI_API_KEY` env var and `OpenAiChatModel` if configured. The CLI will log a clear error if LangChain jars are missing.
+- Unit tests: prefer mocking `ChatModelProvider` (see test `MockChatModelProvider`) to exercise migration orchestration without network calls.
 
-Common pitfalls
-- Constraint ordering matters: add unique constraints before FK constraints that rely on them (composite unique/FK ordering matters).
-- `PostgresTypeValidator` validates types (case-insensitive, arrays, parameterized types). Add tests if you extend supported types.
-- Keep CLI exit codes and stdout/stderr behavior stable for automation scripts.
+Common pitfalls & tips
+- Constraint FK ordering: unique constraints must exist before foreign keys that depend on them. The generators follow an ordered rendering, but tests should exercise composite FKs.
+- If you change a generator, update both unit tests and `scripts/examples` fixtures; add new integration snapshot tests as needed.
+- Update `PostgresTypeValidator` when adding new SQL types or parameterized types (e.g., NUMERIC, TIMESTAMP, arrays).
+- Keep CLI outputs, exit codes, and JSON/YAML output stable; automation scripts depend on them.
 
-Extra notes
-- `scripts/examples/` and `state-modeler-app/src/test/resources/examples/` provide canonical fixtures and snapshots used by tests and scripts.
-- If introducing backward-incompatible changes, update `PR_SUMMARY.md` and include migration notes in PR.
+Make PRs easy to review
+- Run `./gradlew spotlessApply` and `./gradlew test` before PRs. CI verifies Spotless and Jacoco.
+- If a PR introduces a change that breaks DDL snapshots, update the appropriate example SQL under `scripts/examples` and add/update tests under `state-modeler-core`/`state-modeler-app`.
+- If the change is behavioral or public API-breaking, add migration notes to `PR_SUMMARY.md`.
 
-If anything is unclear or missing, ask for specific areas (LLM tests, SQL generation, CLI commands) and I’ll add targeted examples or tests.
+Where to ask for help
+- Check `instructions/ARCHITECTURE.md`, `instructions/SDR_REPOSITORY_DESIGN.md`, and `DEV_README.md` for architecture and design decisions. If a convention is unclear, prefer changing the docs versus the code.
+
+If something is missing or causes confusion, open an issue or ask for a guided update; I’ll iterate on these instructions.
 ````markdown
 # Copilot Instructions — sdd-modeler
 

@@ -3,6 +3,7 @@ package io.statemodeler.cli.commands;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
 import io.statemodeler.validation.ModelValidators;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -33,6 +34,13 @@ public class SqlCommand implements Callable<Integer> {
             names = {"-o", "--output"},
             description = "Output file (default: stdout)")
     private Path outputFile;
+
+    // Output writer for CLI content; default to System.out
+    PrintWriter output = new PrintWriter(System.out, true);
+
+    public void setOutput(PrintWriter output) {
+        this.output = output;
+    }
 
     @Override
     public Integer call() {
@@ -73,11 +81,12 @@ public class SqlCommand implements Callable<Integer> {
                             // Generate DDL
                             var generator = DdlGenerators.forDialect(dialect);
                             var ddlStatements = generator.generateDdl(model);
-                            var output = String.join(";\n", ddlStatements) + ";\n";
+                            var ddlContent = String.join(";\n", ddlStatements) + ";\n";
 
                             // Write to file or stdout
                             if (outputFile != null) {
-                                var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile, output));
+                                var writeResult =
+                                        io.vavr.control.Try.of(() -> Files.writeString(outputFile, ddlContent));
                                 if (writeResult.isFailure()) {
                                     logger.error(
                                             "Error writing DDL output: {}",
@@ -86,9 +95,9 @@ public class SqlCommand implements Callable<Integer> {
                                 }
                                 logger.info("✓ DDL written to: {}", outputFile);
                             } else {
-                                System.out.println();
-                                System.out.println("-- Generated DDL for " + model.name());
-                                System.out.println(output);
+                                output.println();
+                                output.println("-- Generated DDL for " + model.name());
+                                output.println(ddlContent);
                             }
 
                             return 0;

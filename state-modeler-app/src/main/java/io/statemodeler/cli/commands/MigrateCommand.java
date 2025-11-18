@@ -17,6 +17,8 @@ import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 // Locale not needed when using Jackson for JSON serialization
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -40,6 +42,7 @@ import picocli.CommandLine.Parameters;
         description = "Generate migration script between two SDR versions",
         mixinStandardHelpOptions = true)
 public class MigrateCommand implements Callable<Integer> {
+    private static final Logger logger = LoggerFactory.getLogger(MigrateCommand.class);
 
     @Parameters(index = "0", description = "Source SDR hash or name:version")
     String fromIdentifier;
@@ -86,8 +89,8 @@ public class MigrateCommand implements Callable<Integer> {
     public Integer call() {
         // Validate dialect
         if (!isValidDialect(dialect)) {
-            System.err.println("ERROR: Unsupported dialect '" + dialect + "'");
-            System.err.println("  Supported dialects: postgres");
+            logger.error("ERROR: Unsupported dialect '{}'", dialect);
+            logger.error("  Supported dialects: postgres");
             return 1;
         }
 
@@ -122,7 +125,7 @@ public class MigrateCommand implements Callable<Integer> {
                             var existingResult = repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
                             if (existingResult.isSuccess()
                                     && existingResult.get().isPresent()) {
-                                System.err.println("INFO: Migration already exists (use --force to regenerate)");
+                                logger.info("INFO: Migration already exists (use --force to regenerate)");
                                 var migration = existingResult.get().get();
                                 outputMigration(migration.migrationScript());
                                 if (outputJson != null) {
@@ -130,14 +133,14 @@ public class MigrateCommand implements Callable<Integer> {
                                     var dto = new MigrationDto(
                                             migration.confidence(), migration.comments(), migration.migrationScript());
                                     objectMapper.writeValue(outputJson, dto);
-                                    System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
+                                    logger.info("  JSON Output: {}", outputJson.getAbsolutePath());
                                 }
                                 return 0;
                             }
                         }
 
                         // Create LLM-based migration service
-                        System.err.println("INFO: Generating migration using " + llmProvider + " LLM...");
+                        logger.info("INFO: Generating migration using {} LLM...", llmProvider);
                         ChatModel llmModel = null;
                         llmModel =
                                 io.vavr.control.Try.of(() -> createLlmModel()).get();
@@ -155,10 +158,10 @@ public class MigrateCommand implements Callable<Integer> {
                         }
 
                         var migration = migrationResult.get();
-                        System.err.println("SUCCESS: Migration generated and saved");
-                        System.err.println("  From: " + fromSdr.schemaHash());
-                        System.err.println("  To:   " + toSdr.schemaHash());
-                        System.err.println("  Dialect: " + dialect);
+                        logger.info("SUCCESS: Migration generated and saved");
+                        logger.info("  From: {}", fromSdr.schemaHash());
+                        logger.info("  To:   {}", toSdr.schemaHash());
+                        logger.info("  Dialect: {}", dialect);
 
                         // Output migration script
                         outputMigration(migration.migrationScript());
@@ -168,7 +171,7 @@ public class MigrateCommand implements Callable<Integer> {
                             var dto = new MigrationDto(
                                     migration.confidence(), migration.comments(), migration.migrationScript());
                             objectMapper.writeValue(outputJson, dto);
-                            System.err.println("  JSON Output: " + outputJson.getAbsolutePath());
+                            logger.info("  JSON Output: {}", outputJson.getAbsolutePath());
                         }
 
                         return 0;
@@ -177,18 +180,17 @@ public class MigrateCommand implements Callable<Integer> {
                 .fold(
                         throwable -> {
                             if (throwable instanceof NoClassDefFoundError) {
-                                System.err.println("ERROR: LangChain4j dependencies not found");
-                                System.err.println("  The 'migrate' command requires LangChain4j libraries.");
-                                System.err.println("  Please ensure the following dependencies are available:");
-                                System.err.println("    - dev.langchain4j:langchain4j:0.36.2");
-                                System.err.println("    - dev.langchain4j:langchain4j-ollama:0.36.2");
-                                System.err.println(
-                                        "    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
-                                System.err.println("  Missing class: " + throwable.getMessage());
+                                logger.error("ERROR: LangChain4j dependencies not found");
+                                logger.error("  The 'migrate' command requires LangChain4j libraries.");
+                                logger.error("  Please ensure the following dependencies are available:");
+                                logger.error("    - dev.langchain4j:langchain4j:0.36.2");
+                                logger.error("    - dev.langchain4j:langchain4j-ollama:0.36.2");
+                                logger.error("    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
+                                logger.error("  Missing class: {}", throwable.getMessage());
                                 return 1;
                             }
-                            System.err.println("ERROR: Unexpected error");
-                            System.err.println("  " + throwable.getMessage());
+                            logger.error("ERROR: Unexpected error");
+                            logger.error("  {}", throwable.getMessage());
                             throwable.printStackTrace();
                             return 1;
                         },
@@ -274,11 +276,11 @@ public class MigrateCommand implements Callable<Integer> {
     private void outputMigration(String script) {
         if (outputFile != null) {
             var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile.toPath(), script));
-            writeResult.onFailure(e -> System.err.println("WARN: Failed to write output: " + e.getMessage()));
+            writeResult.onFailure(e -> logger.warn("WARN: Failed to write output: {}", e.getMessage()));
             if (writeResult.isFailure()) {
                 System.out.println(script);
             } else {
-                System.err.println("  Output: " + outputFile.getAbsolutePath());
+                logger.info("  Output: {}", outputFile.getAbsolutePath());
             }
         } else {
             System.out.println(script);

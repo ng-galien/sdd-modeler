@@ -2,8 +2,6 @@ package io.statemodeler.cli;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
@@ -12,21 +10,15 @@ class MainTest {
     @Test
     void shouldShowHelpWhenNoSubcommandSpecified() {
         // Given
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-
-        // When
         Main main = new Main();
-        main.run();
-
-        // Then
-        System.setOut(originalOut);
-        String output = outContent.toString();
-        assertTrue(output.contains("sdd-modeler"), "Help should mention command name");
-        assertTrue(
-                output.contains("State-Driven Design") || output.contains("Usage"),
-                "Help should show usage or description");
+        var cmd = new CommandLine(main);
+        CliTestHelper.runWithCapture(cmd, result -> {
+            assertTrue((result.out() + result.err()).contains("sdd-modeler"), "Help should mention command name");
+            assertTrue(
+                    (result.out() + result.err()).contains("State-Driven Design")
+                            || (result.out() + result.err()).contains("Usage"),
+                    "Help should show usage or description");
+        });
     }
 
     @Test

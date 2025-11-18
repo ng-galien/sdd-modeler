@@ -2,12 +2,9 @@ package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import io.statemodeler.cli.CliTestHelper;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
@@ -17,22 +14,7 @@ class ValidateCommandTest {
     @TempDir
     Path tempDir;
 
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
-
-    @BeforeEach
-    void setUpStreams() {
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
-    }
-
-    @AfterEach
-    void restoreStreams() {
-        System.setOut(originalOut);
-        System.setErr(originalErr);
-    }
+    // Use PicocliTestHelper.capture(cmd) per-test to capture both command output and logging
 
     @Test
     void shouldValidateValidYamlModel() throws Exception {
@@ -64,14 +46,15 @@ class ValidateCommandTest {
 
         var command = new ValidateCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(0, exitCode);
-        assertTrue(outContent.toString().contains("✓ Model parsed successfully"));
-        assertTrue(outContent.toString().contains("✓ Model validation passed"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    String output = result.out() + result.err();
+                    assertTrue(output.contains("✓ Model parsed successfully"));
+                    assertTrue(output.contains("✓ Model validation passed"));
+                },
+                modelFile.toString());
     }
 
     @Test
@@ -100,14 +83,15 @@ class ValidateCommandTest {
 
         var command = new ValidateCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("✗ Model validation failed"));
-        assertTrue(errContent.toString().contains("Entity must have exactly one initial state"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    String err = result.err();
+                    assertTrue(err.contains("✗ Model validation failed"));
+                    assertTrue(err.contains("Entity must have exactly one initial state"));
+                },
+                modelFile.toString());
     }
 
     @Test
@@ -124,13 +108,14 @@ class ValidateCommandTest {
 
         var command = new ValidateCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("✗ Failed to parse model file"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    String err = result.err();
+                    assertTrue(err.contains("✗ Failed to parse model file"));
+                },
+                modelFile.toString());
     }
 
     @Test
@@ -140,12 +125,13 @@ class ValidateCommandTest {
 
         var command = new ValidateCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(nonExistentFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("Error: Model file does not exist"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    String err = result.err();
+                    assertTrue(err.contains("Error: Model file does not exist"));
+                },
+                nonExistentFile.toString());
     }
 }

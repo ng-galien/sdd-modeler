@@ -2,12 +2,10 @@ package io.statemodeler.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import io.statemodeler.cli.CliTestHelper;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+// no BeforeEach/AfterEach stream manipulation - using PicocliTestHelper instead
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
@@ -17,22 +15,7 @@ class DiagramCommandTest {
     @TempDir
     Path tempDir;
 
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
-
-    @BeforeEach
-    void setUpStreams() {
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
-    }
-
-    @AfterEach
-    void restoreStreams() {
-        System.setOut(originalOut);
-        System.setErr(originalErr);
-    }
+    // Use PicocliTestHelper.capture(cmd) per-test to capture both output and logging
 
     @Test
     void shouldGenerateDiagramToStdout() throws Exception {
@@ -71,18 +54,20 @@ class DiagramCommandTest {
 
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(0, exitCode);
-        var output = outContent.toString();
-        assertTrue(output.contains("✓ Model parsed successfully"));
-        assertTrue(output.contains("✓ Model validation passed"));
-        assertTrue(output.contains("stateDiagram-v2"));
-        assertTrue(output.contains("[*] --> pending"));
-        assertTrue(output.contains("pending --> paid"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    // When
+                    // Then
+                    assertEquals(0, result.exitCode());
+                    var output = result.out() + result.err();
+                    assertTrue(output.contains("✓ Model parsed successfully"));
+                    assertTrue(output.contains("✓ Model validation passed"));
+                    assertTrue(output.contains("stateDiagram-v2"));
+                    assertTrue(output.contains("[*] --> pending"));
+                    assertTrue(output.contains("pending --> paid"));
+                },
+                modelFile.toString());
     }
 
     @Test
@@ -116,17 +101,23 @@ class DiagramCommandTest {
         var outputFile = tempDir.resolve("output.mmd");
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString(), "-o", outputFile.toString());
-
-        // Then
-        assertEquals(0, exitCode);
-        assertTrue(Files.exists(outputFile));
-        var diagramContent = Files.readString(outputFile);
-        assertTrue(diagramContent.contains("stateDiagram-v2"));
-        assertTrue(diagramContent.contains("[*] --> pending"));
-        assertTrue(outContent.toString().contains("✓ Diagram written to"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    assertTrue(Files.exists(outputFile));
+                    try {
+                        var diagramContent = Files.readString(outputFile);
+                        assertTrue(diagramContent.contains("stateDiagram-v2"));
+                        assertTrue(diagramContent.contains("[*] --> pending"));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    assertTrue((result.out() + result.err()).contains("✓ Diagram written to"));
+                },
+                modelFile.toString(),
+                "-o",
+                outputFile.toString());
     }
 
     @Test
@@ -165,16 +156,18 @@ class DiagramCommandTest {
 
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString(), "-e", "order");
-
-        // Then
-        assertEquals(0, exitCode);
-        var output = outContent.toString();
-        assertTrue(output.contains("stateDiagram-v2"));
-        assertTrue(output.contains("order State Diagram"));
-        assertFalse(output.contains("shipment"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(0, result.exitCode());
+                    var output = result.out() + result.err();
+                    assertTrue(output.contains("stateDiagram-v2"));
+                    assertTrue(output.contains("order State Diagram"));
+                    assertFalse(output.contains("shipment"));
+                },
+                modelFile.toString(),
+                "-e",
+                "order");
     }
 
     @Test
@@ -184,13 +177,13 @@ class DiagramCommandTest {
 
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(nonExistentFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("Error: Model file does not exist"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    assertTrue(result.err().contains("Error: Model file does not exist"));
+                },
+                nonExistentFile.toString());
     }
 
     @Test
@@ -219,14 +212,16 @@ class DiagramCommandTest {
 
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString(), "-f", "plantuml");
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("Error: Unsupported diagram format"));
-        assertTrue(errContent.toString().contains("Supported formats: mermaid"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    assertTrue(result.err().contains("Error: Unsupported diagram format"));
+                    assertTrue(result.err().contains("Supported formats: mermaid"));
+                },
+                modelFile.toString(),
+                "-f",
+                "plantuml");
     }
 
     @Test
@@ -255,13 +250,15 @@ class DiagramCommandTest {
 
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString(), "-e", "shipment");
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("Error: Entity not found"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    assertTrue(result.err().contains("Error: Entity not found"));
+                },
+                modelFile.toString(),
+                "-e",
+                "shipment");
     }
 
     @Test
@@ -290,12 +287,12 @@ class DiagramCommandTest {
 
         var command = new DiagramCommand();
         var cmd = new CommandLine(command);
-
-        // When
-        var exitCode = cmd.execute(modelFile.toString());
-
-        // Then
-        assertEquals(1, exitCode);
-        assertTrue(errContent.toString().contains("✗ Model validation failed"));
+        CliTestHelper.runWithCapture(
+                cmd,
+                result -> {
+                    assertEquals(1, result.exitCode());
+                    assertTrue(result.err().contains("✗ Model validation failed"));
+                },
+                modelFile.toString());
     }
 }

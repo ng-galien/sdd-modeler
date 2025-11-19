@@ -40,8 +40,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of(),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -92,8 +95,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of(),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -130,7 +136,7 @@ class MermaidDiagramGeneratorTest {
         var model = new SddModel(
                 "0.1",
                 "test-model",
-                new DatabaseConfig("postgres", null, null),
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("entity1", entity1, "entity2", entity2));
 
         var generator = new MermaidDiagramGenerator();
@@ -157,7 +163,10 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("entity1", entity));
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("entity1", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -190,8 +199,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of(),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -223,8 +235,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of("paid_ext", extension),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -270,8 +285,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of("pending_ext", pendingExt, "paid_ext1", paidExt1, "paid_ext2", paidExt2),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -300,8 +318,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of(),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 
@@ -327,8 +348,11 @@ class MermaidDiagramGeneratorTest {
                 Map.of(),
                 Map.of());
 
-        var model =
-                new SddModel("0.1", "test-model", new DatabaseConfig("postgres", null, null), Map.of("order", entity));
+        var model = new SddModel(
+                "0.1",
+                "test-model",
+                new DatabaseConfig("postgres", null, null, java.util.Map.of()),
+                Map.of("order", entity));
 
         var generator = new MermaidDiagramGenerator();
 

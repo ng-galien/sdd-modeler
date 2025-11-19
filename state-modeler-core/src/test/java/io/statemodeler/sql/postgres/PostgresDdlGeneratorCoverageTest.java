@@ -17,7 +17,7 @@ class PostgresDdlGeneratorCoverageTest {
     @Test
     void shouldHandleCurrentStateViewWithoutIntervalsView() {
         // Given - Entity with only current_state projection (no intervals)
-        var database = new DatabaseConfig("postgres", "test", null);
+        var database = new DatabaseConfig("postgres", "test", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var initialState = new StateDef("active", "test_active", true, List.of(), List.of(), Map.of());
@@ -48,7 +48,7 @@ class PostgresDdlGeneratorCoverageTest {
     @Test
     void shouldHandleMultipleProjectionsSorting() {
         // Given - Entity with multiple projections including intervals and current_state
-        var database = new DatabaseConfig("postgres", "test", null);
+        var database = new DatabaseConfig("postgres", "test", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var initialState = new StateDef("active", "test_active", true, List.of(), List.of(), Map.of());
@@ -87,7 +87,7 @@ class PostgresDdlGeneratorCoverageTest {
     void shouldNotUseInlineColumnReferences() {
         // Verifies that all FK are now added as ALTER TABLE constraints
 
-        var database = new DatabaseConfig("postgres", "test", null);
+        var database = new DatabaseConfig("postgres", "test", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var refAttr = new AttributeDef("parent_id", "INTEGER", true, false, null, null);
 

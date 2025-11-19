@@ -90,7 +90,7 @@ class PostgresDdlGeneratorIntegrationTest {
     @Test
     void shouldGenerateWithCustomStateSchema() throws Exception {
         // Given - model with custom state schema
-        var database = new DatabaseConfig("postgres", "myapp", "custom_states");
+        var database = new DatabaseConfig("postgres", "myapp", "custom_states", java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var nameAttr = new AttributeDef("name", "text", false, false, null, null);
 
@@ -131,7 +131,7 @@ class PostgresDdlGeneratorIntegrationTest {
     @Test
     void shouldGenerateWithNullSchemaDefaultingToStates() throws Exception {
         // Given - model with null schemas (tests default behavior)
-        var database = new DatabaseConfig("postgres", null, null);
+        var database = new DatabaseConfig("postgres", null, null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var initialState = new StateDef(
@@ -166,7 +166,7 @@ class PostgresDdlGeneratorIntegrationTest {
     @Test
     void shouldGenerateWithPublicStateSchema() throws Exception {
         // Given - model with custom entity schema but 'public' state schema
-        var database = new DatabaseConfig("postgres", "myapp", "public");
+        var database = new DatabaseConfig("postgres", "myapp", "public", java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var initialState = new StateDef(
@@ -200,7 +200,7 @@ class PostgresDdlGeneratorIntegrationTest {
     @Test
     void shouldGenerateWithEmptyStringSchemasDefaultingToStates() throws Exception {
         // Given - model with empty string schemas (should be treated as null)
-        var database = new DatabaseConfig("postgres", "", "");
+        var database = new DatabaseConfig("postgres", "", "", java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var initialState = new StateDef(
@@ -236,7 +236,7 @@ class PostgresDdlGeneratorIntegrationTest {
     @Test
     void shouldGenerateIndexesOnForeignKeys() throws Exception {
         // Given - model with state transitions (which create FK relationships)
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
@@ -293,7 +293,7 @@ class PostgresDdlGeneratorIntegrationTest {
     }
 
     private SddModel createSimpleOrderModel() {
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
 
         // Entity attributes
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);

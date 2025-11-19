@@ -23,6 +23,9 @@ dependencies {
     implementation("com.github.victools:jsonschema-module-jackson:4.28.0")
     implementation("com.github.victools:jsonschema-module-jakarta-validation:4.38.0")
 
+    // Pebble template engine for code generation
+    implementation("io.pebbletemplates:pebble:3.2.3")
+
     // Test dependencies for core functionality
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.3")

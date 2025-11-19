@@ -33,7 +33,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectModelWithNoEntities() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var model = new SddModel("1.0", "test", database, Map.of());
 
         // When
@@ -49,7 +49,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectEntityWithNoStates() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), Map.of(), Map.of(), Map.of());
         var model = new SddModel("1.0", "test", database, Map.of("order", entity));
@@ -68,7 +68,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectEntityWithNoInitialState() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var state = new StateDef("pending", "order_pending", false, List.of(), List.of(), Map.of());
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), Map.of("pending", state), Map.of(), Map.of());
@@ -88,7 +88,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectEntityWithMultipleInitialStates() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var state1 = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
         var state2 = new StateDef("processing", "order_processing", true, List.of(), List.of(), Map.of());
@@ -110,7 +110,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectInvalidTransitions() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
         var paidState = new StateDef("paid", "order_paid", false, List.of("unknown_state"), List.of(), Map.of());
@@ -133,7 +133,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectInitialStateWithTransitions() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var pendingState = new StateDef("pending", "order_pending", true, List.of("some_state"), List.of(), Map.of());
         var states = Map.of("pending", pendingState);
@@ -155,7 +155,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectConflictingTransitions() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
         var paidState = new StateDef("paid", "order_paid", false, List.of("pending"), List.of("pending"), Map.of());
@@ -178,7 +178,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldValidateOrTransitionsWithMultipleSources() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
         var paidState = new StateDef("paid", "order_paid", false, List.of(), List.of(), Map.of());
@@ -207,7 +207,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldThrowOnInvalidModel() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var model = new SddModel("1.0", "test", database, Map.of());
 
         // When & Then
@@ -219,7 +219,7 @@ class DefaultModelValidatorTest {
     void shouldCheckIsValidCorrectly() {
         // Given
         var validModel = createValidModel();
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var invalidModel = new SddModel("1.0", "test", database, Map.of());
 
         // When & Then
@@ -230,7 +230,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldRejectInvalidAttributeTypes() {
         // Given - model with invalid PostgreSQL type
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         // Invalid type "string" instead of "TEXT"
@@ -254,7 +254,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldAcceptValidPostgresTypes() {
         // Given - model with valid PostgreSQL types
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var nameAttr = new AttributeDef("name", "TEXT", false, false, null, null);
         var priceAttr = new AttributeDef("price", "NUMERIC(10,2)", false, false, null, null);
@@ -278,7 +278,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldValidateStateAttributeTypes() {
         // Given - model with invalid type in state attributes
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         // Invalid type in state attributes
@@ -299,7 +299,7 @@ class DefaultModelValidatorTest {
     @Test
     void shouldValidateExtensionAttributeTypes() {
         // Given - model with invalid type in extension attributes
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
 
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
@@ -325,7 +325,7 @@ class DefaultModelValidatorTest {
     }
 
     private SddModel createValidModel() {
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
         var paidState = new StateDef("paid", "order_paid", false, List.of("pending"), List.of(), Map.of());

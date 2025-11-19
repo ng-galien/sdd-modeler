@@ -10,7 +10,7 @@ class SddModelTest {
     @Test
     void shouldCreateValidSddModel() {
         // Given
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var entityDef = createSampleEntityDef();
         var entities = Map.of("order", entityDef);
 
@@ -27,7 +27,7 @@ class SddModelTest {
 
     @Test
     void shouldRequireNonNullFields() {
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var entities = Map.<String, EntityDef>of();
 
         var ex1 = assertThrows(IllegalArgumentException.class, () -> new SddModel(null, "test", database, entities));

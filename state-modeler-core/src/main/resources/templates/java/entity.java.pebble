@@ -1,0 +1,21 @@
+package {{ options.packageName | default('com.example') }};
+
+import java.util.UUID;
+import java.time.Instant;
+
+/**
+ * Generated ADT for {{ entity.name }} states.
+ */
+public sealed interface {{ entity.name }}State {
+
+    {% for state in entity.states.values() %}
+    /**
+     * State: {{ state.name }}
+     */
+    record {{ state.name }}(
+        {% for attribute in state.attributes.values() %}
+        {{ attribute.type }} {{ attribute.name }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ) implements {{ entity.name }}State {}
+    {% endfor %}
+}

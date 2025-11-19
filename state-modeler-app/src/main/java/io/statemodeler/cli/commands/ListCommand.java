@@ -26,12 +26,16 @@ import picocli.CommandLine.Spec;
 @Command(name = "list", description = "List registered SDRs in the repository", mixinStandardHelpOptions = true)
 public class ListCommand implements Callable<Integer> {
 
-    @Option(names = { "--format",
-            "-f" }, description = "Output format: table (default), json, yaml", defaultValue = "table")
+    @Option(
+            names = {"--format", "-f"},
+            description = "Output format: table (default), json, yaml",
+            defaultValue = "table")
     String format;
 
-    @Option(names = { "--limit",
-            "-l" }, description = "Maximum number of SDRs to display (0 = all)", defaultValue = "0")
+    @Option(
+            names = {"--limit", "-l"},
+            description = "Maximum number of SDRs to display (0 = all)",
+            defaultValue = "0")
     int limit;
 
     @Mixin
@@ -40,8 +44,8 @@ public class ListCommand implements Callable<Integer> {
     @Spec
     CommandSpec spec;
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 
     @Override
     public Integer call() {
@@ -131,8 +135,8 @@ public class ListCommand implements Callable<Integer> {
 
     private void printYaml(List<SdrMetadata> sdrs) {
         try {
-            ObjectMapper mapper = new ObjectMapper(
-                    new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
+            ObjectMapper mapper =
+                    new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
             mapper.findAndRegisterModules();
             mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 

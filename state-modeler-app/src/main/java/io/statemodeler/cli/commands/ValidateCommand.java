@@ -8,8 +8,8 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
 /**

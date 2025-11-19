@@ -40,12 +40,16 @@ public class RegisterCommand implements Callable<Integer> {
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)", paramLabel = "<model-file>")
     Path modelFile;
 
-    @Option(names = { "--name",
-            "-n" }, description = "Model name (default: derived from filename)", paramLabel = "<name>")
+    @Option(
+            names = {"--name", "-n"},
+            description = "Model name (default: derived from filename)",
+            paramLabel = "<name>")
     String modelName;
 
-    @Option(names = { "--version",
-            "-v" }, description = "Model version (default: derived from model or '1.0')", paramLabel = "<version>")
+    @Option(
+            names = {"--version", "-v"},
+            description = "Model version (default: derived from model or '1.0')",
+            paramLabel = "<version>")
     String modelVersion;
 
     @Mixin
@@ -63,10 +67,11 @@ public class RegisterCommand implements Callable<Integer> {
         spec.commandLine().getOut().println("Registering SDD model: " + modelFile);
 
         return io.vavr.control.Try.of(() -> {
-            String modelSource = Files.readString(modelFile);
-            String contentType = modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
-            return new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType);
-        })
+                    String modelSource = Files.readString(modelFile);
+                    String contentType =
+                            modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
+                    return new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType);
+                })
                 .flatMap(pair -> loader.loadFromFile(modelFile)
                         .map(model -> new java.util.AbstractMap.SimpleEntry<>(model, pair)))
                 .map(entry -> {

@@ -102,8 +102,8 @@ class ShowCommandTest {
                 result -> {
                     assertEquals(0, result.exitCode());
                     String output3 = result.out();
-                    assertTrue(output3.contains("=== SDR Metadata ==="),
-                            "Should show metadata. Output was:\n" + output3);
+                    assertTrue(
+                            output3.contains("=== SDR Metadata ==="), "Should show metadata. Output was:\n" + output3);
                 },
                 "test-model:1.0",
                 "--format",

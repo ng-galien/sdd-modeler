@@ -304,8 +304,7 @@ class MigrateCommandTest {
         var cmd = new CommandLine(command);
 
         // When
-        int exitCode = cmd.execute("hash1", "hash2", "--dialect", "postgres", "--output",
-                outputFile.getAbsolutePath());
+        int exitCode = cmd.execute("hash1", "hash2", "--dialect", "postgres", "--output", outputFile.getAbsolutePath());
 
         // Then
         assertEquals(0, exitCode);
@@ -339,8 +338,8 @@ class MigrateCommandTest {
         var cmd = new CommandLine(command);
 
         // When
-        int exitCode = cmd.execute("hash1", "hash2", "--dialect", "postgres", "--output-json",
-                outputJsonFile.getAbsolutePath());
+        int exitCode = cmd.execute(
+                "hash1", "hash2", "--dialect", "postgres", "--output-json", outputJsonFile.getAbsolutePath());
 
         // Then
         assertEquals(0, exitCode);

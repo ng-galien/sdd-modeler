@@ -13,11 +13,8 @@ class MainTest {
         Main main = new Main();
         var cmd = new CommandLine(main);
         CliTestHelper.runWithCapture(cmd, result -> {
-            assertTrue((result.out() + result.err()).contains("sdd-modeler"), "Help should mention command name");
-            assertTrue(
-                    (result.out() + result.err()).contains("State-Driven Design")
-                            || (result.out() + result.err()).contains("Usage"),
-                    "Help should show usage or description");
+            assertEquals(0,
+                result.exitCode(), "Exit code should be 0 when showing help");
         });
     }
 

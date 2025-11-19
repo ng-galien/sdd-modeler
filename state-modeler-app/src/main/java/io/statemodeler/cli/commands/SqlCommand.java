@@ -9,9 +9,9 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 /**
@@ -28,10 +28,15 @@ public class SqlCommand implements Callable<Integer> {
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)")
     private Path modelFile;
 
-    @Option(names = { "--dialect" }, description = "SQL dialect (supported: postgres)", defaultValue = "postgres")
+    @Option(
+            names = {"--dialect"},
+            description = "SQL dialect (supported: postgres)",
+            defaultValue = "postgres")
     private String dialect;
 
-    @Option(names = { "-o", "--output" }, description = "Output file (default: stdout)")
+    @Option(
+            names = {"-o", "--output"},
+            description = "Output file (default: stdout)")
     private Path outputFile;
 
     @Override
@@ -41,7 +46,8 @@ public class SqlCommand implements Callable<Integer> {
 
         if (!DdlGenerators.isSupported(dialect)) {
             spec.commandLine().getErr().println("Error: Unsupported SQL dialect '" + dialect + "'");
-            spec.commandLine().getErr()
+            spec.commandLine()
+                    .getErr()
                     .println("Supported dialects: " + String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
@@ -78,8 +84,8 @@ public class SqlCommand implements Callable<Integer> {
 
                             // Write to file or stdout
                             if (outputFile != null) {
-                                var writeResult = io.vavr.control.Try
-                                        .of(() -> Files.writeString(outputFile, ddlContent));
+                                var writeResult =
+                                        io.vavr.control.Try.of(() -> Files.writeString(outputFile, ddlContent));
                                 if (writeResult.isFailure()) {
                                     logger.error(
                                             "Error writing DDL output: {}",

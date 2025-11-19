@@ -33,8 +33,10 @@ public class ShowCommand implements Callable<Integer> {
     @Parameters(index = "0", description = "SDR hash or name[:version] to display")
     String identifier;
 
-    @Option(names = { "--format",
-            "-f" }, description = "Output format: all (default), metadata, schema, ddl", defaultValue = "all")
+    @Option(
+            names = {"--format", "-f"},
+            description = "Output format: all (default), metadata, schema, ddl",
+            defaultValue = "all")
     String format;
 
     @Mixin

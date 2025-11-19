@@ -10,9 +10,9 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 /**
@@ -32,7 +32,10 @@ public class DiffCommand implements Callable<Integer> {
     @Parameters(index = "1", description = "Path to the future SDD model file (YAML or JSON)")
     private Path futureModelFile;
 
-    @Option(names = { "--dialect" }, description = "SQL dialect (supported: postgres)", defaultValue = "postgres")
+    @Option(
+            names = {"--dialect"},
+            description = "SQL dialect (supported: postgres)",
+            defaultValue = "postgres")
     private String dialect;
 
     @Override
@@ -45,7 +48,8 @@ public class DiffCommand implements Callable<Integer> {
         // Validate dialect and file existence to keep error messages stable
         if (!DdlGenerators.isSupported(dialect)) {
             spec.commandLine().getErr().println("Error: Unsupported SQL dialect '" + dialect + "'");
-            spec.commandLine().getErr()
+            spec.commandLine()
+                    .getErr()
                     .println("Supported dialects: " + String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
@@ -59,64 +63,69 @@ public class DiffCommand implements Callable<Integer> {
         }
 
         return io.vavr.control.Try.of(() -> {
-            var currentLoader = ModelLoader.forFile(currentModelFile);
-            var currentLoadResult = currentLoader.loadFromFile(currentModelFile);
-            if (currentLoadResult.isFailure()) {
-                spec.commandLine().getErr().println("✗ Failed to parse current model file:");
-                spec.commandLine().getErr().println("  " + currentLoadResult.getCause().getMessage());
-                return 1;
-            }
-            var currentModel = currentLoadResult.get();
-            spec.commandLine().getOut().println("✓ Current model parsed: " + currentModel.name());
-            var validator = ModelValidators.getInstance();
-            var currentValidation = validator.validate(currentModel);
-            if (currentValidation.isInvalid()) {
-                throw new IllegalArgumentException("Current model validation failed");
-            }
+                    var currentLoader = ModelLoader.forFile(currentModelFile);
+                    var currentLoadResult = currentLoader.loadFromFile(currentModelFile);
+                    if (currentLoadResult.isFailure()) {
+                        spec.commandLine().getErr().println("✗ Failed to parse current model file:");
+                        spec.commandLine()
+                                .getErr()
+                                .println("  " + currentLoadResult.getCause().getMessage());
+                        return 1;
+                    }
+                    var currentModel = currentLoadResult.get();
+                    spec.commandLine().getOut().println("✓ Current model parsed: " + currentModel.name());
+                    var validator = ModelValidators.getInstance();
+                    var currentValidation = validator.validate(currentModel);
+                    if (currentValidation.isInvalid()) {
+                        throw new IllegalArgumentException("Current model validation failed");
+                    }
 
-            var futureLoader = ModelLoader.forFile(futureModelFile);
-            var futureLoadResult = futureLoader.loadFromFile(futureModelFile);
-            if (futureLoadResult.isFailure()) {
-                spec.commandLine().getErr().println("✗ Failed to parse future model file:");
-                spec.commandLine().getErr().println("  " + futureLoadResult.getCause().getMessage());
-                return 1;
-            }
-            var futureModel = futureLoadResult.get();
-            spec.commandLine().getOut().println("✓ Future model parsed: " + futureModel.name());
-            var futureValidation = validator.validate(futureModel);
-            if (futureValidation.isInvalid()) {
-                throw new IllegalArgumentException("Future model validation failed");
-            }
+                    var futureLoader = ModelLoader.forFile(futureModelFile);
+                    var futureLoadResult = futureLoader.loadFromFile(futureModelFile);
+                    if (futureLoadResult.isFailure()) {
+                        spec.commandLine().getErr().println("✗ Failed to parse future model file:");
+                        spec.commandLine()
+                                .getErr()
+                                .println("  " + futureLoadResult.getCause().getMessage());
+                        return 1;
+                    }
+                    var futureModel = futureLoadResult.get();
+                    spec.commandLine().getOut().println("✓ Future model parsed: " + futureModel.name());
+                    var futureValidation = validator.validate(futureModel);
+                    if (futureValidation.isInvalid()) {
+                        throw new IllegalArgumentException("Future model validation failed");
+                    }
 
-            var generator = DdlGenerators.forDialect(dialect);
-            var currentStatements = generator.generateDdl(currentModel);
-            var currentDdl = String.join(";\n", currentStatements) + ";\n";
-            logger.info("✓ Current DDL generated ({} chars)", currentDdl.length());
-            var futureStatements = generator.generateDdl(futureModel);
-            var futureDdl = String.join(";\n", futureStatements) + ";\n";
-            logger.info("✓ Future DDL generated ({} chars)", futureDdl.length());
+                    var generator = DdlGenerators.forDialect(dialect);
+                    var currentStatements = generator.generateDdl(currentModel);
+                    var currentDdl = String.join(";\n", currentStatements) + ";\n";
+                    logger.info("✓ Current DDL generated ({} chars)", currentDdl.length());
+                    var futureStatements = generator.generateDdl(futureModel);
+                    var futureDdl = String.join(";\n", futureStatements) + ";\n";
+                    logger.info("✓ Future DDL generated ({} chars)", futureDdl.length());
 
-            var comparisonService = new DdlComparisonService();
-            var comparison = comparisonService.compare(currentDdl, futureDdl);
-            if (comparison.diff().isEmpty()) {
-                spec.commandLine().getOut().println("");
-                spec.commandLine().getOut().println("✓ No differences found - DDL schemas are identical");
-                return 0;
-            }
+                    var comparisonService = new DdlComparisonService();
+                    var comparison = comparisonService.compare(currentDdl, futureDdl);
+                    if (comparison.diff().isEmpty()) {
+                        spec.commandLine().getOut().println("");
+                        spec.commandLine().getOut().println("✓ No differences found - DDL schemas are identical");
+                        return 0;
+                    }
 
-            spec.commandLine().getOut().println("");
-            spec.commandLine().getOut().println("DDL Diff:");
-            spec.commandLine().getOut().println("─".repeat(80));
-            for (var line : comparison.diff()) {
-                spec.commandLine().getOut().println(line);
-            }
-            spec.commandLine().getOut().println("─".repeat(80));
-            logger.info("✓ Diff generated ({} lines)", comparison.diff().size());
-            return 0;
-        })
+                    spec.commandLine().getOut().println("");
+                    spec.commandLine().getOut().println("DDL Diff:");
+                    spec.commandLine().getOut().println("─".repeat(80));
+                    for (var line : comparison.diff()) {
+                        spec.commandLine().getOut().println(line);
+                    }
+                    spec.commandLine().getOut().println("─".repeat(80));
+                    logger.info("✓ Diff generated ({} lines)", comparison.diff().size());
+                    return 0;
+                })
                 .fold(
                         throwable -> {
-                            spec.commandLine().getErr()
+                            spec.commandLine()
+                                    .getErr()
                                     .println("Error during DDL comparison: " + throwable.getMessage());
                             return 1;
                         },

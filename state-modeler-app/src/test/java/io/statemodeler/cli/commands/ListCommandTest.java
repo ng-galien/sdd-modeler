@@ -7,7 +7,6 @@ import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.DefaultSdrFactory;
 import io.statemodeler.sdr.SdrFactory;
-import java.io.IOException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

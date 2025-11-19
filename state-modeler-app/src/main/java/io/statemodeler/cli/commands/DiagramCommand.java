@@ -3,17 +3,16 @@ package io.statemodeler.cli.commands;
 import io.statemodeler.diagram.DiagramGenerators;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.validation.ModelValidators;
+import io.vavr.control.Try;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-
-import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 /**
@@ -30,14 +29,20 @@ public class DiagramCommand implements Callable<Integer> {
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)")
     private Path modelFile;
 
-    @Option(names = { "-f",
-            "--format" }, description = "Diagram format: mermaid (default: mermaid)", defaultValue = "mermaid")
+    @Option(
+            names = {"-f", "--format"},
+            description = "Diagram format: mermaid (default: mermaid)",
+            defaultValue = "mermaid")
     private String format;
 
-    @Option(names = { "-o", "--output" }, description = "Output file path (default: stdout)")
+    @Option(
+            names = {"-o", "--output"},
+            description = "Output file path (default: stdout)")
     private Path outputFile;
 
-    @Option(names = { "-e", "--entity" }, description = "Generate diagram for specific entity only")
+    @Option(
+            names = {"-e", "--entity"},
+            description = "Generate diagram for specific entity only")
     private String entityName;
 
     @Override
@@ -51,7 +56,8 @@ public class DiagramCommand implements Callable<Integer> {
         }
         if (!DiagramGenerators.isSupported(format)) {
             spec.commandLine().getErr().println("Error: Unsupported diagram format: " + format);
-            spec.commandLine().getErr()
+            spec.commandLine()
+                    .getErr()
                     .println("Supported formats: " + String.join(", ", DiagramGenerators.getSupportedFormats()));
             return 1;
         }
@@ -80,9 +86,11 @@ public class DiagramCommand implements Callable<Integer> {
 
                             if (entityName != null && !model.entities().containsKey(entityName)) {
                                 spec.commandLine().getErr().println("Error: Entity not found: " + entityName);
-                                spec.commandLine().getErr().println(
-                                        "Available entities: " +
-                                                String.join(", ", model.entities().keySet()));
+                                spec.commandLine()
+                                        .getErr()
+                                        .println("Available entities: "
+                                                + String.join(
+                                                        ", ", model.entities().keySet()));
                                 return 1;
                             }
 
@@ -92,17 +100,18 @@ public class DiagramCommand implements Callable<Integer> {
                                     : generator.generateDiagram(model);
 
                             return io.vavr.control.Try.of(() -> {
-                                if (outputFile != null) {
-                                    Files.writeString(outputFile, diagram);
-                                    spec.commandLine().getOut().println("✓ Diagram written to: " + outputFile);
-                                } else {
-                                    spec.commandLine().getOut().println("\n" + diagram);
-                                }
-                                return 0;
-                            })
+                                        if (outputFile != null) {
+                                            Files.writeString(outputFile, diagram);
+                                            spec.commandLine().getOut().println("✓ Diagram written to: " + outputFile);
+                                        } else {
+                                            spec.commandLine().getOut().println("\n" + diagram);
+                                        }
+                                        return 0;
+                                    })
                                     .fold(
                                             e -> {
-                                                spec.commandLine().getErr()
+                                                spec.commandLine()
+                                                        .getErr()
                                                         .println("Error: Failed to read/write file: " + e.getMessage());
                                                 return 1;
                                             },

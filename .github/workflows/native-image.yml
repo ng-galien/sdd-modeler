@@ -1,0 +1,76 @@
+name: Build native image (GraalVM)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup GraalVM Java 21
+        uses: graalvm/setup-java@v0.3.0
+        with:
+          java-version: 21
+          distribution: graalvm
+          component: native-image
+
+      - name: Print Java version
+        run: java -version
+
+      - name: Build jar
+        run: ./gradlew :state-modeler-app:clean :state-modeler-app:jar --no-daemon
+
+      - name: Run agent to collect native-image config
+        run: |
+          mkdir -p tmp/native-config || true
+          java -agentlib:native-image-agent=config-output-dir=tmp/native-config -jar state-modeler-app/build/libs/state-modeler-app.jar --help || true
+          # Run representative commands (validate/--help)
+          java -agentlib:native-image-agent=config-output-dir=tmp/native-config -jar state-modeler-app/build/libs/state-modeler-app.jar validate scripts/examples/orders-sdd-mini-model.yaml || true
+
+      - name: Copy collected config to repository folder
+        run: |
+          if [ -d tmp/native-config ]; then
+            mkdir -p state-modeler-app/src/main/resources/META-INF/native-image
+            cp -r tmp/native-config/* state-modeler-app/src/main/resources/META-INF/native-image/ || true
+            ls -la state-modeler-app/src/main/resources/META-INF/native-image || true
+          fi
+
+      - name: Build native image
+        run: ./gradlew :state-modeler-app:nativeCompile --no-daemon
+
+      - name: Run smoke tests on native binary
+        run: |
+          if [ -f state-modeler-app/build/native/nativeCompile/sdd-modeler ] ; then
+            state-modeler-app/build/native/nativeCompile/sdd-modeler --help
+            state-modeler-app/build/native/nativeCompile/sdd-modeler validate scripts/examples/orders-sdd-mini-model.yaml || true
+          else
+            echo "native binary not found"
+            exit 1
+          fi
+
+      - name: Upload native binary (artifact)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdd-modeler-${{ matrix.os }}
+          path: state-modeler-app/build/native/nativeCompile/**

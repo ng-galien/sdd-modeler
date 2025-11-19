@@ -1,0 +1,27 @@
+[
+  {
+    "name": "io.statemodeler.dsl.yaml.YamlModelDto",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.statemodeler.dsl.yaml.YamlModelDto$YamlDatabaseDto",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.statemodeler.core.DatabaseConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.statemodeler.cli.commands.GenerateCommand",
+    "allDeclaredConstructors": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "io.statemodeler.cli.Main",
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  }
+]

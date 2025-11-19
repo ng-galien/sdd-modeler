@@ -1,9 +1,29 @@
 plugins {
     application
+    id("org.graalvm.buildtools.native") version "0.11.3"
 }
 
 application {
     mainClass = "io.statemodeler.cli.Main"
+}
+
+// GraalVM native-image configuration (minimal for CLI native build)
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("sdd-modeler")
+            // Use no-fallback by default for a pure native image. Remove if fallback is needed.
+            buildArgs.addAll("--no-fallback", "-H:+ReportExceptionStackTraces")
+            // Resource and agent configuration intentionally left out to
+            // prevent Kotlin DSL misconfiguration. Resources will be pulled
+            // from the classpath by default; for detailed control, add
+            // resource & agent config following the plugin docs.
+        }
+    }
+
+    // Additional configuration for resources and agent can be added here. The
+    // plugin version has different DSL features across versions; adjust if
+    // specific features are needed (resources/proxy/agent configuration).
 }
 
 dependencies {

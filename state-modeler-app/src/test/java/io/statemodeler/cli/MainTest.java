@@ -13,8 +13,7 @@ class MainTest {
         Main main = new Main();
         var cmd = new CommandLine(main);
         CliTestHelper.runWithCapture(cmd, result -> {
-            assertEquals(0,
-                result.exitCode(), "Exit code should be 0 when showing help");
+            assertEquals(0, result.exitCode(), "Exit code should be 0 when showing help");
         });
     }
 

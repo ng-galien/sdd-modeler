@@ -58,39 +58,32 @@ public class ListCommand implements Callable<Integer> {
             return 1;
         }
 
-        try (var repository = repositoryMixin.createRepository()) {
-            // Fetch SDRs
-            var result = limit > 0 ? repository.findRecent(limit) : repository.listAll();
-
-            if (result.isFailure()) {
-                logger.error("ERROR: Failed to list SDRs");
-                logger.error("  {}", result.getCause().getMessage());
-                return 1;
-            }
-
-            List<SdrMetadata> sdrs = result.get();
-
-            // Display based on format
-            switch (format.toLowerCase()) {
-                case "json":
-                    printJson(sdrs);
-                    break;
-                case "yaml":
-                    printYaml(sdrs);
-                    break;
-                case "table":
-                default:
-                    printTable(sdrs);
-                    break;
-            }
-
-            return 0;
-
-        } catch (Exception e) {
-            logger.error("ERROR: Repository error");
-            logger.error("  {}", e.getMessage());
-            return 1;
-        }
+        return io.vavr.control.Try.withResources(() -> repositoryMixin.createRepository())
+                .of(repository -> (limit > 0 ? repository.findRecent(limit) : repository.listAll())
+                        .map(sdrs -> {
+                            // Display based on format
+                            switch (format.toLowerCase()) {
+                                case "json":
+                                    printJson(sdrs);
+                                    break;
+                                case "yaml":
+                                    printYaml(sdrs);
+                                    break;
+                                case "table":
+                                default:
+                                    printTable(sdrs);
+                                    break;
+                            }
+                            return 0;
+                        })
+                        .getOrElseThrow(e -> e))
+                .fold(
+                        throwable -> {
+                            logger.error("ERROR: Failed to list SDRs");
+                            logger.error("  {}", throwable.getMessage());
+                            return 1;
+                        },
+                        result -> result);
     }
 
     private boolean isValidFormat(String fmt) {

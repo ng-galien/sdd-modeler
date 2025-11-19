@@ -3,7 +3,6 @@ package io.statemodeler.cli.commands;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
 import io.statemodeler.validation.ModelValidators;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -12,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Spec;
 
 /**
  * Command to generate SQL DDL from an SDD model file.
@@ -21,26 +22,17 @@ public class SqlCommand implements Callable<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger(SqlCommand.class);
 
+    @Spec
+    CommandSpec spec;
+
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)")
     private Path modelFile;
 
-    @Option(
-            names = {"--dialect"},
-            description = "SQL dialect (supported: postgres)",
-            defaultValue = "postgres")
+    @Option(names = { "--dialect" }, description = "SQL dialect (supported: postgres)", defaultValue = "postgres")
     private String dialect;
 
-    @Option(
-            names = {"-o", "--output"},
-            description = "Output file (default: stdout)")
+    @Option(names = { "-o", "--output" }, description = "Output file (default: stdout)")
     private Path outputFile;
-
-    // Output writer for CLI content; default to System.out
-    PrintWriter output = new PrintWriter(System.out, true);
-
-    public void setOutput(PrintWriter output) {
-        this.output = output;
-    }
 
     @Override
     public Integer call() {
@@ -48,13 +40,14 @@ public class SqlCommand implements Callable<Integer> {
         logger.info("Dialect: {}", dialect);
 
         if (!DdlGenerators.isSupported(dialect)) {
-            logger.error("Error: Unsupported SQL dialect '{}'", dialect);
-            logger.error("Supported dialects: {}", String.join(", ", DdlGenerators.getSupportedDialects()));
+            spec.commandLine().getErr().println("Error: Unsupported SQL dialect '" + dialect + "'");
+            spec.commandLine().getErr()
+                    .println("Supported dialects: " + String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
         // Check if model file exists
         if (!Files.exists(modelFile)) {
-            logger.error("Error: Model file does not exist: {}", modelFile);
+            spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
             return 1;
         }
 
@@ -63,17 +56,17 @@ public class SqlCommand implements Callable<Integer> {
                 .flatMap(loader -> loader.loadFromFile(modelFile))
                 .fold(
                         throwable -> {
-                            logger.error("✗ Failed to parse model file:");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("✗ Failed to parse model file:");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             return 1;
                         },
                         model -> {
-                            logger.info("✓ Model parsed successfully: {}", model.name());
+                            spec.commandLine().getOut().println("✓ Model parsed successfully: " + model.name());
                             var validationResult = ModelValidators.getInstance().validate(model);
                             if (validationResult.isInvalid()) {
-                                logger.error("✗ Model validation failed:");
+                                spec.commandLine().getErr().println("✗ Model validation failed:");
                                 for (var error : validationResult.getError()) {
-                                    logger.error("  • {}", error.message());
+                                    spec.commandLine().getErr().println("  • " + error.message());
                                 }
                                 return 1;
                             }
@@ -85,8 +78,8 @@ public class SqlCommand implements Callable<Integer> {
 
                             // Write to file or stdout
                             if (outputFile != null) {
-                                var writeResult =
-                                        io.vavr.control.Try.of(() -> Files.writeString(outputFile, ddlContent));
+                                var writeResult = io.vavr.control.Try
+                                        .of(() -> Files.writeString(outputFile, ddlContent));
                                 if (writeResult.isFailure()) {
                                     logger.error(
                                             "Error writing DDL output: {}",
@@ -95,9 +88,9 @@ public class SqlCommand implements Callable<Integer> {
                                 }
                                 logger.info("✓ DDL written to: {}", outputFile);
                             } else {
-                                output.println();
-                                output.println("-- Generated DDL for " + model.name());
-                                output.println(ddlContent);
+                                spec.commandLine().getOut().println();
+                                spec.commandLine().getOut().println("-- Generated DDL for " + model.name());
+                                spec.commandLine().getOut().println(ddlContent);
                             }
 
                             return 0;

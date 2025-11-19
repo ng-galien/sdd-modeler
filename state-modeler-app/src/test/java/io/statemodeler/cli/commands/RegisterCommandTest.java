@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import picocli.CommandLine;
 
 /**
  * Tests for {@link RegisterCommand}.
@@ -32,69 +33,69 @@ class RegisterCommandTest {
         // Valid YAML model
         validModelFile = tempDir.resolve("valid-model.yaml");
         Files.writeString(validModelFile, """
-                version: "0.1"
-                name: "test-model"
-                database:
-                  dialect: postgres
-                entities:
-                  order:
-                    table: orders
-                    id:
-                      name: id
-                      type: serial
-                      primary_key: true
-                    states:
-                      pending:
-                        initial: true
-                        table: order_pending
-                """);
+        version: "0.1"
+        name: "test-model"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: order_pending
+        """);
 
         // Invalid model (no initial state)
         invalidModelFile = tempDir.resolve("invalid-model.yaml");
         Files.writeString(invalidModelFile, """
-                version: "0.1"
-                name: "invalid-model"
-                database:
-                  dialect: postgres
-                entities:
-                  order:
-                    table: orders
-                    id:
-                      name: id
-                      type: serial
-                      primary_key: true
-                    states:
-                      pending:
-                        table: order_pending
-                """);
+        version: "0.1"
+        name: "invalid-model"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                table: order_pending
+        """);
 
         // Valid JSON model
         jsonModelFile = tempDir.resolve("json-model.json");
         Files.writeString(jsonModelFile, """
-                {
-                  "version": "0.1",
-                  "name": "json-test",
-                  "database": {
-                    "dialect": "postgres"
-                  },
-                  "entities": {
-                    "order": {
-                      "table": "orders",
-                      "id": {
-                        "name": "id",
-                        "type": "serial",
-                        "primary_key": true
-                      },
-                      "states": {
-                        "pending": {
-                          "initial": true,
-                          "table": "order_pending"
-                        }
-                      }
-                    }
-                  }
+        {
+          "version": "0.1",
+          "name": "json-test",
+          "database": {
+            "dialect": "postgres"
+          },
+          "entities": {
+            "order": {
+              "table": "orders",
+              "id": {
+                "name": "id",
+                "type": "serial",
+                "primary_key": true
+              },
+              "states": {
+                "pending": {
+                  "initial": true,
+                  "table": "order_pending"
                 }
-                """);
+              }
+            }
+          }
+        }
+        """);
     }
 
     @AfterEach
@@ -117,11 +118,11 @@ class RegisterCommandTest {
     void shouldRegisterValidYamlModel() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = validModelFile;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(validModelFile.toString());
 
         // Then
         assertEquals(0, exitCode, "Should succeed with exit code 0");
@@ -131,11 +132,11 @@ class RegisterCommandTest {
     void shouldRegisterValidJsonModel() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = jsonModelFile;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(jsonModelFile.toString());
 
         // Then
         assertEquals(0, exitCode, "Should succeed with exit code 0");
@@ -145,11 +146,11 @@ class RegisterCommandTest {
     void shouldFailWithInvalidModel() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = invalidModelFile;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(invalidModelFile.toString());
 
         // Then
         assertEquals(1, exitCode, "Should fail with exit code 1 for validation error");
@@ -159,11 +160,11 @@ class RegisterCommandTest {
     void shouldFailWithNonexistentFile() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = tempDir.resolve("nonexistent.yaml");
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(tempDir.resolve("nonexistent.yaml").toString());
 
         // Then
         assertEquals(1, exitCode, "Should fail with exit code 1 for missing file");
@@ -173,16 +174,16 @@ class RegisterCommandTest {
     void shouldDetectDuplicates() {
         // Given
         var command1 = new RegisterCommand();
-        command1.modelFile = validModelFile;
         command1.repositoryMixin = createMixin();
+        var cmd1 = new CommandLine(command1);
 
         var command2 = new RegisterCommand();
-        command2.modelFile = validModelFile;
         command2.repositoryMixin = createMixin();
+        var cmd2 = new CommandLine(command2);
 
         // When
-        int firstExitCode = command1.call();
-        int secondExitCode = command2.call();
+        int firstExitCode = cmd1.execute(validModelFile.toString());
+        int secondExitCode = cmd2.execute(validModelFile.toString());
 
         // Then
         assertEquals(0, firstExitCode, "First registration should succeed");
@@ -193,12 +194,11 @@ class RegisterCommandTest {
     void shouldUseCustomName() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = validModelFile;
-        command.modelName = "custom-name";
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(validModelFile.toString(), "--name", "custom-name");
 
         // Then
         assertEquals(0, exitCode);
@@ -209,12 +209,11 @@ class RegisterCommandTest {
     void shouldUseCustomVersion() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = validModelFile;
-        command.modelVersion = "2.5.3";
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(validModelFile.toString(), "--version", "2.5.3");
 
         // Then
         assertEquals(0, exitCode);
@@ -225,11 +224,11 @@ class RegisterCommandTest {
     void shouldDeriveNameFromFilename() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = validModelFile; // filename: valid-model.yaml
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(validModelFile.toString());
 
         // Then
         assertEquals(0, exitCode);
@@ -240,11 +239,11 @@ class RegisterCommandTest {
     void shouldUseDefaultVersionWhenNotSpecified() {
         // Given
         var command = new RegisterCommand();
-        command.modelFile = validModelFile;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(validModelFile.toString());
 
         // Then
         assertEquals(0, exitCode);
@@ -256,29 +255,29 @@ class RegisterCommandTest {
         // Given - model with version in YAML
         Path versionedModel = tempDir.resolve("versioned-model.yaml");
         Files.writeString(versionedModel, """
-                version: "2.0"
-                name: "versioned-test"
-                database:
-                  dialect: postgres
-                entities:
-                  order:
-                    table: orders
-                    id:
-                      name: id
-                      type: serial
-                      primary_key: true
-                    states:
-                      pending:
-                        initial: true
-                        table: order_pending
-                """);
+        version: "2.0"
+        name: "versioned-test"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: order_pending
+        """);
 
         var command = new RegisterCommand();
-        command.modelFile = versionedModel;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(versionedModel.toString());
 
         // Then
         assertEquals(0, exitCode);
@@ -290,30 +289,29 @@ class RegisterCommandTest {
         // Given - model with version but CLI override
         Path versionedModel = tempDir.resolve("versioned-model2.yaml");
         Files.writeString(versionedModel, """
-                version: "1.5"
-                name: "test-override"
-                database:
-                  dialect: postgres
-                entities:
-                  order:
-                    table: orders
-                    id:
-                      name: id
-                      type: serial
-                      primary_key: true
-                    states:
-                      pending:
-                        initial: true
-                        table: order_pending
-                """);
+        version: "1.5"
+        name: "test-override"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: order_pending
+        """);
 
         var command = new RegisterCommand();
-        command.modelFile = versionedModel;
-        command.modelVersion = "3.0.0"; // CLI override
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(versionedModel.toString(), "--version", "3.0.0");
 
         // Then
         assertEquals(0, exitCode);
@@ -325,29 +323,29 @@ class RegisterCommandTest {
         // Given - file without extension (edge case for resolveName)
         Path noExtensionFile = tempDir.resolve("noextension");
         Files.writeString(noExtensionFile, """
-                version: "0.1"
-                name: "test-no-ext"
-                database:
-                  dialect: postgres
-                entities:
-                  order:
-                    table: orders
-                    id:
-                      name: id
-                      type: serial
-                      primary_key: true
-                    states:
-                      pending:
-                        initial: true
-                        table: order_pending
-                """);
+        version: "0.1"
+        name: "test-no-ext"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: order_pending
+        """);
 
         var command = new RegisterCommand();
-        command.modelFile = noExtensionFile;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(noExtensionFile.toString());
 
         // Then
         assertEquals(0, exitCode);
@@ -358,14 +356,14 @@ class RegisterCommandTest {
     void shouldHandleRepositoryException() {
         // Given - command that will trigger repository error
         var command = new RegisterCommand();
-        command.modelFile = validModelFile;
         // Use an invalid repository path to trigger exception
         var mixin = new RepositoryMixin();
         mixin.repositoryPath = "/invalid/\0/path"; // Invalid path with null char
         command.repositoryMixin = mixin;
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(validModelFile.toString());
 
         // Then
         assertEquals(1, exitCode, "Should fail with exit code 1 for repository error");

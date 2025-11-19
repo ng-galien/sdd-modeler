@@ -3,14 +3,17 @@ package io.statemodeler.cli.commands;
 import io.statemodeler.diagram.DiagramGenerators;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.validation.ModelValidators;
+import io.vavr.control.Try;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 /**
  * Command to generate state diagrams from an SDD model file.
@@ -19,6 +22,9 @@ import picocli.CommandLine.Parameters;
 public class DiagramCommand implements Callable<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger(DiagramCommand.class);
+
+    @Spec
+    CommandSpec spec;
 
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)")
     private Path modelFile;
@@ -45,42 +51,46 @@ public class DiagramCommand implements Callable<Integer> {
 
         // Validate file existence and format to keep stable error messages
         if (!Files.exists(modelFile)) {
-            logger.error("Error: Model file does not exist: {}", modelFile);
+            spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
             return 1;
         }
         if (!DiagramGenerators.isSupported(format)) {
-            logger.error("Error: Unsupported diagram format: {}", format);
-            logger.error("Supported formats: {}", String.join(", ", DiagramGenerators.getSupportedFormats()));
+            spec.commandLine().getErr().println("Error: Unsupported diagram format: " + format);
+            spec.commandLine()
+                    .getErr()
+                    .println("Supported formats: " + String.join(", ", DiagramGenerators.getSupportedFormats()));
             return 1;
         }
 
-        return io.vavr.control.Try.of(() -> modelFile)
-                .map(f -> ModelLoader.forFile(f))
+        return Try.of(() -> modelFile)
+                .map(ModelLoader::forFile)
                 .flatMap(loader -> loader.loadFromFile(modelFile))
                 .fold(
                         throwable -> {
-                            logger.error("✗ Failed to parse model file:");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("✗ Failed to parse model file:");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             return 1;
                         },
                         model -> {
-                            logger.info("✓ Model parsed successfully: {}", model.name());
+                            spec.commandLine().getOut().println("✓ Model parsed successfully: " + model.name());
                             var validator = ModelValidators.getInstance();
                             var validationResult = validator.validate(model);
                             if (validationResult.isInvalid()) {
-                                logger.error("✗ Model validation failed:");
+                                spec.commandLine().getErr().println("✗ Model validation failed:");
                                 for (var error : validationResult.getError()) {
-                                    logger.error("  • {}", error.message());
+                                    spec.commandLine().getErr().println("  • " + error.message());
                                 }
                                 return 1;
                             }
-                            logger.info("✓ Model validation passed");
+                            spec.commandLine().getOut().println("✓ Model validation passed");
 
                             if (entityName != null && !model.entities().containsKey(entityName)) {
-                                logger.error("Error: Entity not found: {}", entityName);
-                                logger.error(
-                                        "Available entities: {}",
-                                        String.join(", ", model.entities().keySet()));
+                                spec.commandLine().getErr().println("Error: Entity not found: " + entityName);
+                                spec.commandLine()
+                                        .getErr()
+                                        .println("Available entities: "
+                                                + String.join(
+                                                        ", ", model.entities().keySet()));
                                 return 1;
                             }
 
@@ -92,15 +102,17 @@ public class DiagramCommand implements Callable<Integer> {
                             return io.vavr.control.Try.of(() -> {
                                         if (outputFile != null) {
                                             Files.writeString(outputFile, diagram);
-                                            logger.info("✓ Diagram written to: {}", outputFile);
+                                            spec.commandLine().getOut().println("✓ Diagram written to: " + outputFile);
                                         } else {
-                                            System.out.println("\n" + diagram);
+                                            spec.commandLine().getOut().println("\n" + diagram);
                                         }
                                         return 0;
                                     })
                                     .fold(
                                             e -> {
-                                                logger.error("Error: Failed to read/write file: {}", e.getMessage());
+                                                spec.commandLine()
+                                                        .getErr()
+                                                        .println("Error: Failed to read/write file: " + e.getMessage());
                                                 return 1;
                                             },
                                             result -> result);

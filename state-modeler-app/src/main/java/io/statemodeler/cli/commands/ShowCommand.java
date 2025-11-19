@@ -3,14 +3,13 @@ package io.statemodeler.cli.commands;
 import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.sdr.SdrRecord;
 import io.vavr.control.Try;
-import java.io.PrintWriter;
 import java.util.concurrent.Callable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 /**
  * CLI command to show details of a registered SDR.
@@ -30,7 +29,6 @@ import picocli.CommandLine.Parameters;
  */
 @Command(name = "show", description = "Show details of a registered SDR", mixinStandardHelpOptions = true)
 public class ShowCommand implements Callable<Integer> {
-    private static final Logger logger = LoggerFactory.getLogger(ShowCommand.class);
 
     @Parameters(index = "0", description = "SDR hash or name[:version] to display")
     String identifier;
@@ -44,20 +42,15 @@ public class ShowCommand implements Callable<Integer> {
     @Mixin
     RepositoryMixin repositoryMixin;
 
-    // Output writer for CLI content printing. Default to System.out; tests can
-    // override.
-    PrintWriter output = new PrintWriter(System.out, true);
-
-    public void setOutput(PrintWriter output) {
-        this.output = output;
-    }
+    @Spec
+    CommandSpec spec;
 
     @Override
     public Integer call() {
         // Validate format
         if (!isValidFormat(format)) {
-            logger.error("ERROR: Invalid format '{}'", format);
-            logger.error("  Supported formats: all, metadata, schema, ddl");
+            spec.commandLine().getErr().println("ERROR: Invalid format '" + format + "'");
+            spec.commandLine().getErr().println("  Supported formats: all, metadata, schema, ddl");
             return 1;
         }
 
@@ -89,13 +82,13 @@ public class ShowCommand implements Callable<Integer> {
                         throwable -> {
                             if (throwable instanceof IllegalArgumentException
                                     && "SDR not found".equals(throwable.getMessage())) {
-                                logger.error("ERROR: SDR not found");
-                                logger.error("  Identifier: {}", identifier);
-                                logger.error("  Use 'sdd-modeler list' to view registered SDRs");
+                                spec.commandLine().getErr().println("ERROR: SDR not found");
+                                spec.commandLine().getErr().println("  Identifier: " + identifier);
+                                spec.commandLine().getErr().println("  Use 'sdd-modeler list' to view registered SDRs");
                                 return 1;
                             }
-                            logger.error("ERROR: Repository error");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("ERROR: Repository error");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             return 1;
                         },
                         result -> result);
@@ -137,29 +130,29 @@ public class ShowCommand implements Callable<Integer> {
     }
 
     private void printMetadata(SdrRecord sdr) {
-        output.println("=== SDR Metadata ===");
-        output.println("Schema Hash:       " + sdr.schemaHash());
-        output.println("Content Type:      " + sdr.contentType());
-        output.println("DDL Hash:          " + sdr.ddlHash());
-        output.println("SDR Version:       " + sdr.version());
-        output.println("Build Fingerprint: " + sdr.buildFingerprint());
+        spec.commandLine().getOut().println("=== SDR Metadata ===");
+        spec.commandLine().getOut().println("Schema Hash:       " + sdr.schemaHash());
+        spec.commandLine().getOut().println("Content Type:      " + sdr.contentType());
+        spec.commandLine().getOut().println("DDL Hash:          " + sdr.ddlHash());
+        spec.commandLine().getOut().println("SDR Version:       " + sdr.version());
+        spec.commandLine().getOut().println("Build Fingerprint: " + sdr.buildFingerprint());
     }
 
     private void printSchema(SdrRecord sdr) {
-        output.println("=== Schema (JSON) ===");
-        output.println(sdr.schema());
+        spec.commandLine().getOut().println("=== Schema (JSON) ===");
+        spec.commandLine().getOut().println(sdr.schema());
     }
 
     private void printDdl(SdrRecord sdr) {
-        output.println("=== DDL (SQL) ===");
-        output.println(sdr.ddl());
+        spec.commandLine().getOut().println("=== DDL (SQL) ===");
+        spec.commandLine().getOut().println(sdr.ddl());
     }
 
     private void printAll(SdrRecord sdr) {
         printMetadata(sdr);
-        output.println();
+        spec.commandLine().getOut().println();
         printSchema(sdr);
-        output.println();
+        spec.commandLine().getOut().println();
         printDdl(sdr);
     }
 }

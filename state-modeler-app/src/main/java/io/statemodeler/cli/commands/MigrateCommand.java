@@ -21,8 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 /**
  * CLI command to generate migration scripts between two SDR versions.
@@ -88,12 +90,15 @@ public class MigrateCommand implements Callable<Integer> {
     @Mixin
     RepositoryMixin repositoryMixin;
 
+    @Spec
+    CommandSpec spec;
+
     @Override
     public Integer call() {
         // Validate dialect
         if (!isValidDialect(dialect)) {
-            logger.error("ERROR: Unsupported dialect '{}'", dialect);
-            logger.error("  Supported dialects: postgres");
+            spec.commandLine().getErr().println("ERROR: Unsupported dialect '" + dialect + "'");
+            spec.commandLine().getErr().println("  Supported dialects: postgres");
             return 1;
         }
 
@@ -130,17 +135,24 @@ public class MigrateCommand implements Callable<Integer> {
                 .fold(
                         throwable -> {
                             if (throwable instanceof NoClassDefFoundError) {
-                                logger.error("ERROR: LangChain4j dependencies not found");
-                                logger.error("  The 'migrate' command requires LangChain4j libraries.");
-                                logger.error("  Please ensure the following dependencies are available:");
-                                logger.error("    - dev.langchain4j:langchain4j:0.36.2");
-                                logger.error("    - dev.langchain4j:langchain4j-ollama:0.36.2");
-                                logger.error("    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
-                                logger.error("  Missing class: {}", throwable.getMessage());
+                                spec.commandLine().getErr().println("ERROR: LangChain4j dependencies not found");
+                                spec.commandLine()
+                                        .getErr()
+                                        .println("  The 'migrate' command requires LangChain4j libraries.");
+                                spec.commandLine()
+                                        .getErr()
+                                        .println("  Please ensure the following dependencies are available:");
+                                spec.commandLine().getErr().println("    - dev.langchain4j:langchain4j:0.36.2");
+                                spec.commandLine().getErr().println("    - dev.langchain4j:langchain4j-ollama:0.36.2");
+                                spec.commandLine()
+                                        .getErr()
+                                        .println(
+                                                "    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
+                                spec.commandLine().getErr().println("  Missing class: " + throwable.getMessage());
                                 return 1;
                             }
-                            logger.error("ERROR: Unexpected error");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("ERROR: Unexpected error");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             // throwable.printStackTrace(); // Keep stack trace for debugging if needed, or
                             // remove for cleaner CLI
                             return 1;
@@ -269,12 +281,12 @@ public class MigrateCommand implements Callable<Integer> {
             var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile.toPath(), script));
             writeResult.onFailure(e -> logger.warn("WARN: Failed to write output: {}", e.getMessage()));
             if (writeResult.isFailure()) {
-                System.out.println(script);
+                spec.commandLine().getOut().println(script);
             } else {
                 logger.info("  Output: {}", outputFile.getAbsolutePath());
             }
         } else {
-            System.out.println(script);
+            spec.commandLine().getOut().println(script);
         }
     }
 }

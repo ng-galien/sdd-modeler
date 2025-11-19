@@ -7,7 +7,6 @@ import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.DefaultSdrFactory;
 import io.statemodeler.sdr.SdrFactory;
-import java.io.IOException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ class ListCommandTest {
     }
 
     @AfterEach
-    void tearDown() throws IOException {
+    void tearDown() {
         if (repository != null) {
             repository.close();
         }
@@ -167,12 +166,11 @@ class ListCommandTest {
     void shouldRejectInvalidFormat() {
         // Given
         var command = new ListCommand();
-        command.format = "xml"; // Invalid format
-        command.limit = 0;
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute("--format", "xml");
 
         // Then
         assertEquals(1, exitCode, "Should fail with invalid format");
@@ -182,15 +180,13 @@ class ListCommandTest {
     void shouldHandleRepositoryError() {
         // Given - invalid repository path
         var command = new ListCommand();
-        command.format = "table";
-        command.limit = 0;
-
         var mixin = new RepositoryMixin();
         mixin.repositoryPath = "/invalid/\0/path";
         command.repositoryMixin = mixin;
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute("--format", "table");
 
         // Then
         assertEquals(1, exitCode, "Should fail with repository error");

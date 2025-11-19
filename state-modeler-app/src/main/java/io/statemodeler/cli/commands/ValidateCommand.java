@@ -8,7 +8,9 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 /**
  * Command to validate an SDD model file.
@@ -18,6 +20,9 @@ public class ValidateCommand implements Callable<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger(ValidateCommand.class);
 
+    @Spec
+    CommandSpec spec;
+
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)")
     private Path modelFile;
 
@@ -25,7 +30,7 @@ public class ValidateCommand implements Callable<Integer> {
     public Integer call() {
         logger.info("Validating model file: {}", modelFile);
         if (!Files.exists(modelFile)) {
-            logger.error("Error: Model file does not exist: {}", modelFile);
+            spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
             return 1;
         }
 
@@ -36,21 +41,21 @@ public class ValidateCommand implements Callable<Integer> {
                 // handle load/validate result
                 .fold(
                         throwable -> {
-                            logger.error("✗ Failed to parse model file:");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("✗ Failed to parse model file:");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             return 1;
                         },
                         model -> {
-                            logger.info("✓ Model parsed successfully: {}", model.name());
+                            spec.commandLine().getOut().println("✓ Model parsed successfully: " + model.name());
                             var validationResult = ModelValidators.getInstance().validate(model);
                             if (validationResult.isInvalid()) {
-                                logger.error("✗ Model validation failed:");
+                                spec.commandLine().getErr().println("✗ Model validation failed:");
                                 for (var error : validationResult.getError()) {
-                                    logger.error("  • {}", error.message());
+                                    spec.commandLine().getErr().println("  • " + error.message());
                                 }
                                 return 1;
                             }
-                            logger.info("✓ Model validation passed");
+                            spec.commandLine().getOut().println("✓ Model validation passed");
                             return 0;
                         });
     }

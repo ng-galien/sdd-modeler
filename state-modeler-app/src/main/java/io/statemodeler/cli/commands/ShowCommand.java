@@ -2,6 +2,7 @@ package io.statemodeler.cli.commands;
 
 import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.sdr.SdrRecord;
+import io.vavr.control.Try;
 import java.io.PrintWriter;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
@@ -14,14 +15,17 @@ import picocli.CommandLine.Parameters;
 /**
  * CLI command to show details of a registered SDR.
  *
- * <p>Usage: sdd-modeler show <hash|name[:version]> [--format metadata|schema|ddl|all]
+ * <p>
+ * Usage: sdd-modeler show <hash|name[:version]> [--format
+ * metadata|schema|ddl|all]
  *
- * <p>Examples:
+ * <p>
+ * Examples:
  * <ul>
- *   <li>sdd-modeler show 222fa0d3 (show by short hash)
- *   <li>sdd-modeler show orders-sdd-example (show latest version by name)
- *   <li>sdd-modeler show orders-sdd-example:0.1 (show specific version)
- *   <li>sdd-modeler show 222fa0d3 --format schema (show schema JSON only)
+ * <li>sdd-modeler show 222fa0d3 (show by short hash)
+ * <li>sdd-modeler show orders-sdd-example (show latest version by name)
+ * <li>sdd-modeler show orders-sdd-example:0.1 (show specific version)
+ * <li>sdd-modeler show 222fa0d3 --format schema (show schema JSON only)
  * </ul>
  */
 @Command(name = "show", description = "Show details of a registered SDR", mixinStandardHelpOptions = true)
@@ -40,7 +44,8 @@ public class ShowCommand implements Callable<Integer> {
     @Mixin
     RepositoryMixin repositoryMixin;
 
-    // Output writer for CLI content printing. Default to System.out; tests can override.
+    // Output writer for CLI content printing. Default to System.out; tests can
+    // override.
     PrintWriter output = new PrintWriter(System.out, true);
 
     public void setOutput(PrintWriter output) {
@@ -56,50 +61,44 @@ public class ShowCommand implements Callable<Integer> {
             return 1;
         }
 
-        try (var repository = repositoryMixin.createRepository()) {
-            // Try to find SDR
-            var result = findSdr(repository, identifier);
-
-            if (result.isFailure()) {
-                logger.error("ERROR: Failed to retrieve SDR");
-                logger.error("  {}", result.getCause().getMessage());
-                return 1;
-            }
-
-            var sdrOpt = result.get();
-            if (sdrOpt.isEmpty()) {
-                logger.error("ERROR: SDR not found");
-                logger.error("  Identifier: {}", identifier);
-                logger.error("  Use 'sdd-modeler list' to view registered SDRs");
-                return 1;
-            }
-
-            SdrRecord sdr = sdrOpt.get();
-
-            // Display based on format
-            switch (format.toLowerCase()) {
-                case "metadata":
-                    printMetadata(sdr);
-                    break;
-                case "schema":
-                    printSchema(sdr);
-                    break;
-                case "ddl":
-                    printDdl(sdr);
-                    break;
-                case "all":
-                default:
-                    printAll(sdr);
-                    break;
-            }
-
-            return 0;
-
-        } catch (Exception e) {
-            logger.error("ERROR: Repository error");
-            logger.error("  {}", e.getMessage());
-            return 1;
-        }
+        return Try.withResources(() -> repositoryMixin.createRepository())
+                .of(repository -> findSdr(repository, identifier)
+                        .flatMap(sdrOpt -> sdrOpt.map(Try::success)
+                                .orElseGet(() -> Try.failure(new IllegalArgumentException("SDR not found"))))
+                        .map(sdr -> {
+                            // Display based on format
+                            switch (format.toLowerCase()) {
+                                case "metadata":
+                                    printMetadata(sdr);
+                                    break;
+                                case "schema":
+                                    printSchema(sdr);
+                                    break;
+                                case "ddl":
+                                    printDdl(sdr);
+                                    break;
+                                case "all":
+                                default:
+                                    printAll(sdr);
+                                    break;
+                            }
+                            return 0;
+                        })
+                        .getOrElseThrow(e -> e))
+                .fold(
+                        throwable -> {
+                            if (throwable instanceof IllegalArgumentException
+                                    && "SDR not found".equals(throwable.getMessage())) {
+                                logger.error("ERROR: SDR not found");
+                                logger.error("  Identifier: {}", identifier);
+                                logger.error("  Use 'sdd-modeler list' to view registered SDRs");
+                                return 1;
+                            }
+                            logger.error("ERROR: Repository error");
+                            logger.error("  {}", throwable.getMessage());
+                            return 1;
+                        },
+                        result -> result);
     }
 
     private io.vavr.control.Try<java.util.Optional<SdrRecord>> findSdr(
@@ -117,7 +116,8 @@ public class ShowCommand implements Callable<Integer> {
             return repository.findByHash(id);
         }
 
-        // Otherwise, treat as name (find latest version by name, then fetch full record)
+        // Otherwise, treat as name (find latest version by name, then fetch full
+        // record)
         return repository.findByName(id).flatMap(metadataList -> {
             if (metadataList.isEmpty()) {
                 return io.vavr.control.Try.success(java.util.Optional.<SdrRecord>empty());

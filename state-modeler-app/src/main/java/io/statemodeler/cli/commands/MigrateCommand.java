@@ -27,14 +27,17 @@ import picocli.CommandLine.Parameters;
 /**
  * CLI command to generate migration scripts between two SDR versions.
  *
- * <p>Usage: sdd-modeler migrate <from-hash|name:version> <to-hash|name:version> [options]
+ * <p>
+ * Usage: sdd-modeler migrate <from-hash|name:version> <to-hash|name:version>
+ * [options]
  *
- * <p>Examples:
+ * <p>
+ * Examples:
  * <ul>
- *   <li>sdd-modeler migrate orders:1.0 orders:2.0
- *   <li>sdd-modeler migrate abc123 def456 --dialect postgres
- *   <li>sdd-modeler migrate orders:1.0 orders:2.0 -o migration.sql
- *   <li>sdd-modeler migrate abc123 def456 --llm ollama --model llama3.2
+ * <li>sdd-modeler migrate orders:1.0 orders:2.0
+ * <li>sdd-modeler migrate abc123 def456 --dialect postgres
+ * <li>sdd-modeler migrate orders:1.0 orders:2.0 -o migration.sql
+ * <li>sdd-modeler migrate abc123 def456 --llm ollama --model llama3.2
  * </ul>
  */
 @Command(
@@ -94,89 +97,36 @@ public class MigrateCommand implements Callable<Integer> {
             return 1;
         }
 
-        return io.vavr.control.Try.of(() -> {
-                    try (var repository = repositoryMixin.createRepository()) {
-                        // Find source SDR
-                        var fromResult = findSdr(repository, fromIdentifier);
-                        if (fromResult.isFailure()) {
-                            throw new IllegalStateException("Failed to retrieve source SDR: "
-                                    + fromResult.getCause().getMessage());
-                        }
-                        var fromSdrOpt = fromResult.get();
-                        if (fromSdrOpt.isEmpty()) {
-                            throw new IllegalStateException("Source SDR not found: " + fromIdentifier);
-                        }
-                        SdrRecord fromSdr = fromSdrOpt.get();
-
-                        // Find target SDR
-                        var toResult = findSdr(repository, toIdentifier);
-                        if (toResult.isFailure()) {
-                            throw new IllegalStateException("Failed to retrieve target SDR: "
-                                    + toResult.getCause().getMessage());
-                        }
-                        var toSdrOpt = toResult.get();
-                        if (toSdrOpt.isEmpty()) {
-                            throw new IllegalStateException("Target SDR not found: " + toIdentifier);
-                        }
-                        SdrRecord toSdr = toSdrOpt.get();
-
-                        // Check if migration already exists
-                        if (!force) {
-                            var existingResult = repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
-                            if (existingResult.isSuccess()
-                                    && existingResult.get().isPresent()) {
-                                logger.info("INFO: Migration already exists (use --force to regenerate)");
-                                var migration = existingResult.get().get();
-                                outputMigration(migration.migrationScript());
-                                if (outputJson != null) {
-                                    ObjectMapper objectMapper = new ObjectMapper();
-                                    var dto = new MigrationDto(
-                                            migration.confidence(), migration.comments(), migration.migrationScript());
-                                    objectMapper.writeValue(outputJson, dto);
-                                    logger.info("  JSON Output: {}", outputJson.getAbsolutePath());
-                                }
-                                return 0;
-                            }
-                        }
-
-                        // Create LLM-based migration service
-                        logger.info("INFO: Generating migration using {} LLM...", llmProvider);
-                        ChatModel llmModel = null;
-                        llmModel =
-                                io.vavr.control.Try.of(() -> createLlmModel()).get();
-
-                        var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
-                        var comparisonService = new DdlComparisonService();
-                        var orchestrationService =
-                                new MigrationOrchestrationService(migrationGenerator, comparisonService, repository);
-
-                        // Generate and save migration
-                        var migrationResult = orchestrationService.generateAndSaveMigration(fromSdr, toSdr, dialect);
-                        if (migrationResult.isFailure()) {
-                            throw new IllegalStateException("Failed to generate migration: "
-                                    + migrationResult.getCause().getMessage());
-                        }
-
-                        var migration = migrationResult.get();
-                        logger.info("SUCCESS: Migration generated and saved");
-                        logger.info("  From: {}", fromSdr.schemaHash());
-                        logger.info("  To:   {}", toSdr.schemaHash());
-                        logger.info("  Dialect: {}", dialect);
-
-                        // Output migration script
-                        outputMigration(migration.migrationScript());
-
-                        if (outputJson != null) {
-                            ObjectMapper objectMapper = new ObjectMapper();
-                            var dto = new MigrationDto(
-                                    migration.confidence(), migration.comments(), migration.migrationScript());
-                            objectMapper.writeValue(outputJson, dto);
-                            logger.info("  JSON Output: {}", outputJson.getAbsolutePath());
-                        }
-
-                        return 0;
-                    }
-                })
+        return io.vavr.control.Try.withResources(() -> repositoryMixin.createRepository())
+                .of(repository -> findSdr(repository, fromIdentifier)
+                        .flatMap(fromSdrOpt -> fromSdrOpt
+                                .map(Try::success)
+                                .orElseGet(() -> Try.failure(
+                                        new IllegalStateException("Source SDR not found: " + fromIdentifier))))
+                        .flatMap(fromSdr -> findSdr(repository, toIdentifier)
+                                .flatMap(toSdrOpt -> toSdrOpt.map(Try::success)
+                                        .orElseGet(() -> Try.failure(
+                                                new IllegalStateException("Target SDR not found: " + toIdentifier))))
+                                .flatMap(toSdr -> {
+                                    // Check if migration already exists
+                                    if (!force) {
+                                        var existingResult =
+                                                repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
+                                        if (existingResult.isSuccess()
+                                                && existingResult.get().isPresent()) {
+                                            logger.info("INFO: Migration already exists (use --force to regenerate)");
+                                            var migration = existingResult.get().get();
+                                            outputMigration(migration.migrationScript());
+                                            outputJson(
+                                                    migration.confidence(),
+                                                    migration.comments(),
+                                                    migration.migrationScript());
+                                            return Try.success(0);
+                                        }
+                                    }
+                                    return generateAndSaveMigration(repository, fromSdr, toSdr);
+                                }))
+                        .getOrElseThrow(e -> e))
                 .fold(
                         throwable -> {
                             if (throwable instanceof NoClassDefFoundError) {
@@ -191,10 +141,51 @@ public class MigrateCommand implements Callable<Integer> {
                             }
                             logger.error("ERROR: Unexpected error");
                             logger.error("  {}", throwable.getMessage());
-                            throwable.printStackTrace();
+                            // throwable.printStackTrace(); // Keep stack trace for debugging if needed, or
+                            // remove for cleaner CLI
                             return 1;
                         },
                         result -> result);
+    }
+
+    private Try<Integer> generateAndSaveMigration(
+            io.statemodeler.repository.SdrRepository repository, SdrRecord fromSdr, SdrRecord toSdr) {
+        return Try.of(() -> {
+                    // Create LLM-based migration service
+                    logger.info("INFO: Generating migration using {} LLM...", llmProvider);
+                    ChatModel llmModel = createLlmModel();
+
+                    var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
+                    var comparisonService = new DdlComparisonService();
+                    var orchestrationService =
+                            new MigrationOrchestrationService(migrationGenerator, comparisonService, repository);
+
+                    return orchestrationService;
+                })
+                .flatMap(orchestrationService -> orchestrationService.generateAndSaveMigration(fromSdr, toSdr, dialect))
+                .map(migration -> {
+                    logger.info("SUCCESS: Migration generated and saved");
+                    logger.info("  From: {}", fromSdr.schemaHash());
+                    logger.info("  To:   {}", toSdr.schemaHash());
+                    logger.info("  Dialect: {}", dialect);
+
+                    outputMigration(migration.migrationScript());
+                    outputJson(migration.confidence(), migration.comments(), migration.migrationScript());
+                    return 0;
+                });
+    }
+
+    private void outputJson(double confidence, String comments, String script) {
+        if (outputJson != null) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                var dto = new MigrationDto(confidence, comments, script);
+                objectMapper.writeValue(outputJson, dto);
+                logger.info("  JSON Output: {}", outputJson.getAbsolutePath());
+            } catch (Exception e) {
+                logger.warn("WARN: Failed to write JSON output: {}", e.getMessage());
+            }
+        }
     }
 
     /**

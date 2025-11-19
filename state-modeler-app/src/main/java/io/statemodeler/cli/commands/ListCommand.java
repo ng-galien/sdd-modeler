@@ -1,6 +1,11 @@
 package io.statemodeler.cli.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.statemodeler.cli.RepositoryMixin;
+import io.statemodeler.cli.dto.SdrListResponse;
 import io.statemodeler.repository.SdrMetadata;
 import java.io.PrintWriter;
 import java.time.ZoneId;
@@ -16,7 +21,8 @@ import picocli.CommandLine.Option;
 /**
  * CLI command to list registered SDRs in the repository.
  *
- * <p>Usage: sdd-modeler list [--format table|json|yaml] [--limit N]
+ * <p>
+ * Usage: sdd-modeler list [--format table|json|yaml] [--limit N]
  */
 @Command(name = "list", description = "List registered SDRs in the repository", mixinStandardHelpOptions = true)
 public class ListCommand implements Callable<Integer> {
@@ -39,7 +45,8 @@ public class ListCommand implements Callable<Integer> {
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
-    // Output writer for CLI content printing. Default to System.out; tests can override.
+    // Output writer for CLI content printing. Default to System.out; tests can
+    // override.
     PrintWriter output = new PrintWriter(System.out, true);
 
     public void setOutput(PrintWriter output) {
@@ -55,39 +62,32 @@ public class ListCommand implements Callable<Integer> {
             return 1;
         }
 
-        try (var repository = repositoryMixin.createRepository()) {
-            // Fetch SDRs
-            var result = limit > 0 ? repository.findRecent(limit) : repository.listAll();
-
-            if (result.isFailure()) {
-                logger.error("ERROR: Failed to list SDRs");
-                logger.error("  {}", result.getCause().getMessage());
-                return 1;
-            }
-
-            List<SdrMetadata> sdrs = result.get();
-
-            // Display based on format
-            switch (format.toLowerCase()) {
-                case "json":
-                    printJson(sdrs);
-                    break;
-                case "yaml":
-                    printYaml(sdrs);
-                    break;
-                case "table":
-                default:
-                    printTable(sdrs);
-                    break;
-            }
-
-            return 0;
-
-        } catch (Exception e) {
-            logger.error("ERROR: Repository error");
-            logger.error("  {}", e.getMessage());
-            return 1;
-        }
+        return io.vavr.control.Try.withResources(() -> repositoryMixin.createRepository())
+                .of(repository -> (limit > 0 ? repository.findRecent(limit) : repository.listAll())
+                        .map(sdrs -> {
+                            // Display based on format
+                            switch (format.toLowerCase()) {
+                                case "json":
+                                    printJson(sdrs);
+                                    break;
+                                case "yaml":
+                                    printYaml(sdrs);
+                                    break;
+                                case "table":
+                                default:
+                                    printTable(sdrs);
+                                    break;
+                            }
+                            return 0;
+                        })
+                        .getOrElseThrow(e -> e))
+                .fold(
+                        throwable -> {
+                            logger.error("ERROR: Failed to list SDRs");
+                            logger.error("  {}", throwable.getMessage());
+                            return 1;
+                        },
+                        result -> result);
     }
 
     private boolean isValidFormat(String fmt) {
@@ -121,48 +121,34 @@ public class ListCommand implements Callable<Integer> {
     }
 
     private void printJson(List<SdrMetadata> sdrs) {
-        output.println("{");
-        output.println("  \"sdrs\": [");
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.findAndRegisterModules();
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        for (int i = 0; i < sdrs.size(); i++) {
-            SdrMetadata sdr = sdrs.get(i);
-            output.println("    {");
-            output.println("      \"name\": \"" + escapeJson(sdr.modelName()) + "\",");
-            output.println("      \"version\": \"" + escapeJson(sdr.modelVersion()) + "\",");
-            output.println("      \"hash\": \"" + sdr.schemaHash() + "\",");
-            output.println("      \"sdrVersion\": \"" + sdr.sdrVersion() + "\",");
-            output.println("      \"buildFingerprint\": \"" + sdr.buildFingerprint() + "\",");
-            output.println("      \"createdAt\": \"" + sdr.createdAt() + "\"");
-            output.print("    }");
-            if (i < sdrs.size() - 1) {
-                System.out.println(",");
-            } else {
-                System.out.println();
-            }
+            SdrListResponse response = SdrListResponse.from(sdrs);
+            // Write directly to the output writer
+            // We use writeValueAsString to avoid closing the writer if we passed it
+            // directly
+            output.println(mapper.writeValueAsString(response));
+        } catch (Exception e) {
+            logger.error("ERROR: Failed to generate JSON output", e);
         }
-
-        output.println("  ],");
-        output.println("  \"total\": " + sdrs.size());
-        output.println("}");
     }
 
     private void printYaml(List<SdrMetadata> sdrs) {
-        output.println("sdrs:");
+        try {
+            ObjectMapper mapper =
+                    new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
+            mapper.findAndRegisterModules();
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        if (sdrs.isEmpty()) {
-            output.println("  []");
-        } else {
-            for (SdrMetadata sdr : sdrs) {
-                output.println("  - name: \"" + escapeYaml(sdr.modelName()) + "\"");
-                output.println("    version: \"" + escapeYaml(sdr.modelVersion()) + "\"");
-                output.println("    hash: \"" + sdr.schemaHash() + "\"");
-                output.println("    sdrVersion: \"" + sdr.sdrVersion() + "\"");
-                output.println("    buildFingerprint: \"" + sdr.buildFingerprint() + "\"");
-                output.println("    createdAt: \"" + sdr.createdAt() + "\"");
-            }
+            SdrListResponse response = SdrListResponse.from(sdrs);
+            output.println(mapper.writeValueAsString(response));
+        } catch (Exception e) {
+            logger.error("ERROR: Failed to generate YAML output", e);
         }
-
-        output.println("total: " + sdrs.size());
     }
 
     private String truncate(String str, int maxLength) {
@@ -173,23 +159,5 @@ public class ListCommand implements Callable<Integer> {
             return str;
         }
         return str.substring(0, maxLength - 3) + "...";
-    }
-
-    private String escapeJson(String str) {
-        if (str == null) {
-            return "";
-        }
-        return str.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
-    }
-
-    private String escapeYaml(String str) {
-        if (str == null) {
-            return "";
-        }
-        // Basic YAML escaping for quoted strings
-        return str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
 }

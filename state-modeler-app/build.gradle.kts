@@ -26,6 +26,9 @@ dependencies {
     
     // JSON diff library for schema comparison
     implementation("com.flipkart.zjsonpatch:zjsonpatch:0.4.16")
+
+    // Snakeyaml for YAML parsing
+    implementation("org.yaml:snakeyaml:2.2")
     
     // Diff algorithm for DDL comparison
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")

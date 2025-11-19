@@ -7,11 +7,11 @@ import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.repository.H2SdrRepository;
 import io.statemodeler.sdr.SdrRecord;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 class DeleteCommandTest {
 
@@ -19,7 +19,7 @@ class DeleteCommandTest {
     SdrRecord testSdr;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         // Use in-memory database for faster tests
         repository = H2SdrRepository.createInMemory("test-delete-" + System.nanoTime());
 
@@ -51,11 +51,11 @@ class DeleteCommandTest {
     @Test
     void shouldDeleteSdrWithYesFlag() {
         DeleteCommand command = new DeleteCommand();
-        command.hash = testSdr.schemaHash();
+        String hash = testSdr.schemaHash();
         command.skipConfirmation = true;
         command.repositoryMixin = createMixin();
-
-        int exitCode = command.call();
+        CommandLine cmd = new CommandLine(command);
+        int exitCode = cmd.execute(hash);
 
         assertEquals(0, exitCode);
 
@@ -74,11 +74,11 @@ class DeleteCommandTest {
             System.setIn(new ByteArrayInputStream(simulatedInput.getBytes()));
 
             DeleteCommand command = new DeleteCommand();
-            command.hash = testSdr.schemaHash();
+            String hash = testSdr.schemaHash();
             command.skipConfirmation = false;
             command.repositoryMixin = createMixin();
-
-            int exitCode = command.call();
+            CommandLine cmd = new CommandLine(command);
+            int exitCode = cmd.execute(hash);
 
             assertEquals(0, exitCode);
 
@@ -100,11 +100,11 @@ class DeleteCommandTest {
             System.setIn(new ByteArrayInputStream(simulatedInput.getBytes()));
 
             DeleteCommand command = new DeleteCommand();
-            command.hash = testSdr.schemaHash();
+            String hash = testSdr.schemaHash();
             command.skipConfirmation = false;
             command.repositoryMixin = createMixin();
-
-            int exitCode = command.call();
+            CommandLine cmd = new CommandLine(command);
+            int exitCode = cmd.execute(hash);
 
             assertEquals(0, exitCode);
 
@@ -126,11 +126,11 @@ class DeleteCommandTest {
             System.setIn(new ByteArrayInputStream(simulatedInput.getBytes()));
 
             DeleteCommand command = new DeleteCommand();
-            command.hash = testSdr.schemaHash();
+            String hash = testSdr.schemaHash();
             command.skipConfirmation = false;
             command.repositoryMixin = createMixin();
-
-            int exitCode = command.call();
+            CommandLine cmd = new CommandLine(command);
+            int exitCode = cmd.execute(hash);
 
             assertEquals(0, exitCode);
 
@@ -146,11 +146,11 @@ class DeleteCommandTest {
     @Test
     void shouldHandleNonexistentHash() {
         DeleteCommand command = new DeleteCommand();
-        command.hash = "nonexistent1234567890abcdef";
+        String hash = "nonexistent1234567890abcdef";
         command.skipConfirmation = true;
         command.repositoryMixin = createMixin();
-
-        int exitCode = command.call();
+        CommandLine cmd = new CommandLine(command);
+        int exitCode = cmd.execute(hash);
 
         assertEquals(1, exitCode);
     }
@@ -159,15 +159,13 @@ class DeleteCommandTest {
     void shouldHandleRepositoryError() {
         // Given - invalid repository path
         DeleteCommand command = new DeleteCommand();
-        command.hash = testSdr.schemaHash();
         command.skipConfirmation = true;
 
         var mixin = new RepositoryMixin();
         mixin.repositoryPath = "/invalid/\0/path";
         command.repositoryMixin = mixin;
-
-        // When
-        int exitCode = command.call();
+        CommandLine cmd = new CommandLine(command);
+        int exitCode = cmd.execute(testSdr.schemaHash());
 
         // Then
         assertEquals(1, exitCode);
@@ -178,11 +176,10 @@ class DeleteCommandTest {
         // This test verifies that the command runs successfully and displays info
         // Full verification would require capturing System.out, but we test the flow
         DeleteCommand command = new DeleteCommand();
-        command.hash = testSdr.schemaHash();
         command.skipConfirmation = true;
         command.repositoryMixin = createMixin();
-
-        int exitCode = command.call();
+        CommandLine cmd = new CommandLine(command);
+        int exitCode = cmd.execute(testSdr.schemaHash());
 
         assertEquals(0, exitCode);
     }
@@ -196,11 +193,11 @@ class DeleteCommandTest {
             System.setIn(new ByteArrayInputStream(simulatedInput.getBytes()));
 
             DeleteCommand command = new DeleteCommand();
-            command.hash = testSdr.schemaHash();
+            String hash = testSdr.schemaHash();
             command.skipConfirmation = false;
             command.repositoryMixin = createMixin();
-
-            int exitCode = command.call();
+            CommandLine cmd = new CommandLine(command);
+            int exitCode = cmd.execute(hash);
 
             assertEquals(0, exitCode);
 

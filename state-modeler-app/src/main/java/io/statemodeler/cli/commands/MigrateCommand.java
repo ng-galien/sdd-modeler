@@ -40,7 +40,10 @@ import picocli.CommandLine.Parameters;
  * <li>sdd-modeler migrate abc123 def456 --llm ollama --model llama3.2
  * </ul>
  */
-@Command(name = "migrate", description = "Generate migration script between two SDR versions", mixinStandardHelpOptions = true)
+@Command(
+        name = "migrate",
+        description = "Generate migration script between two SDR versions",
+        mixinStandardHelpOptions = true)
 public class MigrateCommand implements Callable<Integer> {
     private static final Logger logger = LoggerFactory.getLogger(MigrateCommand.class);
 
@@ -50,23 +53,36 @@ public class MigrateCommand implements Callable<Integer> {
     @Parameters(index = "1", description = "Target SDR hash or name:version")
     String toIdentifier;
 
-    @Option(names = { "--dialect",
-            "-d" }, description = "Database dialect (default: postgres)", defaultValue = "postgres")
+    @Option(
+            names = {"--dialect", "-d"},
+            description = "Database dialect (default: postgres)",
+            defaultValue = "postgres")
     String dialect;
 
-    @Option(names = { "--output", "-o" }, description = "Output file path (default: stdout)")
+    @Option(
+            names = {"--output", "-o"},
+            description = "Output file path (default: stdout)")
     File outputFile;
 
-    @Option(names = { "--output-json", "-j" }, description = "Write migration JSON output to file (default: none)")
+    @Option(
+            names = {"--output-json", "-j"},
+            description = "Write migration JSON output to file (default: none)")
     File outputJson;
 
-    @Option(names = { "--llm" }, description = "LLM provider (ollama|openai)", defaultValue = "ollama")
+    @Option(
+            names = {"--llm"},
+            description = "LLM provider (ollama|openai)",
+            defaultValue = "ollama")
     String llmProvider;
 
-    @Option(names = { "--model" }, description = "LLM model name (default: llama3.2)")
+    @Option(
+            names = {"--model"},
+            description = "LLM model name (default: llama3.2)")
     String modelName;
 
-    @Option(names = { "--force" }, description = "Force regeneration even if migration already exists")
+    @Option(
+            names = {"--force"},
+            description = "Force regeneration even if migration already exists")
     boolean force;
 
     @Mixin
@@ -85,23 +101,25 @@ public class MigrateCommand implements Callable<Integer> {
                 .of(repository -> findSdr(repository, fromIdentifier)
                         .flatMap(fromSdrOpt -> fromSdrOpt
                                 .map(Try::success)
-                                .orElseGet(() -> Try
-                                        .failure(new IllegalStateException("Source SDR not found: " + fromIdentifier))))
+                                .orElseGet(() -> Try.failure(
+                                        new IllegalStateException("Source SDR not found: " + fromIdentifier))))
                         .flatMap(fromSdr -> findSdr(repository, toIdentifier)
-                                .flatMap(toSdrOpt -> toSdrOpt
-                                        .map(Try::success)
+                                .flatMap(toSdrOpt -> toSdrOpt.map(Try::success)
                                         .orElseGet(() -> Try.failure(
                                                 new IllegalStateException("Target SDR not found: " + toIdentifier))))
                                 .flatMap(toSdr -> {
                                     // Check if migration already exists
                                     if (!force) {
-                                        var existingResult = repository.findMigration(fromSdr.schemaHash(),
-                                                toSdr.schemaHash());
-                                        if (existingResult.isSuccess() && existingResult.get().isPresent()) {
+                                        var existingResult =
+                                                repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
+                                        if (existingResult.isSuccess()
+                                                && existingResult.get().isPresent()) {
                                             logger.info("INFO: Migration already exists (use --force to regenerate)");
                                             var migration = existingResult.get().get();
                                             outputMigration(migration.migrationScript());
-                                            outputJson(migration.confidence(), migration.comments(),
+                                            outputJson(
+                                                    migration.confidence(),
+                                                    migration.comments(),
                                                     migration.migrationScript());
                                             return Try.success(0);
                                         }
@@ -130,20 +148,21 @@ public class MigrateCommand implements Callable<Integer> {
                         result -> result);
     }
 
-    private Try<Integer> generateAndSaveMigration(io.statemodeler.repository.SdrRepository repository,
-            SdrRecord fromSdr, SdrRecord toSdr) {
+    private Try<Integer> generateAndSaveMigration(
+            io.statemodeler.repository.SdrRepository repository, SdrRecord fromSdr, SdrRecord toSdr) {
         return Try.of(() -> {
-            // Create LLM-based migration service
-            logger.info("INFO: Generating migration using {} LLM...", llmProvider);
-            ChatModel llmModel = createLlmModel();
+                    // Create LLM-based migration service
+                    logger.info("INFO: Generating migration using {} LLM...", llmProvider);
+                    ChatModel llmModel = createLlmModel();
 
-            var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
-            var comparisonService = new DdlComparisonService();
-            var orchestrationService = new MigrationOrchestrationService(migrationGenerator, comparisonService,
-                    repository);
+                    var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
+                    var comparisonService = new DdlComparisonService();
+                    var orchestrationService =
+                            new MigrationOrchestrationService(migrationGenerator, comparisonService, repository);
 
-            return orchestrationService;
-        }).flatMap(orchestrationService -> orchestrationService.generateAndSaveMigration(fromSdr, toSdr, dialect))
+                    return orchestrationService;
+                })
+                .flatMap(orchestrationService -> orchestrationService.generateAndSaveMigration(fromSdr, toSdr, dialect))
                 .map(migration -> {
                     logger.info("SUCCESS: Migration generated and saved");
                     logger.info("  From: {}", fromSdr.schemaHash());

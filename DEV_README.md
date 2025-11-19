@@ -59,6 +59,25 @@
 
 ./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml --entity order"
  
+### Native image (GraalVM)
+
+To build a native executable for the CLI with GraalVM, follow these steps (developer machine must have GraalVM + native-image installed):
+
+```bash
+# Instrument runs to collect reflection / resource metadata
+./scripts/generate-native-config.sh
+
+# Build the native image (Gradle nativeCompile task provided by the plugin)
+./gradlew :state-modeler-app:nativeCompile
+
+# Smoke test the native binary
+./state-modeler-app/build/native/nativeCompile/sdd-modeler --help
+./state-modeler-app/build/native/nativeCompile/sdd-modeler validate scripts/examples/orders-sdd-mini-model.yaml
+```
+
+Notes:
+- The repository contains skeleton `META-INF/native-image` config files; the script `scripts/generate-native-config.sh` will collect data via `native-image-agent` and copy results into `src/main/resources/META-INF/native-image/` for further refinement.
+- The `migrate` command (LLM integration) relies on external libs and network; consider excluding it from the native build or running it via the JVM distribution if integration proves complex for the first pass.
 # === SDR Repository Management ===
 
 # Register a model in the repository

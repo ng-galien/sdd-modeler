@@ -1,41 +1,41 @@
 dependencies {
     // Lombok for reducing boilerplate
-    compileOnly("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
     
     // JSpecify for null-safety annotations
-    compileOnly("org.jspecify:jspecify:${rootProject.ext["jspecifyVersion"]}")
+    compileOnly(libs.jspecify)
     
     // Jackson for YAML/JSON parsing
-    api("com.fasterxml.jackson.core:jackson-core:${rootProject.ext["jacksonVersion"]}")
-    api("com.fasterxml.jackson.core:jackson-databind:${rootProject.ext["jacksonVersion"]}")
-    api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${rootProject.ext["jacksonVersion"]}")
+    api(libs.jackson.core)
+    api(libs.jackson.databind)
+    api(libs.jackson.dataformat.yaml)
     
     // Additional Jackson modules for Java time, etc.
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${rootProject.ext["jacksonVersion"]}")
-    implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:${rootProject.ext["jacksonVersion"]}")
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.module.parameter.names)
     
     // Vavr for functional programming and enhanced error handling
-    implementation("io.vavr:vavr:0.10.7")
+    implementation(libs.vavr)
     
     // JSON Schema generation for IDE support (victools)
-    implementation("com.github.victools:jsonschema-generator:4.38.0")
-    implementation("com.github.victools:jsonschema-module-jackson:4.28.0")
-    implementation("com.github.victools:jsonschema-module-jakarta-validation:4.38.0")
+    implementation(libs.victools.jsonschema.generator)
+    implementation(libs.victools.jsonschema.module.jackson)
+    implementation(libs.victools.jsonschema.module.jakarta.validation)
 
     // Pebble template engine for code generation
-    implementation("io.pebbletemplates:pebble:3.2.3")
+    implementation(libs.pebble)
 
     // Test dependencies for core functionality
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.11.3")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.platform.launcher)
     
     // PostgreSQL integration tests with Testcontainers
-    testImplementation("org.testcontainers:testcontainers:${rootProject.ext["testcontainersVersion"]}")
-    testImplementation("org.testcontainers:postgresql:${rootProject.ext["testcontainersVersion"]}")
-    testImplementation("org.testcontainers:junit-jupiter:${rootProject.ext["testcontainersVersion"]}")
-    testImplementation("org.postgresql:postgresql:${rootProject.ext["postgresqlVersion"]}")
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.postgresql)
 }
 
 // Task to generate JSON Schema automatically during build

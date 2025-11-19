@@ -1,0 +1,59 @@
+[versions]
+graalvm-buildtools = "0.11.3"
+lombok = "1.18.30"
+vavr = "0.10.7"
+picocli = "4.7.6"
+h2 = "2.2.224"
+zjsonpatch = "0.4.16"
+snakeyaml = "2.2"
+java-diff-utils = "4.15"
+langchain4j = "1.8.0"
+slf4j = "2.0.16"
+logback = "1.5.12"
+junit = "5.11.3"
+spotless = "6.25.0"
+jacoco = "0.8.12"
+palantir-java-format = "2.82.0"
+jackson = "2.18.0"
+jspecify = "1.0.0"
+testcontainers = "1.20.4"
+postgresql = "42.7.4"
+victools-jsonschema-generator = "4.38.0"
+victools-jsonschema-module-jackson = "4.28.0"
+pebble = "3.2.3"
+
+[libraries]
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+vavr = { module = "io.vavr:vavr", version.ref = "vavr" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjsonpatch" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+java-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "java-diff-utils" }
+langchain4j = { module = "dev.langchain4j:langchain4j", version.ref = "langchain4j" }
+langchain4j-ollama = { module = "dev.langchain4j:langchain4j-ollama", version.ref = "langchain4j" }
+langchain4j-open-ai = { module = "dev.langchain4j:langchain4j-open-ai", version.ref = "langchain4j" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-module-parameter-names = { module = "com.fasterxml.jackson.module:jackson-module-parameter-names", version.ref = "jackson" }
+victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools-jsonschema-generator" }
+victools-jsonschema-module-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools-jsonschema-module-jackson" }
+victools-jsonschema-module-jakarta-validation = { module = "com.github.victools:jsonschema-module-jakarta-validation", version.ref = "victools-jsonschema-generator" }
+pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+graalvm-buildtools-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-buildtools" }

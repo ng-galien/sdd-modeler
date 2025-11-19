@@ -1,5 +1,5 @@
 plugins {
-    id("com.diffplug.spotless") version "6.25.0"
+    alias(libs.plugins.spotless)
     jacoco
 }
 
@@ -11,6 +11,10 @@ allprojects {
         mavenCentral()
     }
 }
+
+// Extract versions from catalog to avoid scope issues in subprojects
+val palantirJavaFormatVersion = libs.versions.palantir.java.format.get()
+val jacocoVersion = libs.versions.jacoco.get()
 
 subprojects {
     apply(plugin = "java-library")
@@ -32,7 +36,7 @@ subprojects {
 
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         java {
-            palantirJavaFormat("2.82.0")
+            palantirJavaFormat(palantirJavaFormatVersion)
             removeUnusedImports()
             trimTrailingWhitespace()
             endWithNewline()
@@ -49,7 +53,7 @@ subprojects {
 
     // JaCoCo configuration for code coverage
     jacoco {
-        toolVersion = "0.8.12"
+        toolVersion = jacocoVersion
     }
 
     tasks.withType<Test> {
@@ -70,17 +74,7 @@ subprojects {
 }
 
 // Version catalog for shared dependencies
-val jacksonVersion = "2.18.0"
-val picocliVersion = "4.7.6"
-val jspecifyVersion = "1.0.0"
-val testcontainersVersion = "1.20.4"
-val postgresqlVersion = "42.7.4"
-
-ext["jacksonVersion"] = jacksonVersion
-ext["picocliVersion"] = picocliVersion
-ext["jspecifyVersion"] = jspecifyVersion
-ext["testcontainersVersion"] = testcontainersVersion
-ext["postgresqlVersion"] = postgresqlVersion
+// Versions are now managed in gradle/libs.versions.toml
 
 // Task to copy schema from core resources to project root for GitHub distribution
 tasks.register<Copy>("distributeSchema") {

@@ -53,15 +53,15 @@ jobs:
           
           ## Downloads
           
-          - CLI JAR: `state-modeler-cli-${{ steps.get_version.outputs.VERSION }}.jar`
+          - CLI JAR: `state-modeler-app-${{ steps.get_version.outputs.VERSION }}.jar`
           
           ## Usage
           
           ```bash
-          java -jar state-modeler-cli-${{ steps.get_version.outputs.VERSION }}.jar --help
+          java -jar state-modeler-app-${{ steps.get_version.outputs.VERSION }}.jar --help
           ```
         files: |
-          state-modeler-cli/build/libs/*.jar
+          state-modeler-app/build/libs/*.jar
         draft: false
         prerelease: false
       env:

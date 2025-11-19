@@ -76,57 +76,142 @@ To build a native executable for the CLI with GraalVM, follow these steps (devel
 ```
 
 Notes:
+
 - The repository contains skeleton `META-INF/native-image` config files; the script `scripts/generate-native-config.sh` will collect data via `native-image-agent` and copy results into `src/main/resources/META-INF/native-image/` for further refinement.
+
 - The `migrate` command (LLM integration) relies on external libs and network; consider excluding it from the native build or running it via the JVM distribution if integration proves complex for the first pass.
-# === SDR Repository Management ===
 
-# Register a model in the repository
-./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
+## Installing GraalVM & native-image (macOS / Linux)
 
+On macOS using Homebrew (preferred for a system-wide install):
+
+```bash
+brew tap graalvm/tap
+brew install --cask graalvm/tap/graalvm-ce-java21
+export JAVA_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java21.jdk/Contents/Home"
+${JAVA_HOME}/bin/gu install native-image
+```
+
+If you prefer SDKMAN (cross-platform):
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install 24.0.1-graalce
+sdk use java 24.0.1-graalce
+gu install native-image
+```
+
+After installing GraalVM, verify `native-image` is available:
+
+```bash
+native-image --version
+```
+
+If `native-image` reports a version number, you can re-run:
+
+```bash
+./scripts/generate-native-config.sh
+./gradlew :state-modeler-app:nativeCompile
+```
+
+## === SDR Repository Management ===
+
+### Register a model in the repository
+
+```shell
 ./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
-# Register with custom name and version
+```
+
+```bash
+./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
+```
+
+### Register with custom name and version
+
+```bash
 ./gradlew :state-modeler-app:run --args="register model.yaml --name my-model --version 2.0.0"
+```
 
-# Register to custom repository path
+### Register to custom repository path
+
+```bash
 ./gradlew :state-modeler-app:run --args="register model.yaml --repository /path/to/repo"
+```
 
-# List all registered models (table format)
+### List all registered models (table format)
+
+```bash
 ./gradlew :state-modeler-app:run --args="list"
+```
 
-# List in JSON format
+### List in JSON format
+
+```bash
 ./gradlew :state-modeler-app:run --args="list --format json"
+```
 
-# List in YAML format
+### List in YAML format
+
+```bash
 ./gradlew :state-modeler-app:run --args="list --format yaml"
+```
 
-# List with limit
+### List with limit
+
+```bash
 ./gradlew :state-modeler-app:run --args="list --limit 10"
+```
 
-# Show model by hash
-./gradlew :state-modeler-app:run --args="show 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4"
+### Show model by hash
 
-# Show model by name (latest version)
+```bash
+./gradlew :state-modeler-app:run --args="show d384846b1edfa53f6d0f373bf61d619321ec48702ca6f2208d2c3a954191b3d1"
+```
+
+### Show model by name (latest version)
+
+```bash
 ./gradlew :state-modeler-app:run --args="show orders-sdd-example"
+```
 
-# Show model by name and version
+### Show model by name and version
+
+```bash
 ./gradlew :state-modeler-app:run --args="show orders-sdd-example:1.0.0"
+```
 
-# Show only metadata
+### Show only metadata
+
+```bash
 ./gradlew :state-modeler-app:run --args="show orders-sdd-example --format metadata"
+```
 
-# Show only schema
+### Show only schema
+
+```bash
 ./gradlew :state-modeler-app:run --args="show orders-sdd-example --format schema"
+```
 
-# Show only DDL
+### Show only DDL
+
+```bash
 ./gradlew :state-modeler-app:run --args="show orders-sdd-example --format ddl"
+```
 
-# Delete a model (interactive confirmation)
+### Delete a model (interactive confirmation)
+
+```bash
 ./gradlew :state-modeler-app:run --args="delete 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4"
+```
 
-# Delete without confirmation
+### Delete without confirmation
+
+```bash
 ./gradlew :state-modeler-app:run --args="delete 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4 --yes"
+```
 
-# === DDL Comparison & Migration ===
+## DDL Comparison & Migration
 
 # Compare DDL between two SDR versions
 ./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"

@@ -5,15 +5,30 @@ set -euo pipefail
 # native-image-agent to collect reflection/resource metadata for GraalVM.
 # Usage: ./scripts/generate-native-config.sh [--jar path-to-jar]
 
-JAR_PATH="state-modeler-app/build/libs/state-modeler-app.jar"
+JAR_PATH=""
 if [ "$#" -gt 0 ]; then
   JAR_PATH="$1"
+else
+  # Try to find the built jar in build/libs
+  JAR_PATH=$(ls state-modeler-app/build/libs/*.jar 2>/dev/null | grep -v '\(-sources\|-javadoc\)\.jar' | head -n 1 || true)
+fi
+
+if [ -z "${JAR_PATH}" ]; then
+  echo "Jar not found in state-modeler-app/build/libs; running build to create it..."
+  ./gradlew :state-modeler-app:clean :state-modeler-app:jar
+  JAR_PATH=$(ls state-modeler-app/build/libs/*.jar 2>/dev/null | grep -v '\(-sources\|-javadoc\)\.jar' | head -n 1 || true)
+fi
+
+if [ -z "${JAR_PATH}" ]; then
+  echo "Error: could not find JAR for state-modeler-app in build/libs/" >&2
+  exit 1
 fi
 
 ./gradlew :state-modeler-app:clean :state-modeler-app:jar
 mkdir -p tmp/native-config
 
 # Run representative commands to exercise reflection paths
+echo "Using JAR: ${JAR_PATH}"
 java -agentlib:native-image-agent=config-output-dir=tmp/native-config -jar "${JAR_PATH}" --help || true
 java -agentlib:native-image-agent=config-output-dir=tmp/native-config -jar "${JAR_PATH}" validate scripts/examples/orders-sdd-mini-model.yaml || true
 

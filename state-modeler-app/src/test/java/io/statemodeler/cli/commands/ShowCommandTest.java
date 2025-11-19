@@ -44,12 +44,13 @@ class ShowCommandTest {
         var command = new ShowCommand();
         command.repositoryMixin = createMixin();
         var cmd = new CommandLine(command);
+
         CliTestHelper.runWithCapture(
                 cmd,
                 result -> {
                     assertEquals(0, result.exitCode());
                     String output = result.out();
-                    assertTrue(output.contains("=== SDR Metadata ==="), "Should show metadata");
+                    assertTrue(output.contains("=== SDR Metadata ==="), "Should show metadata. Output was:\n" + output);
                 },
                 testHash,
                 "--format",
@@ -62,12 +63,11 @@ class ShowCommandTest {
         String shortHash = testHash.substring(0, 8);
 
         var command = new ShowCommand();
-        command.identifier = shortHash;
-        command.format = "all";
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(shortHash, "--format", "all");
 
         // Then
         assertEquals(1, exitCode, "Short hash lookup not yet supported - should fail with exit code 1");
@@ -102,7 +102,8 @@ class ShowCommandTest {
                 result -> {
                     assertEquals(0, result.exitCode());
                     String output3 = result.out();
-                    assertTrue(output3.contains("=== SDR Metadata ==="), "Should show metadata");
+                    assertTrue(output3.contains("=== SDR Metadata ==="),
+                            "Should show metadata. Output was:\n" + output3);
                 },
                 "test-model:1.0",
                 "--format",
@@ -120,7 +121,8 @@ class ShowCommandTest {
                 result -> {
                     assertEquals(0, result.exitCode());
                     String output = result.out();
-                    assertTrue(output.contains("=== SDR Metadata ==="), "Should show metadata");
+                    System.out.println("DEBUG_IDENTITY_CMD: " + System.identityHashCode(cmd4));
+                    assertTrue(output.contains("=== SDR Metadata ==="), "Should show metadata. Output was:\n" + output);
                     assertFalse(output.contains("=== Schema (JSON) ==="), "Should not show schema");
                     assertFalse(output.contains("=== DDL (SQL) ==="), "Should not show DDL");
                 },
@@ -173,12 +175,11 @@ class ShowCommandTest {
     void shouldHandleNonExistentHash() {
         // Given
         var command = new ShowCommand();
-        command.identifier = "0000000000000000";
-        command.format = "all";
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute("0000000000000000", "--format", "all");
 
         // Then
         assertEquals(1, exitCode, "Should fail with exit code 1 for nonexistent SDR");
@@ -188,12 +189,11 @@ class ShowCommandTest {
     void shouldHandleNonExistentName() {
         // Given
         var command = new ShowCommand();
-        command.identifier = "nonexistent-model";
-        command.format = "all";
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute("nonexistent-model", "--format", "all");
 
         // Then
         assertEquals(1, exitCode, "Should fail with exit code 1 for nonexistent model");
@@ -203,12 +203,11 @@ class ShowCommandTest {
     void shouldRejectInvalidFormat() {
         // Given
         var command = new ShowCommand();
-        command.identifier = testHash;
-        command.format = "xml"; // Invalid format
         command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(testHash, "--format", "xml");
 
         // Then
         assertEquals(1, exitCode, "Should fail with invalid format");
@@ -218,15 +217,13 @@ class ShowCommandTest {
     void shouldHandleRepositoryError() {
         // Given
         var command = new ShowCommand();
-        command.identifier = testHash;
-        command.format = "all";
-
         var mixin = new RepositoryMixin();
         mixin.repositoryPath = "/invalid/\0/path";
         command.repositoryMixin = mixin;
+        var cmd = new CommandLine(command);
 
         // When
-        int exitCode = command.call();
+        int exitCode = cmd.execute(testHash, "--format", "all");
 
         // Then
         assertEquals(1, exitCode, "Should fail with repository error");

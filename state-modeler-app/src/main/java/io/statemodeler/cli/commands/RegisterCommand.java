@@ -8,9 +8,8 @@ import io.statemodeler.validation.DefaultModelValidator;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine.*;
+import picocli.CommandLine.Model.CommandSpec;
 
 /**
  * CLI command to register an SDD model as an SDR (State-Driven Record) in the
@@ -37,25 +36,23 @@ import picocli.CommandLine.*;
  */
 @Command(name = "register", description = "Register an SDD model in the repository", mixinStandardHelpOptions = true)
 public class RegisterCommand implements Callable<Integer> {
-    private static final Logger logger = LoggerFactory.getLogger(RegisterCommand.class);
 
     @Parameters(index = "0", description = "Path to the SDD model file (YAML or JSON)", paramLabel = "<model-file>")
     Path modelFile;
 
-    @Option(
-            names = {"--name", "-n"},
-            description = "Model name (default: derived from filename)",
-            paramLabel = "<name>")
+    @Option(names = { "--name",
+            "-n" }, description = "Model name (default: derived from filename)", paramLabel = "<name>")
     String modelName;
 
-    @Option(
-            names = {"--version", "-v"},
-            description = "Model version (default: derived from model or '1.0')",
-            paramLabel = "<version>")
+    @Option(names = { "--version",
+            "-v" }, description = "Model version (default: derived from model or '1.0')", paramLabel = "<version>")
     String modelVersion;
 
     @Mixin
     RepositoryMixin repositoryMixin;
+
+    @Spec
+    CommandSpec spec;
 
     private final YamlModelLoader loader = new YamlModelLoader();
     private final DefaultModelValidator validator = new DefaultModelValidator();
@@ -63,24 +60,23 @@ public class RegisterCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        logger.info("Registering SDD model: {}", modelFile);
+        spec.commandLine().getOut().println("Registering SDD model: " + modelFile);
 
         return io.vavr.control.Try.of(() -> {
-                    String modelSource = Files.readString(modelFile);
-                    String contentType =
-                            modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
-                    return new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType);
-                })
+            String modelSource = Files.readString(modelFile);
+            String contentType = modelFile.toString().endsWith(".json") ? "application/json" : "application/yaml";
+            return new java.util.AbstractMap.SimpleEntry<>(modelSource, contentType);
+        })
                 .flatMap(pair -> loader.loadFromFile(modelFile)
                         .map(model -> new java.util.AbstractMap.SimpleEntry<>(model, pair)))
                 .map(entry -> {
                     var model = entry.getKey();
                     var pair = entry.getValue();
-                    logger.info("  Loaded model: {}", model.name());
+                    spec.commandLine().getOut().println("  Loaded model: " + model.name());
 
                     // Validate
                     validator.validateOrThrow(model);
-                    logger.info("  Validation: PASSED");
+                    spec.commandLine().getOut().println("  Validation: PASSED");
 
                     return new java.util.AbstractMap.SimpleEntry<>(model, pair);
                 })
@@ -93,8 +89,8 @@ public class RegisterCommand implements Callable<Integer> {
                     String sqlDialect = model.database().dialect();
                     var sdr = sdrFactory.create(modelSource, contentType, sqlDialect);
 
-                    logger.info("  Schema hash: {}", sdr.schemaHash());
-                    logger.info("  DDL hash: {}", sdr.ddlHash());
+                    spec.commandLine().getOut().println("  Schema hash: " + sdr.schemaHash());
+                    spec.commandLine().getOut().println("  DDL hash: " + sdr.ddlHash());
 
                     return new java.util.AbstractMap.SimpleEntry<>(sdr, model);
                 })
@@ -108,10 +104,10 @@ public class RegisterCommand implements Callable<Integer> {
                             .of(repo -> repo.save(sdr, finalName, finalVersion))
                             .flatMap(x -> x)
                             .map(ignored -> {
-                                logger.info("\n✓ Successfully registered SDR");
-                                logger.info("  Name: {}", finalName);
-                                logger.info("  Version: {}", finalVersion);
-                                logger.info("  Hash: {}", sdr.schemaHash());
+                                spec.commandLine().getOut().println("\n✓ Successfully registered SDR");
+                                spec.commandLine().getOut().println("  Name: " + finalName);
+                                spec.commandLine().getOut().println("  Version: " + finalVersion);
+                                spec.commandLine().getOut().println("  Hash: " + sdr.schemaHash());
                                 return 0;
                             });
                 })
@@ -120,16 +116,16 @@ public class RegisterCommand implements Callable<Integer> {
                     if (cause != null
                             && cause.getMessage() != null
                             && cause.getMessage().contains("already exists")) {
-                        logger.error("ERROR: SDR already registered");
-                        logger.error("  {}", cause.getMessage());
-                        logger.error("  Use 'sdd-modeler list' to view registered SDRs");
+                        spec.commandLine().getErr().println("ERROR: SDR already registered");
+                        spec.commandLine().getErr().println("  " + cause.getMessage());
+                        spec.commandLine().getErr().println("  Use 'sdd-modeler list' to view registered SDRs");
                         return io.vavr.control.Try.success(2);
                     }
                     return io.vavr.control.Try.failure(throwable);
                 })
                 .getOrElseGet(throwable -> {
-                    logger.error("ERROR: Failed to register SDR");
-                    logger.error("  {}", throwable.getMessage());
+                    spec.commandLine().getErr().println("ERROR: Failed to register SDR");
+                    spec.commandLine().getErr().println("  " + throwable.getMessage());
                     return 1;
                 });
     }

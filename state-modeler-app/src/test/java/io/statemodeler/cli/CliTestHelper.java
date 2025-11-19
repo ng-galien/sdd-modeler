@@ -1,5 +1,7 @@
 package io.statemodeler.cli;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.function.Consumer;
 import picocli.CommandLine;
 
@@ -13,14 +15,16 @@ public final class CliTestHelper {
 
     private CliTestHelper() {}
 
-    public static record ExecutionResult(int exitCode, String out, String err) {}
+    public record ExecutionResult(int exitCode, String out, String err) {}
 
     public static void runWithCapture(CommandLine cmd, Consumer<ExecutionResult> assertions, String... args) {
-        try (var capture = PicocliTestHelper.capture(cmd)) {
-            int exitCode = cmd.execute(args);
-            var result = new ExecutionResult(exitCode, capture.getOut(), capture.getErr());
-            assertions.accept(result);
-        }
+        var out = new StringWriter();
+        var err = new StringWriter();
+        cmd.setOut(new PrintWriter(out, true));
+        cmd.setErr(new PrintWriter(err, true));
+        int exitCode = cmd.execute(args);
+        var result = new ExecutionResult(exitCode, out.toString(), err.toString());
+        assertions.accept(result);
     }
 
     public static void runWithCapture(CommandLine cmd, Consumer<ExecutionResult> assertions) {

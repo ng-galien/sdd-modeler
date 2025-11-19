@@ -21,8 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 /**
  * CLI command to generate migration scripts between two SDR versions.
@@ -40,10 +42,7 @@ import picocli.CommandLine.Parameters;
  * <li>sdd-modeler migrate abc123 def456 --llm ollama --model llama3.2
  * </ul>
  */
-@Command(
-        name = "migrate",
-        description = "Generate migration script between two SDR versions",
-        mixinStandardHelpOptions = true)
+@Command(name = "migrate", description = "Generate migration script between two SDR versions", mixinStandardHelpOptions = true)
 public class MigrateCommand implements Callable<Integer> {
     private static final Logger logger = LoggerFactory.getLogger(MigrateCommand.class);
 
@@ -53,47 +52,37 @@ public class MigrateCommand implements Callable<Integer> {
     @Parameters(index = "1", description = "Target SDR hash or name:version")
     String toIdentifier;
 
-    @Option(
-            names = {"--dialect", "-d"},
-            description = "Database dialect (default: postgres)",
-            defaultValue = "postgres")
+    @Option(names = { "--dialect",
+            "-d" }, description = "Database dialect (default: postgres)", defaultValue = "postgres")
     String dialect;
 
-    @Option(
-            names = {"--output", "-o"},
-            description = "Output file path (default: stdout)")
+    @Option(names = { "--output", "-o" }, description = "Output file path (default: stdout)")
     File outputFile;
 
-    @Option(
-            names = {"--output-json", "-j"},
-            description = "Write migration JSON output to file (default: none)")
+    @Option(names = { "--output-json", "-j" }, description = "Write migration JSON output to file (default: none)")
     File outputJson;
 
-    @Option(
-            names = {"--llm"},
-            description = "LLM provider (ollama|openai)",
-            defaultValue = "ollama")
+    @Option(names = { "--llm" }, description = "LLM provider (ollama|openai)", defaultValue = "ollama")
     String llmProvider;
 
-    @Option(
-            names = {"--model"},
-            description = "LLM model name (default: llama3.2)")
+    @Option(names = { "--model" }, description = "LLM model name (default: llama3.2)")
     String modelName;
 
-    @Option(
-            names = {"--force"},
-            description = "Force regeneration even if migration already exists")
+    @Option(names = { "--force" }, description = "Force regeneration even if migration already exists")
     boolean force;
 
     @Mixin
     RepositoryMixin repositoryMixin;
 
+    @Spec
+    CommandSpec spec;
+
     @Override
     public Integer call() {
         // Validate dialect
         if (!isValidDialect(dialect)) {
-            logger.error("ERROR: Unsupported dialect '{}'", dialect);
-            logger.error("  Supported dialects: postgres");
+            spec.commandLine().getErr().println("ERROR: Unsupported dialect '" + dialect + "'");
+            spec.commandLine().getErr().println("  Supported dialects: postgres");
             return 1;
         }
 
@@ -110,8 +99,8 @@ public class MigrateCommand implements Callable<Integer> {
                                 .flatMap(toSdr -> {
                                     // Check if migration already exists
                                     if (!force) {
-                                        var existingResult =
-                                                repository.findMigration(fromSdr.schemaHash(), toSdr.schemaHash());
+                                        var existingResult = repository.findMigration(fromSdr.schemaHash(),
+                                                toSdr.schemaHash());
                                         if (existingResult.isSuccess()
                                                 && existingResult.get().isPresent()) {
                                             logger.info("INFO: Migration already exists (use --force to regenerate)");
@@ -130,17 +119,20 @@ public class MigrateCommand implements Callable<Integer> {
                 .fold(
                         throwable -> {
                             if (throwable instanceof NoClassDefFoundError) {
-                                logger.error("ERROR: LangChain4j dependencies not found");
-                                logger.error("  The 'migrate' command requires LangChain4j libraries.");
-                                logger.error("  Please ensure the following dependencies are available:");
-                                logger.error("    - dev.langchain4j:langchain4j:0.36.2");
-                                logger.error("    - dev.langchain4j:langchain4j-ollama:0.36.2");
-                                logger.error("    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
-                                logger.error("  Missing class: {}", throwable.getMessage());
+                                spec.commandLine().getErr().println("ERROR: LangChain4j dependencies not found");
+                                spec.commandLine().getErr()
+                                        .println("  The 'migrate' command requires LangChain4j libraries.");
+                                spec.commandLine().getErr()
+                                        .println("  Please ensure the following dependencies are available:");
+                                spec.commandLine().getErr().println("    - dev.langchain4j:langchain4j:0.36.2");
+                                spec.commandLine().getErr().println("    - dev.langchain4j:langchain4j-ollama:0.36.2");
+                                spec.commandLine().getErr().println(
+                                        "    - dev.langchain4j:langchain4j-openai:0.36.2 (if using --llm openai)");
+                                spec.commandLine().getErr().println("  Missing class: " + throwable.getMessage());
                                 return 1;
                             }
-                            logger.error("ERROR: Unexpected error");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("ERROR: Unexpected error");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             // throwable.printStackTrace(); // Keep stack trace for debugging if needed, or
                             // remove for cleaner CLI
                             return 1;
@@ -151,17 +143,17 @@ public class MigrateCommand implements Callable<Integer> {
     private Try<Integer> generateAndSaveMigration(
             io.statemodeler.repository.SdrRepository repository, SdrRecord fromSdr, SdrRecord toSdr) {
         return Try.of(() -> {
-                    // Create LLM-based migration service
-                    logger.info("INFO: Generating migration using {} LLM...", llmProvider);
-                    ChatModel llmModel = createLlmModel();
+            // Create LLM-based migration service
+            logger.info("INFO: Generating migration using {} LLM...", llmProvider);
+            ChatModel llmModel = createLlmModel();
 
-                    var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
-                    var comparisonService = new DdlComparisonService();
-                    var orchestrationService =
-                            new MigrationOrchestrationService(migrationGenerator, comparisonService, repository);
+            var migrationGenerator = new LangChainMigrationGenerationService(llmModel);
+            var comparisonService = new DdlComparisonService();
+            var orchestrationService = new MigrationOrchestrationService(migrationGenerator, comparisonService,
+                    repository);
 
-                    return orchestrationService;
-                })
+            return orchestrationService;
+        })
                 .flatMap(orchestrationService -> orchestrationService.generateAndSaveMigration(fromSdr, toSdr, dialect))
                 .map(migration -> {
                     logger.info("SUCCESS: Migration generated and saved");
@@ -269,12 +261,12 @@ public class MigrateCommand implements Callable<Integer> {
             var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile.toPath(), script));
             writeResult.onFailure(e -> logger.warn("WARN: Failed to write output: {}", e.getMessage()));
             if (writeResult.isFailure()) {
-                System.out.println(script);
+                spec.commandLine().getOut().println(script);
             } else {
                 logger.info("  Output: {}", outputFile.getAbsolutePath());
             }
         } else {
-            System.out.println(script);
+            spec.commandLine().getOut().println(script);
         }
     }
 }

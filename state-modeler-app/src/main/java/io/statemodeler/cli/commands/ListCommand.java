@@ -7,16 +7,15 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.cli.dto.SdrListResponse;
 import io.statemodeler.repository.SdrMetadata;
-import java.io.PrintWriter;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.Callable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 
 /**
  * CLI command to list registered SDRs in the repository.
@@ -26,39 +25,30 @@ import picocli.CommandLine.Option;
  */
 @Command(name = "list", description = "List registered SDRs in the repository", mixinStandardHelpOptions = true)
 public class ListCommand implements Callable<Integer> {
-    private static final Logger logger = LoggerFactory.getLogger(ListCommand.class);
 
-    @Option(
-            names = {"--format", "-f"},
-            description = "Output format: table (default), json, yaml",
-            defaultValue = "table")
+    @Option(names = { "--format",
+            "-f" }, description = "Output format: table (default), json, yaml", defaultValue = "table")
     String format;
 
-    @Option(
-            names = {"--limit", "-l"},
-            description = "Maximum number of SDRs to display (0 = all)",
-            defaultValue = "0")
+    @Option(names = { "--limit",
+            "-l" }, description = "Maximum number of SDRs to display (0 = all)", defaultValue = "0")
     int limit;
 
     @Mixin
     RepositoryMixin repositoryMixin;
 
-    private static final DateTimeFormatter DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
-    // Output writer for CLI content printing. Default to System.out; tests can
-    // override.
-    PrintWriter output = new PrintWriter(System.out, true);
+    @Spec
+    CommandSpec spec;
 
-    public void setOutput(PrintWriter output) {
-        this.output = output;
-    }
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.systemDefault());
 
     @Override
     public Integer call() {
         // Validate format
         if (!isValidFormat(format)) {
-            logger.error("ERROR: Invalid format '{}'", format);
-            logger.error("  Supported formats: table, json, yaml");
+            spec.commandLine().getErr().println("ERROR: Invalid format '" + format + "'");
+            spec.commandLine().getErr().println("  Supported formats: table, json, yaml");
             return 1;
         }
 
@@ -83,8 +73,8 @@ public class ListCommand implements Callable<Integer> {
                         .getOrElseThrow(e -> e))
                 .fold(
                         throwable -> {
-                            logger.error("ERROR: Failed to list SDRs");
-                            logger.error("  {}", throwable.getMessage());
+                            spec.commandLine().getErr().println("ERROR: Failed to list SDRs");
+                            spec.commandLine().getErr().println("  " + throwable.getMessage());
                             return 1;
                         },
                         result -> result);
@@ -97,27 +87,31 @@ public class ListCommand implements Callable<Integer> {
 
     private void printTable(List<SdrMetadata> sdrs) {
         if (sdrs.isEmpty()) {
-            output.println("No SDRs registered in repository");
+            spec.commandLine().getOut().println("No SDRs registered in repository");
             return;
         }
 
         // Print header
-        output.println(
-                String.format("%-40s %-20s %-12s %-12s %s", "NAME", "VERSION", "HASH", "SDR VERSION", "CREATED AT"));
-        output.println("-".repeat(110));
+        spec.commandLine()
+                .getOut()
+                .println(String.format(
+                        "%-40s %-20s %-12s %-12s %s", "NAME", "VERSION", "HASH", "SDR VERSION", "CREATED AT"));
+        spec.commandLine().getOut().println("-".repeat(110));
 
         // Print rows
         for (SdrMetadata sdr : sdrs) {
-            output.println(String.format(
-                    "%-40s %-20s %-12s %-12s %s",
-                    truncate(sdr.modelName(), 40),
-                    truncate(sdr.modelVersion(), 20),
-                    sdr.shortHash(),
-                    sdr.sdrVersion(),
-                    DATE_FORMATTER.format(sdr.createdAt())));
+            spec.commandLine()
+                    .getOut()
+                    .println(String.format(
+                            "%-40s %-20s %-12s %-12s %s",
+                            truncate(sdr.modelName(), 40),
+                            truncate(sdr.modelVersion(), 20),
+                            sdr.shortHash(),
+                            sdr.sdrVersion(),
+                            DATE_FORMATTER.format(sdr.createdAt())));
         }
 
-        output.println("\nTotal: " + sdrs.size() + " SDR(s)");
+        spec.commandLine().getOut().println("\nTotal: " + sdrs.size() + " SDR(s)");
     }
 
     private void printJson(List<SdrMetadata> sdrs) {
@@ -128,26 +122,25 @@ public class ListCommand implements Callable<Integer> {
             mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
             SdrListResponse response = SdrListResponse.from(sdrs);
-            // Write directly to the output writer
-            // We use writeValueAsString to avoid closing the writer if we passed it
-            // directly
-            output.println(mapper.writeValueAsString(response));
+            spec.commandLine().getOut().println(mapper.writeValueAsString(response));
         } catch (Exception e) {
-            logger.error("ERROR: Failed to generate JSON output", e);
+            spec.commandLine().getErr().println("ERROR: Failed to generate JSON output");
+            e.printStackTrace(spec.commandLine().getErr());
         }
     }
 
     private void printYaml(List<SdrMetadata> sdrs) {
         try {
-            ObjectMapper mapper =
-                    new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
+            ObjectMapper mapper = new ObjectMapper(
+                    new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
             mapper.findAndRegisterModules();
             mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
             SdrListResponse response = SdrListResponse.from(sdrs);
-            output.println(mapper.writeValueAsString(response));
+            spec.commandLine().getOut().println(mapper.writeValueAsString(response));
         } catch (Exception e) {
-            logger.error("ERROR: Failed to generate YAML output", e);
+            spec.commandLine().getErr().println("ERROR: Failed to generate YAML output");
+            e.printStackTrace(spec.commandLine().getErr());
         }
     }
 

@@ -35,6 +35,9 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
       
+    - name: Publish core and plugin to mavenLocal
+      run: ./gradlew :state-modeler-core:publishToMavenLocal :state-modeler-gradle-plugin:publishToMavenLocal
+
     - name: Build release artifacts
       run: ./gradlew build -x test
       

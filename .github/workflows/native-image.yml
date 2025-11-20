@@ -36,6 +36,9 @@ jobs:
       - name: Print Java version
         run: java -version
 
+      - name: Publish core and plugin to mavenLocal
+        run: ./gradlew :state-modeler-core:publishToMavenLocal :state-modeler-gradle-plugin:publishToMavenLocal
+
       - name: Build jar
         run: ./gradlew :state-modeler-app:clean :state-modeler-app:jar --no-daemon
 

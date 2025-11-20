@@ -5,6 +5,7 @@ The core library for State-Driven Design (SDD) modeling, validation, and SQL gen
 ## 🚀 Features
 
 ### Declarative State Modeling
+
 - Define entities with immutable state transitions in YAML/JSON
 - Explicit state graphs with simple (`from`) and OR transitions (`from_any_of`)
 - Separation of stable entity data from mutable state facts
@@ -12,6 +13,7 @@ The core library for State-Driven Design (SDD) modeling, validation, and SQL gen
 - Derived projections (state intervals, current state views)
 
 ### Production-Ready SQL Generation
+
 - **Complete PostgreSQL DDL**: Entity tables, state tables, extension tables, projection views
 - **Automatic foreign key indexing**: Performance-optimized with `idx_<table>_<column>` naming convention
 - **Type validation**: Comprehensive PostgreSQL type checking (NUMERIC, TIMESTAMP, arrays, etc.)
@@ -19,6 +21,7 @@ The core library for State-Driven Design (SDD) modeling, validation, and SQL gen
 - **Schema separation**: Configurable entity vs. state schema isolation
 
 ### Robust Validation
+
 - State graph coherence (initial state, valid transitions, no cycles)
 - Attribute type validation for PostgreSQL compatibility
 - Extension and projection reference validation
@@ -112,12 +115,14 @@ CREATE VIEW public_states.current_order_states AS
 ## 🏗️ Architecture
 
 ### Core Principles
+
 - **Immutable state facts**: No UPDATE on state tables - only INSERT (audit trail)
 - **No status columns**: Derive current state from projections/views
 - **Separation of concerns**: Entity data vs. state data in different schemas
 - **Type safety**: Compile-time validation with Java 21 records
 
 ### Technology Stack
+
 - **Language**: Java 21 (records, pattern matching, sealed types)
 - **Parsing**: Jackson (YAML/JSON)
 - **Validation**: Vavr (functional error accumulation)

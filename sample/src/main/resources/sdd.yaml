@@ -28,4 +28,4 @@ entities:
         from_any_of: []
         attributes:
           reason:
-            type: "String"
+            type: "TEXT"

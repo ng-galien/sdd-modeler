@@ -166,6 +166,8 @@ public class PebbleCodeGenerator implements CodeGenerator {
             for (Object o : eis) if (o instanceof String str) imports.add(str);
         }
         context.put("imports", imports);
+        // Ensure templates have generator options (packageName, etc.) available
+        context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
         return generateFromTemplate("id", context);
     }
 
@@ -192,6 +194,8 @@ public class PebbleCodeGenerator implements CodeGenerator {
             for (Object o : eis2) if (o instanceof String str) imports.add(str);
         }
         context.put("imports", imports);
+        // Provide generator options (like packageName) to converters template
+        context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
         return generateFromTemplate("converters", context);
     }
 
@@ -204,6 +208,7 @@ public class PebbleCodeGenerator implements CodeGenerator {
     private String generateConfiguration(SddModel model) {
         Map<String, Object> context = new HashMap<>();
         context.put("model", buildModelContext(model));
+        context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
         return generateFromTemplate("configuration", context);
     }
 

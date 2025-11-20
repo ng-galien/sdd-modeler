@@ -1,6 +1,9 @@
 plugins {
     id("org.springframework.boot") version "3.2.3"
     id("io.spring.dependency-management") version "1.1.4"
+    // Use the codegen plugin declared in the included build
+    // Plugin id temporarily removed during publish; will be re-enabled once the plugin is published
+    id("io.statemodeler.sdd-codegen") version "0.1.0-SNAPSHOT"
 }
 
 dependencies {
@@ -26,33 +29,28 @@ val modelFileUsedAbs = project.file(modelFileProp ?: "src/main/resources/sdd.yam
 val resolvedOutDirFile = if (outDirProp != null) project.file(outDirProp) else project.buildDir.resolve("generated/sdd")
 val sddOutDirAbs = resolvedOutDirFile.absolutePath
 
-val generateCode by tasks.registering(Exec::class) {
-    group = "sdd"
-    description = "Runs the scripts/generate-code.sh helper to produce generated sources for the sample module"
+// The sdd-codegen plugin is applied via the plugins DSL above so the `sddCodegen` extension is
+// registered and available to configure below.
 
-    val scriptPath = project.rootProject.file("scripts/generate-code.sh").absolutePath
-    commandLine("bash", scriptPath,
-        "-m", modelFileUsedAbs,
-        "-o", sddOutDirAbs,
-        "-l", languageProp ?: "java",
-        "--skip-build",
-        "--no-format")
+// Configure plugin extension from the project properties
+// Configure plugin extension from the project properties
+// Configure plugin extension from the project properties
+sddCodegen {
+    modelFile.set(file(modelFileProp ?: "src/main/resources/sdd.yaml"))
+    outputDir.set(layout.buildDirectory.dir(outDirProp ?: "generated/sdd"))
+    language.set(languageProp ?: "java")
+    addToSourceSet.set(addToSourceSetProp)
+}
 
-    outputs.dir(sddOutDirAbs)
-
-    doFirst {
-        println("Generating sources from model: $modelFileUsedAbs into $sddOutDirAbs")
-        project.file(sddOutDirAbs).mkdirs()
-    }
+// Ensure generated sources are reformatted with Spotless immediately after generation so
+// format checks pass in the lifecycle (e.g., `build`).
+tasks.named("generateSddCode") {
+    finalizedBy("spotlessApply")
 }
 
 // Add generated sources to compilation sourceset if flagged
-if (addToSourceSetProp == null || addToSourceSetProp) {
-    sourceSets.main.get().java.srcDir(resolvedOutputDir)
-    tasks.named("compileJava") {
-        dependsOn(generateCode)
-    }
-}
+// With the plugin applied, the `generateSddCode` task is registered and automatically wired into
+// the Java source set by the plugin when `addToSourceSet` is true. No further setup required here.
 
 // Exclude generated sources from Spotless formatting checks
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {

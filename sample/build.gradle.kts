@@ -3,7 +3,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.4"
     // Use the codegen plugin declared in the included build
     // Plugin id temporarily removed during publish; will be re-enabled once the plugin is published
-    id("io.statemodeler.sdd-codegen") version "0.1.0-SNAPSHOT"
+    id("io.statemodeler.sdd-codegen")
 }
 
 dependencies {
@@ -29,12 +29,6 @@ val modelFileUsedAbs = project.file(modelFileProp ?: "src/main/resources/sdd.yam
 val resolvedOutDirFile = if (outDirProp != null) project.file(outDirProp) else project.buildDir.resolve("generated/sdd")
 val sddOutDirAbs = resolvedOutDirFile.absolutePath
 
-// The sdd-codegen plugin is applied via the plugins DSL above so the `sddCodegen` extension is
-// registered and available to configure below.
-
-// Configure plugin extension from the project properties
-// Configure plugin extension from the project properties
-// Configure plugin extension from the project properties
 sddCodegen {
     modelFile.set(file(modelFileProp ?: "src/main/resources/sdd.yaml"))
     outputDir.set(layout.buildDirectory.dir(outDirProp ?: "generated/sdd"))

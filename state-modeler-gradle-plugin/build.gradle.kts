@@ -7,13 +7,13 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
     implementation(gradleApi())
-    implementation(project(":state-modeler-core"))
+    implementation("io.statemodeler:state-modeler-core:0.1.0-SNAPSHOT")
 }
 
 gradlePlugin {

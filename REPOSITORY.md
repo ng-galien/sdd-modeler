@@ -411,6 +411,8 @@ repository.findByHash(hash)
 ## See Also
 
 - [Main Documentation](README.md)
-- [Development Guide](DEV_README.md)
+- [Core Library Documentation](state-modeler-core/README.md)
+- [CLI Documentation](state-modeler-app/README.md)
+- [Gradle Plugin Documentation](state-modeler-gradle-plugin/README.md)
 - [Architecture Guide](instructions/ARCHITECTURE.md)
 - [Examples](scripts/examples/)

@@ -50,6 +50,8 @@ tasks.named("generateSddCode") {
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     java {
         val generated = resolvedOutputDir.get().asFile
-        targetExclude("${generated.absolutePath}/**")
+        // Use a path relative to the project dir so Spotless targetExclude matches correctly
+        val relativeGenerated = generated.toRelativeString(project.projectDir).replace(File.separatorChar, '/')
+        targetExclude("$relativeGenerated/**")
     }
 }

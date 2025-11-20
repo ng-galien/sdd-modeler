@@ -65,6 +65,7 @@ Manage your State Definition Records (SDR) in a local repository (`~/.sdd-modele
 ## ✨ Key Features
 
 ### SDR Repository Management
+
 - **State Definition Records (SDR)**: Immutable snapshots of your models with cryptographic hashes
 - **Local H2 database**: Automatic persistence in `~/.sdd-modeler/repository`
 - **Version tracking**: Compare models across versions
@@ -72,6 +73,7 @@ Manage your State Definition Records (SDR) in a local repository (`~/.sdd-modele
 - **Multiple output formats**: Table, JSON, or YAML for listing models
 
 ### AI-Powered Migration Generation
+
 - **LLM-based migration scripts**: Automatic SQL migration generation using LangChain4j
 - **DDL comparison service**: Structural diff analysis between model versions
 - **Migration caching**: Persisted migrations to avoid regeneration costs

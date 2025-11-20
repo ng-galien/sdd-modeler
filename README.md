@@ -10,27 +10,37 @@ A Java library and CLI tool for implementing **State-Driven Design (SDD)** with 
 
 **SDD-Modeler** enables you to define your domain model as a declarative YAML/JSON schema describing entities, states, transitions, extensions, and projections. From this single source of truth, it generates production-ready PostgreSQL DDL with optimized state tracking patterns.
 
+See related [blog post](https://ng-galien.github.io/tags/sdd/) for more context.
+
 ## 🧩 Modules
 
 This project is organized into several modules, each with its own documentation:
 
 ### 📚 [Core Library](state-modeler-core/README.md)
+
 The heart of the project. Contains the modeling concepts, validation logic, and SQL generation engine.
+
 - **Key Features**: Declarative modeling, immutable state facts, robust validation.
 - **Go here if**: You want to understand the SDD concepts or use the library programmatically.
 
 ### 🛠️ [CLI Tool](state-modeler-app/README.md)
+
 A command-line interface for managing SDD models.
+
 - **Key Features**: Validation, SQL generation, local repository management, AI-powered migrations.
 - **Go here if**: You want to use the `state-modeler` command to manage your models.
 
 ### 🔌 [Gradle Plugin](state-modeler-gradle-plugin/README.md)
+
 Integrate SDD generation into your Gradle build.
+
 - **Key Features**: Automatic code generation during build, seamless integration with Java projects.
 - **Go here if**: You want to use SDD Modeler in your Gradle project.
 
 ### 🧪 [Sample Project](sample/README.md)
+
 A working example demonstrating the full stack.
+
 - **Go here if**: You want to see a running application using SDD Modeler.
 
 ## 🤝 Contributing

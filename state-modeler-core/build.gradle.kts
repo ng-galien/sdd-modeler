@@ -1,5 +1,63 @@
 plugins {
+    `java-library`
+    alias(libs.plugins.spotless)
     `maven-publish`
+    jacoco
+}
+
+group = "io.statemodeler"
+version = "0.1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+}
+
+val palantirJavaFormatVersion = libs.versions.palantir.java.format.get()
+val jacocoVersion = libs.versions.jacoco.get()
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+    finalizedBy(tasks.withType<JacocoReport>())
+    systemProperty("java.awt.headless", "true")
+}
+
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    java {
+        palantirJavaFormat(palantirJavaFormatVersion)
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+        formatAnnotations()
+    }
+    
+    flexmark {
+        target("*.md", "**/*.md")
+        flexmark()
+        endWithNewline()
+    }
+}
+
+jacoco {
+    toolVersion = jacocoVersion
+}
+
+tasks.withType<JacocoReport> {
+    dependsOn(tasks.withType<Test>())
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")).include("**/*.exec"))
 }
 
 dependencies {

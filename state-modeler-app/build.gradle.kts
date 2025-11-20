@@ -34,7 +34,7 @@ dependencies {
     annotationProcessor(libs.lombok)
     
     // Depend on core module
-    implementation(project(":state-modeler-core"))
+    implementation("io.statemodeler:state-modeler-core")
     
     // Vavr for functional programming (needed for Try<T> from core)
     implementation(libs.vavr)

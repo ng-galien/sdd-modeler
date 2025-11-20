@@ -17,9 +17,9 @@ public sealed interface {{ entity.className }}State {
      */
     @Table("{{ entity.table }}")
     record {{ state.className }}(
-        @Id {{ entity.className }}Id {{ entity.id.name }}{% if not state.attributes.isEmpty() %}, {% endif %}
+        @Id {{ entity.className }}Id {{ entity.id.propertyName }}{% if not state.attributes.isEmpty() %}, {% endif %}
         {% for attribute in state.attributes %}
-        {{ attribute.javaType }} {{ attribute.name }}{% if not loop.last %}, {% endif %}
+        {{ attribute.javaType }} {{ attribute.propertyName }}{% if not loop.last %}, {% endif %}
         {% endfor %}
     ) implements {{ entity.className }}State {}
     {% endfor %}

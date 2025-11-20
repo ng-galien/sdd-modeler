@@ -22,9 +22,11 @@ dependencies {
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.module.jackson)
     implementation(libs.victools.jsonschema.module.jakarta.validation)
-
+    
     // Pebble template engine for code generation
     implementation(libs.pebble)
+    // Apache Commons Text for robust case conversions in code generation
+    implementation(libs.commons.text)
 
     // Test dependencies for core functionality
     testImplementation(libs.junit.jupiter)

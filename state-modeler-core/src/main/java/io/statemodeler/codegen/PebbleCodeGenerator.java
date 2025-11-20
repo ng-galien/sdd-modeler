@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.text.CaseUtils;
 
 /**
  * Pebble-based code generator implementation. Uses templates stored under
@@ -257,6 +258,7 @@ public class PebbleCodeGenerator implements CodeGenerator {
         ctx.put("table", entity.table() != null ? entity.table() : entity.name());
         Map<String, Object> idCtx = new HashMap<>();
         idCtx.put("name", entity.id().name());
+        idCtx.put("propertyName", toCamel(entity.id().name()));
         idCtx.put("className", className + "Id");
         ctx.put("id", idCtx);
 
@@ -288,6 +290,7 @@ public class PebbleCodeGenerator implements CodeGenerator {
         for (var attr : state.attributes().values()) {
             Map<String, Object> attrCtx = new HashMap<>();
             attrCtx.put("name", attr.name());
+            attrCtx.put("propertyName", toCamel(attr.name()));
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
             if (mapped.importName() != null) imports.add(mapped.importName());
@@ -353,6 +356,16 @@ public class PebbleCodeGenerator implements CodeGenerator {
 
     private String toPascal(String s) {
         if (s == null || s.isEmpty()) return s;
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
+        return CaseUtils.toCamelCase(normalizeCaseInput(s), true, '_', '-', ' ', '.');
+    }
+
+    private String toCamel(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return CaseUtils.toCamelCase(normalizeCaseInput(s), false, '_', '-', ' ', '.');
+    }
+
+    private String normalizeCaseInput(String s) {
+        // Normalize existing camel/pascal case boundaries so CaseUtils keeps word breaks
+        return s.replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_");
     }
 }

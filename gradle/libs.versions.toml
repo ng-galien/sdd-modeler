@@ -21,6 +21,7 @@ postgresql = "42.7.4"
 victools-jsonschema-generator = "4.38.0"
 victools-jsonschema-module-jackson = "4.28.0"
 pebble = "3.2.3"
+commons-text = "1.12.0"
 
 [libraries]
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
@@ -53,6 +54,7 @@ testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

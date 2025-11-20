@@ -19,9 +19,9 @@ entities:
         from_any_of: []
         attributes:
           username:
-            type: "String"
+            type: "TEXT"
           email:
-            type: "String"
+            type: "TEXT"
       inactive:
         table: "users_inactive"
         from: ["active"]

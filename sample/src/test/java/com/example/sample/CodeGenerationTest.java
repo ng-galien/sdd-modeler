@@ -2,7 +2,6 @@ package com.example.sample;
 
 import io.statemodeler.codegen.CodeGenerators;
 import io.statemodeler.dsl.YamlModelLoader;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;

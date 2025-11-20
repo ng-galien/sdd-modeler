@@ -1,3 +1,7 @@
+plugins {
+    `maven-publish`
+}
+
 dependencies {
     // Lombok for reducing boilerplate
     compileOnly(libs.lombok)
@@ -57,4 +61,12 @@ val generateJsonSchema by tasks.registering(JavaExec::class) {
 // Generate schema as part of the build process, but after main compilation
 tasks.build {
     dependsOn(generateJsonSchema)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
+    }
 }

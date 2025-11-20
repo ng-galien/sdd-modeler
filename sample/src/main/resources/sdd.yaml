@@ -1,0 +1,31 @@
+version: "1.0"
+name: "sample"
+database:
+  dialect: "postgres"
+  schema: "public"
+  generator_options:
+    packageName: "com.example.sample.domain"
+entities:
+  User:
+    table: "users"
+    id:
+      name: "id"
+      type: "uuid"
+    states:
+      active:
+        table: "users_active"
+        initial: true
+        from: []
+        from_any_of: []
+        attributes:
+          username:
+            type: "String"
+          email:
+            type: "String"
+      inactive:
+        table: "users_inactive"
+        from: ["active"]
+        from_any_of: []
+        attributes:
+          reason:
+            type: "String"

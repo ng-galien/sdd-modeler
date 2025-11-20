@@ -1,21 +1,26 @@
 package {{ options.packageName | default('com.example') }};
 
-import java.util.UUID;
-import java.time.Instant;
+{% if imports is defined %}{% for imp in imports %}import {{ imp }};
+{% endfor %}{% endif %}
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
 /**
  * Generated ADT for {{ entity.name }} states.
  */
-public sealed interface {{ entity.name }}State {
+public sealed interface {{ entity.className }}State {
 
-    {% for state in entity.states.values() %}
+    {% for state in entity.states %}
     /**
      * State: {{ state.name }}
      */
-    record {{ state.name }}(
-        {% for attribute in state.attributes.values() %}
-        {{ attribute.type }} {{ attribute.name }}{% if not loop.last %}, {% endif %}
+    @Table("{{ entity.table }}")
+    record {{ state.className }}(
+        @Id {{ entity.className }}Id {{ entity.id.name }}{% if not state.attributes.isEmpty() %}, {% endif %}
+        {% for attribute in state.attributes %}
+        {{ attribute.javaType }} {{ attribute.name }}{% if not loop.last %}, {% endif %}
         {% endfor %}
-    ) implements {{ entity.name }}State {}
+    ) implements {{ entity.className }}State {}
     {% endfor %}
 }

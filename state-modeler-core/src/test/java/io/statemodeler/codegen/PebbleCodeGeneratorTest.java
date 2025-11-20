@@ -28,5 +28,31 @@ class PebbleCodeGeneratorTest {
         var content = generated.get(filename);
         assertTrue(content.contains("interface OrderState"));
         assertTrue(content.contains("record pending("));
+
+        var repoFilename = "com/example/pendingRepository.java";
+        assertTrue(generated.containsKey(repoFilename), "Expected generated repository: " + repoFilename);
+        var repoContent = generated.get(repoFilename);
+        assertTrue(
+                repoContent.contains("interface pendingRepository extends CrudRepository<OrderState.pending, UUID>"));
+
+        // Verify ID generation
+        var idFilename = "com/example/OrderId.java";
+        assertTrue(generated.containsKey(idFilename), "Expected generated ID: " + idFilename);
+        assertTrue(generated.get(idFilename).contains("public record OrderId(UUID value)"));
+
+        // Verify Converters generation
+        var convertersFilename = "com/example/OrderConverters.java";
+        assertTrue(generated.containsKey(convertersFilename), "Expected generated Converters: " + convertersFilename);
+        assertTrue(generated.get(convertersFilename).contains("class UuidToOrderIdConverter"));
+        assertTrue(generated.get(convertersFilename).contains("class OrderIdToUuidConverter"));
+
+        // Verify Config generation
+        var configFilename = "com/example/SddConfig.java";
+        assertTrue(generated.containsKey(configFilename), "Expected generated Config: " + configFilename);
+        assertTrue(generated.get(configFilename).contains("new OrderConverters.UuidToOrderIdConverter()"));
+
+        // Verify Entity annotations
+        assertTrue(content.contains("@Table(\"orders\")"));
+        assertTrue(content.contains("@Id OrderId id"));
     }
 }

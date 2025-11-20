@@ -179,7 +179,8 @@ public class RegisterCommand implements Callable<Integer> {
             if (Files.exists(scriptsFolder)) {
                 try (var stream = java.nio.file.Files.walk(scriptsFolder)) {
                     var fileName = requested.getFileName().toString();
-                    var found = stream.filter(p -> p.getFileName().toString().equals(fileName)).findFirst();
+                    var found = stream.filter(p -> p.getFileName().toString().equals(fileName))
+                            .findFirst();
                     if (found.isPresent()) {
                         var f = found.get();
                         spec.commandLine().getOut().println("  Resolved model path to: " + f);

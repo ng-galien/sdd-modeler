@@ -16,7 +16,7 @@ dependencies {
     implementation(libs.jackson.module.parameter.names)
     
     // Vavr for functional programming and enhanced error handling
-    implementation(libs.vavr)
+    api(libs.vavr)
     
     // JSON Schema generation for IDE support (victools)
     implementation(libs.victools.jsonschema.generator)

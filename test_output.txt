@@ -1,0 +1,231 @@
+Initialized native services in: /Users/alexandreboyer/.gradle/native
+Initialized jansi services in: /Users/alexandreboyer/.gradle/native
+Received JVM installation metadata from '/Users/alexandreboyer/.sdkman/candidates/java/21.0.2-graalce': {JAVA_HOME=/Users/alexandreboyer/.sdkman/candidates/java/21.0.2-graalce, JAVA_VERSION=21.0.2, JAVA_VENDOR=GraalVM Community, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.2+13-jvmci-23.1-b30, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.2+13-jvmci-23.1-b30, VM_VENDOR=GraalVM Community, OS_ARCH=aarch64}
+Found daemon DaemonInfo{pid=93696, address=[fea375ee-52e8-4240-9415-16adc9e6beae port:58421, addresses:[/127.0.0.1]], state=Idle, lastBusy=1763595551749, context=DefaultDaemonContext[uid=a3e99750-af4d-414a-8ed0-1d457ecfabdb,javaHome=/Users/alexandreboyer/.antigravity/extensions/redhat.java-1.49.0-darwin-arm64/jre/21.0.9-macosx-aarch64,daemonRegistryDir=/Users/alexandreboyer/.gradle/daemon,pid=93696,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,daemonOpts=--add-opens=java.base/java.util=ALL-UNNAMED,--add-opens=java.base/java.lang=ALL-UNNAMED,--add-opens=java.base/java.lang.invoke=ALL-UNNAMED,--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED,--add-opens=java.base/java.nio.charset=ALL-UNNAMED,--add-opens=java.base/java.net=ALL-UNNAMED,--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED,-XX:MaxMetaspaceSize=384m,-XX:+HeapDumpOnOutOfMemoryError,-Xms256m,-Xmx512m,-Dfile.encoding=UTF-8,-Duser.country=FR,-Duser.language=fr,-Duser.variant]} however its context does not match the desired criteria.
+Java home is different.
+Wanted: DefaultDaemonContext[uid=null,javaHome=/Users/alexandreboyer/.sdkman/candidates/java/21.0.2-graalce,daemonRegistryDir=/Users/alexandreboyer/.gradle/daemon,pid=94330,idleTimeout=null,priority=NORMAL,applyInstrumentationAgent=true,daemonOpts=--add-opens=java.base/java.util=ALL-UNNAMED,--add-opens=java.base/java.lang=ALL-UNNAMED,--add-opens=java.base/java.lang.invoke=ALL-UNNAMED,--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED,--add-opens=java.base/java.nio.charset=ALL-UNNAMED,--add-opens=java.base/java.net=ALL-UNNAMED,--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED,-XX:MaxMetaspaceSize=384m,-XX:+HeapDumpOnOutOfMemoryError,-Xms256m,-Xmx512m,-Dfile.encoding=UTF-8,-Duser.country=FR,-Duser.language=fr,-Duser.variant]
+Actual: DefaultDaemonContext[uid=a3e99750-af4d-414a-8ed0-1d457ecfabdb,javaHome=/Users/alexandreboyer/.antigravity/extensions/redhat.java-1.49.0-darwin-arm64/jre/21.0.9-macosx-aarch64,daemonRegistryDir=/Users/alexandreboyer/.gradle/daemon,pid=93696,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,daemonOpts=--add-opens=java.base/java.util=ALL-UNNAMED,--add-opens=java.base/java.lang=ALL-UNNAMED,--add-opens=java.base/java.lang.invoke=ALL-UNNAMED,--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED,--add-opens=java.base/java.nio.charset=ALL-UNNAMED,--add-opens=java.base/java.net=ALL-UNNAMED,--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED,-XX:MaxMetaspaceSize=384m,-XX:+HeapDumpOnOutOfMemoryError,-Xms256m,-Xmx512m,-Dfile.encoding=UTF-8,-Duser.country=FR,-Duser.language=fr,-Duser.variant]
+
+  Looking for a different daemon...
+The client will now receive all logging from the daemon (pid: 93357). The daemon log file: /Users/alexandreboyer/.gradle/daemon/8.5/daemon-93357.out.log
+Starting 7th build in daemon [uptime: 3 mins 6.585 secs, performance: 99%, GC rate: 0.00/s, heap usage: 4% of 512 MiB, non-heap usage: 45% of 384 MiB]
+Using 10 worker leases.
+Now considering [/Users/alexandreboyer/dev/sdd/sdd-modeler] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file '/Users/alexandreboyer/dev/sdd/sdd-modeler/settings.gradle.kts'.
+Skipping generation of dependency accessors for libs as it is up-to-date.
+Projects loaded. Root project using build file '/Users/alexandreboyer/dev/sdd/sdd-modeler/build.gradle.kts'.
+Included projects: [root project 'sdd-modeler', project ':sample', project ':state-modeler-app', project ':state-modeler-core']
+
+> Configure project :
+Evaluating root project 'sdd-modeler' using build file '/Users/alexandreboyer/dev/sdd/sdd-modeler/build.gradle.kts'.
+Caching disabled for Kotlin DSL accessors for root project 'sdd-modeler' because:
+  Build cache is disabled
+Skipping Kotlin DSL accessors for root project 'sdd-modeler' as it is up-to-date.
+
+> Configure project :sample
+Evaluating project ':sample' using build file '/Users/alexandreboyer/dev/sdd/sdd-modeler/sample/build.gradle.kts'.
+Applying dependency management to configuration 'annotationProcessor' in project 'sample'
+Applying dependency management to configuration 'api' in project 'sample'
+Applying dependency management to configuration 'apiElements' in project 'sample'
+Applying dependency management to configuration 'archives' in project 'sample'
+Applying dependency management to configuration 'bootArchives' in project 'sample'
+Applying dependency management to configuration 'compileClasspath' in project 'sample'
+Applying dependency management to configuration 'compileOnly' in project 'sample'
+Applying dependency management to configuration 'compileOnlyApi' in project 'sample'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'sample'
+Applying dependency management to configuration 'default' in project 'sample'
+Applying dependency management to configuration 'developmentOnly' in project 'sample'
+Applying dependency management to configuration 'implementation' in project 'sample'
+Applying dependency management to configuration 'jacocoAgent' in project 'sample'
+Applying dependency management to configuration 'jacocoAnt' in project 'sample'
+Applying dependency management to configuration 'mainSourceElements' in project 'sample'
+Applying dependency management to configuration 'productionRuntimeClasspath' in project 'sample'
+Applying dependency management to configuration 'runtimeClasspath' in project 'sample'
+Applying dependency management to configuration 'runtimeElements' in project 'sample'
+Applying dependency management to configuration 'runtimeOnly' in project 'sample'
+Applying dependency management to configuration 'testAndDevelopmentOnly' in project 'sample'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'sample'
+Applying dependency management to configuration 'testCompileClasspath' in project 'sample'
+Applying dependency management to configuration 'testCompileOnly' in project 'sample'
+Applying dependency management to configuration 'testImplementation' in project 'sample'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'sample'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'sample'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'sample'
+Caching disabled for Kotlin DSL accessors for project ':sample' because:
+  Build cache is disabled
+Skipping Kotlin DSL accessors for project ':sample' as it is up-to-date.
+
+> Configure project :state-modeler-app
+Evaluating project ':state-modeler-app' using build file '/Users/alexandreboyer/dev/sdd/sdd-modeler/state-modeler-app/build.gradle.kts'.
+[native-image-plugin] ====================
+[native-image-plugin] Initializing project: state-modeler-app
+[native-image-plugin] ====================
+Caching disabled for Kotlin DSL accessors for project ':state-modeler-app' because:
+  Build cache is disabled
+Skipping Kotlin DSL accessors for project ':state-modeler-app' as it is up-to-date.
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/alexandreboyer/.gradle/daemon/8.5 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+[native-image-plugin] Not instrumenting task with native-image-agent: compileTestJava. Reason: Task does not match user predicate
+[native-image-plugin] Not instrumenting task with native-image-agent: jacocoTestReport. Reason: Task does not match user predicate
+
+> Configure project :state-modeler-core
+Evaluating project ':state-modeler-core' using build file '/Users/alexandreboyer/dev/sdd/sdd-modeler/state-modeler-core/build.gradle.kts'.
+Caching disabled for Kotlin DSL accessors for project ':state-modeler-core' because:
+  Build cache is disabled
+Skipping Kotlin DSL accessors for project ':state-modeler-core' as it is up-to-date.
+All projects evaluated.
+Task path ':sample:test' matched project ':sample'
+Task name matched 'test'
+Selected primary task 'test' from project :sample
+Tasks to be executed: [task ':state-modeler-core:compileJava', task ':sample:compileJava', task ':sample:processResources', task ':sample:classes', task ':sample:compileTestJava', task ':sample:processTestResources', task ':sample:testClasses', task ':state-modeler-core:processResources', task ':state-modeler-core:classes', task ':state-modeler-core:jar', task ':sample:test', task ':sample:jacocoTestReport']
+Tasks that were excluded: []
+[native-image-plugin] Not instrumenting task with native-image-agent: clean. Reason: Task does not match user predicate
+Resolve mutations for :state-modeler-core:compileJava (Thread[#937,Execution worker,5,main]) started.
+:state-modeler-core:compileJava (Thread[#937,Execution worker,5,main]) started.
+
+> Task :state-modeler-core:compileJava UP-TO-DATE
+Caching disabled for task ':state-modeler-core:compileJava' because:
+  Build cache is disabled
+Skipping task ':state-modeler-core:compileJava' as it is up-to-date.
+No compile result for :state-modeler-core:compileJava
+work action resolve main (project :state-modeler-core) (Thread[#937,Execution worker,5,main]) started.
+Resolve mutations for :sample:compileJava (Thread[#937,Execution worker,5,main]) started.
+:sample:compileJava (Thread[#937,Execution worker,5,main]) started.
+
+> Task :sample:compileJava UP-TO-DATE
+Resolving global dependency management for project 'sample'
+Excluding []
+Excluding []
+Caching disabled for task ':sample:compileJava' because:
+  Build cache is disabled
+Skipping task ':sample:compileJava' as it is up-to-date.
+No compile result for :sample:compileJava
+Resolve mutations for :sample:processResources (Thread[#937,Execution worker,5,main]) started.
+:sample:processResources (Thread[#937,Execution worker,5,main]) started.
+
+> Task :sample:processResources UP-TO-DATE
+Caching disabled for task ':sample:processResources' because:
+  Build cache is disabled
+Skipping task ':sample:processResources' as it is up-to-date.
+Resolve mutations for :sample:classes (Thread[#937,Execution worker,5,main]) started.
+:sample:classes (Thread[#937,Execution worker,5,main]) started.
+
+> Task :sample:classes UP-TO-DATE
+Skipping task ':sample:classes' as it has no actions.
+Resolve mutations for :sample:compileTestJava (Thread[#937,Execution worker,5,main]) started.
+:sample:compileTestJava (Thread[#937,Execution worker,5,main]) started.
+
+> Task :sample:compileTestJava UP-TO-DATE
+Excluding []
+Excluding []
+Caching disabled for task ':sample:compileTestJava' because:
+  Build cache is disabled
+Skipping task ':sample:compileTestJava' as it is up-to-date.
+No compile result for :sample:compileTestJava
+Resolve mutations for :sample:processTestResources (Thread[#937,Execution worker,5,main]) started.
+:sample:processTestResources (Thread[#937,Execution worker,5,main]) started.
+
+> Task :sample:processTestResources NO-SOURCE
+Skipping task ':sample:processTestResources' as it has no source files and no previous output files.
+Resolve mutations for :sample:testClasses (Thread[#937,Execution worker,5,main]) started.
+:sample:testClasses (Thread[#937,Execution worker,5,main]) started.
+
+> Task :sample:testClasses UP-TO-DATE
+Skipping task ':sample:testClasses' as it has no actions.
+Resolve mutations for :state-modeler-core:processResources (Thread[#937,Execution worker,5,main]) started.
+:state-modeler-core:processResources (Thread[#937,Execution worker,5,main]) started.
+
+> Task :state-modeler-core:processResources UP-TO-DATE
+Caching disabled for task ':state-modeler-core:processResources' because:
+  Build cache is disabled
+Skipping task ':state-modeler-core:processResources' as it is up-to-date.
+Resolve mutations for :state-modeler-core:classes (Thread[#937,Execution worker,5,main]) started.
+:state-modeler-core:classes (Thread[#937,Execution worker,5,main]) started.
+
+> Task :state-modeler-core:classes UP-TO-DATE
+Skipping task ':state-modeler-core:classes' as it has no actions.
+Resolve mutations for :state-modeler-core:jar (Thread[#937,Execution worker,5,main]) started.
+:state-modeler-core:jar (Thread[#937,Execution worker,5,main]) started.
+
+> Task :state-modeler-core:jar UP-TO-DATE
+Caching disabled for task ':state-modeler-core:jar' because:
+  Build cache is disabled
+Skipping task ':state-modeler-core:jar' as it is up-to-date.
+work action resolve state-modeler-core.jar (project :state-modeler-core) (Thread[#937,Execution worker,5,main]) started.
+Resolve mutations for :sample:test (Thread[#937,Execution worker,5,main]) started.
+:sample:test (Thread[#937,Execution worker,5,main]) started.
+Gradle Test Executor 5 started executing tests.
+Gradle Test Executor 5 finished executing tests.
+
+> Task :sample:test FAILED
+Excluding []
+Excluding []
+Caching disabled for task ':sample:test' because:
+  Build cache is disabled
+Task ':sample:test' is not up-to-date because:
+  Task has failed previously.
+Starting process 'Gradle Test Executor 5'. Working directory: /Users/alexandreboyer/dev/sdd/sdd-modeler/sample Command: /Users/alexandreboyer/.sdkman/candidates/java/21.0.2-graalce/bin/java -Djava.awt.headless=true -Dorg.gradle.internal.worker.tmpdir=/Users/alexandreboyer/dev/sdd/sdd-modeler/sample/build/tmp/test/work -Dorg.gradle.native=false -javaagent:/Users/alexandreboyer/dev/sdd/sdd-modeler/sample/build/tmp/.cache/expanded/zip_ff7bf8f04f99dc306508d1c81e47a68b/jacocoagent.jar=destfile=build/jacoco/test.exec,append=true,inclnolocationclasses=false,dumponexit=true,output=file,jmx=false @/Users/alexandreboyer/.gradle/.tmp/gradle-worker-classpath10026907338002623577txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=FR -Duser.language=fr -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 5'
+Successfully started process 'Gradle Test Executor 5'
+
+CodeGenerationTest > generateCode() FAILED
+    java.lang.IllegalArgumentException: table cannot be null
+        at io.statemodeler.core.StateDef.<init>(StateDef.java:28)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.convertState(YamlModelConverter.java:101)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.lambda$convertStates$2(YamlModelConverter.java:92)
+        at java.base/java.util.stream.Collectors.lambda$uniqKeysMapAccumulator$1(Collectors.java:180)
+        at java.base/java.util.stream.ReduceOps$3ReducingSink.accept(ReduceOps.java:169)
+        at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+        at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+        at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+        at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+        at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921)
+        at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+        at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.convertStates(YamlModelConverter.java:92)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.convertEntity(YamlModelConverter.java:53)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.lambda$convertEntities$0(YamlModelConverter.java:47)
+        at java.base/java.util.stream.Collectors.lambda$uniqKeysMapAccumulator$1(Collectors.java:180)
+        at java.base/java.util.stream.ReduceOps$3ReducingSink.accept(ReduceOps.java:169)
+        at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+        at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+        at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+        at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+        at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:921)
+        at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+        at java.base/java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:682)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.convertEntities(YamlModelConverter.java:47)
+        at io.statemodeler.dsl.yaml.YamlModelConverter.convert(YamlModelConverter.java:28)
+        at io.statemodeler.dsl.YamlModelLoader.lambda$loadFromString$ceae3dfb$1(YamlModelLoader.java:74)
+        at io.vavr.control.Try.of(Try.java:74)
+        at io.statemodeler.dsl.YamlModelLoader.loadFromString(YamlModelLoader.java:68)
+        at io.statemodeler.dsl.YamlModelLoader.lambda$loadFromFile$982e561f$1(YamlModelLoader.java:50)
+        at io.vavr.control.Try.of(Try.java:74)
+        at io.statemodeler.dsl.YamlModelLoader.loadFromFile(YamlModelLoader.java:40)
+        at com.example.sample.CodeGenerationTest.generateCode(CodeGenerationTest.java:17)
+
+1 test completed, 1 failed
+Finished generating test XML results (0.002 secs) into: /Users/alexandreboyer/dev/sdd/sdd-modeler/sample/build/test-results/test
+Generating HTML test report...
+Finished generating test html results (0.002 secs) into: /Users/alexandreboyer/dev/sdd/sdd-modeler/sample/build/reports/tests/test
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':sample:test'.
+> There were failing tests. See the report at: file:///Users/alexandreboyer/dev/sdd/sdd-modeler/sample/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.5/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1s
+7 actionable tasks: 1 executed, 6 up-to-date
+Watched directory hierarchies: [/Users/alexandreboyer/dev/sdd/sdd-modeler]

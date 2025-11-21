@@ -84,16 +84,8 @@ class PebbleCodeGeneratorTest {
                 assertTrue(dtoContent.contains("OrderItemId id"));
                 assertTrue(dtoContent.contains("Instant createdAt"));
 
-                // Verify Controller generation
-                var controllerFilename = "com/example/OrderItemController.java";
-                assertTrue(generated.containsKey(controllerFilename),
-                                "Expected generated Controller: " + controllerFilename);
-                var controllerContent = generated.get(controllerFilename);
-                assertTrue(controllerContent.contains("@RestController"));
-                assertTrue(controllerContent.contains("@RequestMapping(\"/api/order_items\")"));
-                assertTrue(controllerContent.contains("public class OrderItemController"));
-                assertTrue(controllerContent
-                                .contains("public ResponseEntity<OrderItemDto> get(@PathVariable OrderItemId id)"));
+                // Note: Controller is not generated for entities with states
+                // (they don't have a unified repository)
 
                 // Verify Service generation
                 var serviceFilename = "com/example/OrderItemService.java";

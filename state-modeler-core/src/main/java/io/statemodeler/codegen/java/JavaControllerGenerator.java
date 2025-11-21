@@ -24,6 +24,11 @@ public class JavaControllerGenerator {
     public Map<String, String> generate(SddModel model) {
         Map<String, String> generatedFiles = new HashMap<>();
         for (EntityDef entity : model.entities().values()) {
+            // Skip controller generation for entities with states
+            // (they don't have a unified repository)
+            if (entity.states() != null && !entity.states().isEmpty()) {
+                continue;
+            }
             String content = generateController(entity, model);
             String filename = resolveControllerFilename(entity, model);
             generatedFiles.put(filename, content);

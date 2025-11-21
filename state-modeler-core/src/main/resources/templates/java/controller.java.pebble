@@ -20,7 +20,7 @@ public class {{ entity.className }}Controller {
     public ResponseEntity<{{ entity.className }}Dto> get(@PathVariable {{ entity.id.className }} id) {
         return repository.findById(id)
             .map(entity -> new {{ entity.className }}Dto(
-                entity.{{ entity.id.propertyName }}(),
+                entity.{{ entity.id.propertyName }}(){% if entity.attributes is not empty %},{% endif %}
                 {% for attr in entity.attributes %}
                 entity.{{ attr.propertyName }}(){{ loop.last ? "" : "," }}
                 {% endfor %}

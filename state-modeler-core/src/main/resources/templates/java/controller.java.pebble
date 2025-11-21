@@ -1,0 +1,31 @@
+package {{ options.packageName }};
+
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+{% for import in imports %}
+import {{ import }};
+{% endfor %}
+
+@RestController
+@RequestMapping("/api/{{ entity.name | lower }}s")
+public class {{ entity.className }}Controller {
+
+    private final {{ entity.className }}Repository repository;
+
+    public {{ entity.className }}Controller({{ entity.className }}Repository repository) {
+        this.repository = repository;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<{{ entity.className }}Dto> get(@PathVariable {{ entity.id.className }} id) {
+        return repository.findById(id)
+            .map(entity -> new {{ entity.className }}Dto(
+                entity.{{ entity.id.propertyName }}(),
+                {% for attr in entity.attributes %}
+                entity.{{ attr.propertyName }}(){{ loop.last ? "" : "," }}
+                {% endfor %}
+            ))
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+}

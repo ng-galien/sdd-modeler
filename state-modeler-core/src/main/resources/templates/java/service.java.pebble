@@ -1,0 +1,75 @@
+package {{ options.packageName }};
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.Optional;
+{% for import in imports %}
+import {{ import }};
+{% endfor %}
+
+@Service
+public class {{ entity.className }}Service {
+
+    {% for state in entity.states %}
+    private final {{ state.className }}Repository {{ state.propertyName }}Repository;
+    {% endfor %}
+
+    public {{ entity.className }}Service(
+        {% for state in entity.states %}
+        {{ state.className }}Repository {{ state.propertyName }}Repository{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ) {
+        {% for state in entity.states %}
+        this.{{ state.propertyName }}Repository = {{ state.propertyName }}Repository;
+        {% endfor %}
+    }
+
+    {% for state in entity.states %}
+    {% if not state.from.isEmpty() %}
+    public record TransitionTo{{ state.className }}Command(
+        {% for attr in state.attributes %}
+        {{ attr.javaType }} {{ attr.propertyName }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ) {
+        public TransitionTo{{ state.className }}Command {
+            {% for attr in state.attributes %}
+            {% if not attr.nullable %}
+            java.util.Objects.requireNonNull({{ attr.propertyName }}, "{{ attr.propertyName }} cannot be null");
+            {% endif %}
+            {% endfor %}
+        }
+    }
+
+    @Transactional
+    public {{ entity.className }}Dto transitionTo{{ state.className }}({{ entity.id.className }} id, TransitionTo{{ state.className }}Command command) {
+        // Find current state
+        {% for source in state.from %}
+        Optional<{{ entity.className }}State.{{ source.className }}> source{{ loop.index }} = {{ source.propertyName }}Repository.findById(id);
+        if (source{{ loop.index }}.isPresent()) {
+            {{ source.propertyName }}Repository.delete(source{{ loop.index }}.get());
+        } else 
+        {% endfor %}
+        {
+            throw new IllegalStateException("Entity " + id + " is not in a valid state to transition to {{ state.name }}");
+        }
+
+        // Create new state
+        var newState = new {{ entity.className }}State.{{ state.className }}(
+            id
+            {% for attr in state.attributes %}
+            , command.{{ attr.propertyName }}()
+            {% endfor %}
+        );
+        {{ state.propertyName }}Repository.save(newState);
+
+        // Return DTO (Note: Stable attributes are not available in State record, passing nulls/defaults)
+        return new {{ entity.className }}Dto(
+            id
+            {% for attr in entity.attributes %}
+            , null // TODO: Fetch stable attribute {{ attr.name }}
+            {% endfor %}
+        );
+    }
+    {% endif %}
+    {% endfor %}
+}

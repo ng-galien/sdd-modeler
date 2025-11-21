@@ -1,0 +1,13 @@
+package {{ options.packageName }};
+
+{% for import in imports %}
+import {{ import }};
+{% endfor %}
+
+public record {{ entity.className }}Dto(
+    {{ entity.id.className }} {{ entity.id.propertyName }}
+    {% for attr in entity.attributes %}
+    , {{ attr.javaType }} {{ attr.propertyName }}
+    {% endfor %}
+) {
+}

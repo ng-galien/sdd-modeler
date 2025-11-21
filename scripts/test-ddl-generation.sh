@@ -23,7 +23,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPTS_EXAMPLES_DIR="$PROJECT_ROOT/scripts/examples"
 TEST_EXAMPLES_DIR="$PROJECT_ROOT/state-modeler-app/src/test/resources/examples"
-EXAMPLES_DIR="$SCRIPTS_EXAMPLES_DIR"
+EXAMPLES_DIR="$TEST_EXAMPLES_DIR"  # Use the test examples by default to ensure models include projections and provide richer tests
+
+# remove duplicated assignment - EXAMPLES_DIR already set above
 
 # CLI flags handled by tests/users: --examples-doc to pick instructions examples, --examples-test to pick test resources
 USE_DOC_EXAMPLES=false
@@ -113,8 +115,18 @@ for check in "${CHECKS[@]}"; do
     if grep -qE "$pattern" "$OUTPUT_DIR/generated-v1.sql"; then
         echo -e "${GREEN}  ✓ $description${NC}"
     else
-        echo -e "${RED}  ✗ Missing: $description${NC}"
-        FAILED_CHECKS=$((FAILED_CHECKS + 1))
+        # If the missing check is for projection views, only fail if the source model actually declares projections.
+        if [ "$description" = "Projection views" ]; then
+            if grep -qE '^\s*projections:' "$MODEL_V1"; then
+                echo -e "${RED}  ✗ Missing: $description (model declares projections)${NC}"
+                FAILED_CHECKS=$((FAILED_CHECKS + 1))
+            else
+                echo -e "${YELLOW}  ⚠ Skipping: $description (model does not declare projections)${NC}"
+            fi
+        else
+            echo -e "${RED}  ✗ Missing: $description${NC}"
+            FAILED_CHECKS=$((FAILED_CHECKS + 1))
+        fi
     fi
 done
 

@@ -51,6 +51,24 @@ DB_PORT="${POSTGRES_PORT:-5432}"
 DOCKER_CONTAINER_NAME="sdd-test-postgres-$$"
 USE_DOCKER=false
 
+# Early, minimal cleanup to remove any leftover Docker containers with our container name when the
+# script exits early (e.g. before the main cleanup function is set). This avoids blocking future
+# runs when Docker containers are left behind.
+cleanup_docker_only() {
+    # Only try to remove containers if docker exists and we intended to use it
+    if [ "$USE_DOCKER" = true ] && command -v docker &> /dev/null; then
+        # Find containers matching our expected name
+        ids=$(docker ps -a -q --filter "name=$DOCKER_CONTAINER_NAME") || true
+        if [ -n "$ids" ]; then
+            echo -e "${YELLOW}⚠ Removing leftover Docker containers: $ids${NC}"
+            docker rm -f $ids > /dev/null 2>&1 || true
+        fi
+    fi
+}
+
+# Ensure early cleanup runs even if the script fails before the full cleanup is defined
+trap cleanup_docker_only EXIT
+
 # Test model
 MODEL_FILE="$EXAMPLES_DIR/orders-sdd-model.yaml"
 DDL_FILE="$OUTPUT_DIR/functional-test.sql"
@@ -161,6 +179,10 @@ exec_sql() {
     fi
 }
 
+# The full cleanup function is defined later in the script to drop the test database and stop
+# the Docker container if required. It will call cleanup_docker_only to ensure any containers are
+# removed even if they were created earlier.
+
 # Helper function to add to report
 report_section() {
     echo -e "\n## $1\n" >> "$REPORT_FILE"
@@ -242,15 +264,19 @@ echo -e "${GREEN}✓ Test database created: $DB_NAME${NC}"
 
 # Cleanup function
 cleanup() {
+    # Ensure leftover containers are always removed as well (robustness)
+    cleanup_docker_only || true
     echo -e "\n${YELLOW}🧹 Cleaning up...${NC}"
-    exec_sql -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1
+    # ignore errors from dropping DB as it may not be reachable during cleanup
+    exec_sql -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1 || true
     echo -e "${GREEN}✓ Test database dropped${NC}"
     
     # Stop and remove Docker container if we started it
     if [ "$USE_DOCKER" = true ]; then
         echo -e "${YELLOW}  Stopping Docker container...${NC}"
-        docker stop "$DOCKER_CONTAINER_NAME" > /dev/null 2>&1
-        docker rm "$DOCKER_CONTAINER_NAME" > /dev/null 2>&1
+        # stop/remove may fail if container already gone; ignore errors
+        docker stop "$DOCKER_CONTAINER_NAME" > /dev/null 2>&1 || true
+        docker rm "$DOCKER_CONTAINER_NAME" > /dev/null 2>&1 || true
         echo -e "${GREEN}✓ Docker container removed${NC}"
     fi
 }

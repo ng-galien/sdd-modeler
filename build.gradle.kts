@@ -98,11 +98,17 @@ subprojects {
 // Versions are now managed in gradle/libs.versions.toml
 
 // Task to copy schema from core resources to project root for GitHub distribution
+val coreProject = findProject(":state-modeler-core")
+// If core is an included build instead of a subproject then the task path
+// `:state-modeler-core:generateJsonSchema` isn't available; configure dependsOn
+// only when the core project is present in this build.
 tasks.register<Copy>("distributeSchema") {
     group = "distribution"
     description = "Copies the generated JSON Schema from core module to project root for GitHub distribution"
     
-    dependsOn(":state-modeler-core:generateJsonSchema")
+    if (coreProject != null) {
+        dependsOn(":state-modeler-core:generateJsonSchema")
+    }
     from("state-modeler-core/src/main/resources/sdd-model-schema.json")
     into(projectDir)
     
@@ -118,7 +124,13 @@ tasks.register<JacocoReport>("jacocoAggregatedReport") {
     description = "Generates an aggregated JaCoCo coverage report for all modules"
     
     dependsOn(subprojects.map { it.tasks.withType<Test>() })
-    mustRunAfter(":state-modeler-core:generateJsonSchema")
+    // Only enforce ordering if the core project exists in this build. When the core
+    // is part of a composite (included) build, the generateJsonSchema task is not
+    // visible via the project path `:state-modeler-core:generateJsonSchema` and would
+    // cause a configuration-time error.
+    if (coreProject != null) {
+        mustRunAfter(":state-modeler-core:generateJsonSchema")
+    }
     
     sourceDirectories.setFrom(subprojects.flatMap { project ->
         project.the<SourceSetContainer>()["main"].allJava.srcDirs

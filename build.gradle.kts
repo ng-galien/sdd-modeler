@@ -97,28 +97,10 @@ subprojects {
 // Version catalog for shared dependencies
 // Versions are now managed in gradle/libs.versions.toml
 
-// Task to copy schema from core resources to project root for GitHub distribution
-val coreProject = findProject(":state-modeler-core")
-// If core is an included build instead of a subproject then the task path
-// `:state-modeler-core:generateJsonSchema` isn't available; configure dependsOn
-// only when the core project is present in this build.
-tasks.register<Copy>("distributeSchema") {
-    group = "distribution"
-    description = "Copies the generated JSON Schema from core module to project root for GitHub distribution"
-    
-    if (coreProject != null) {
-        dependsOn(":state-modeler-core:generateJsonSchema")
-    }
-    from("state-modeler-core/src/main/resources/sdd-model-schema.json")
-    into(projectDir)
-    
-    doLast {
-        println("📋 Schema distributed to project root for GitHub")
-        println("🌍 Available at: https://github.com/user/repo/blob/main/sdd-model-schema.json")
-    }
-}
 
 // Aggregated JaCoCo report for all modules
+// Re-evaluate presence of the core project so we can safely handle composite builds
+val coreProject = findProject(":state-modeler-core")
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
     group = "verification"
     description = "Generates an aggregated JaCoCo coverage report for all modules"

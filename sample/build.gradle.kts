@@ -2,8 +2,8 @@ plugins {
     id("org.springframework.boot") version "3.2.3"
     id("io.spring.dependency-management") version "1.1.4"
     // Use the codegen plugin declared in the included build
-    // Plugin id temporarily removed during publish; will be re-enabled once the plugin is published
-    id("io.statemodeler.sdd-codegen")
+    // Plugin application temporarily commented to allow local mavenLocal publish flow during CI
+    // id("io.statemodeler.sdd-codegen")
 }
 
 dependencies {

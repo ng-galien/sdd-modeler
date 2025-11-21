@@ -1,0 +1,9 @@
+package {{ options.packageName | default('com.example') }};
+
+import org.springframework.data.repository.CrudRepository;
+
+/**
+ * Generated Repository for {{ state.className }} state.
+ */
+public interface {{ state.className }}Repository extends CrudRepository<{{ entity.className }}State.{{ state.className }}, {{ entity.className }}Id> {
+}

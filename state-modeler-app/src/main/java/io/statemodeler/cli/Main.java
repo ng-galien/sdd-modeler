@@ -24,6 +24,7 @@ import picocli.CommandLine.Command;
         subcommands = {
             ValidateCommand.class,
             SqlCommand.class,
+            io.statemodeler.cli.commands.GenerateCommand.class,
             DiagramCommand.class,
             DiffCommand.class,
             RegisterCommand.class,

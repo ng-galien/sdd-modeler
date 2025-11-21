@@ -53,99 +53,77 @@
 ./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml -o diagram.mmd"
 
 ./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml -o diagram.mmd"
- 
+```
+
+```bash
 # Generate diagram for specific entity
 ./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml --entity order"
 
 ./gradlew :state-modeler-app:run --args="diagram scripts/examples/orders-sdd-model.yaml --entity order"
  
-# === SDR Repository Management ===
+### Native image (GraalVM)
 
-# Register a model in the repository
-./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
+To build a native executable for the CLI with GraalVM, follow these steps (developer machine must have GraalVM + native-image installed):
 
-./gradlew :state-modeler-app:run --args="register scripts/examples/orders-sdd-model.yaml"
-# Register with custom name and version
-./gradlew :state-modeler-app:run --args="register model.yaml --name my-model --version 2.0.0"
+```bash
+# Instrument runs to collect reflection / resource metadata
+./scripts/generate-native-config.sh
 
-# Register to custom repository path
-./gradlew :state-modeler-app:run --args="register model.yaml --repository /path/to/repo"
+# Build the native image (Gradle nativeCompile task provided by the plugin)
+./gradlew :state-modeler-app:nativeCompile
 
-# List all registered models (table format)
-./gradlew :state-modeler-app:run --args="list"
-
-# List in JSON format
-./gradlew :state-modeler-app:run --args="list --format json"
-
-# List in YAML format
-./gradlew :state-modeler-app:run --args="list --format yaml"
-
-# List with limit
-./gradlew :state-modeler-app:run --args="list --limit 10"
-
-# Show model by hash
-./gradlew :state-modeler-app:run --args="show 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4"
-
-# Show model by name (latest version)
-./gradlew :state-modeler-app:run --args="show orders-sdd-example"
-
-# Show model by name and version
-./gradlew :state-modeler-app:run --args="show orders-sdd-example:1.0.0"
-
-# Show only metadata
-./gradlew :state-modeler-app:run --args="show orders-sdd-example --format metadata"
-
-# Show only schema
-./gradlew :state-modeler-app:run --args="show orders-sdd-example --format schema"
-
-# Show only DDL
-./gradlew :state-modeler-app:run --args="show orders-sdd-example --format ddl"
-
-# Delete a model (interactive confirmation)
-./gradlew :state-modeler-app:run --args="delete 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4"
-
-# Delete without confirmation
-./gradlew :state-modeler-app:run --args="delete 222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4 --yes"
-
-# === DDL Comparison & Migration ===
-
-# Compare DDL between two SDR versions
-./gradlew :state-modeler-app:run --args="diff orders:1.0 orders:2.0"
-
-# Generate LLM-powered migration script
-./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0"
-
-# Generate migration with Ollama (requires Ollama server running)
-./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --llm ollama --model llama3.2"
-
-# Save migration to file
-./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 -o migration.sql"
-
-# Force regeneration (skip cached migration)
-./gradlew :state-modeler-app:run --args="migrate orders:1.0 orders:2.0 --force"
+# Smoke test the native binary
+./state-modeler-app/build/native/nativeCompile/sdd-modeler --help
+./state-modeler-app/build/native/nativeCompile/sdd-modeler validate scripts/examples/orders-sdd-mini-model.yaml
 ```
 
-### Runtime Dependencies for Migration Commands
+Notes:
 
-**Important**: The `migrate` command requires LangChain4j dependencies at runtime:
+- The repository contains skeleton `META-INF/native-image` config files; the script `scripts/generate-native-config.sh` will collect data via `native-image-agent` and copy results into `src/main/resources/META-INF/native-image/` for further refinement.
 
-- `dev.langchain4j:langchain4j:0.36.2` (core)
-- `dev.langchain4j:langchain4j-ollama:0.36.2` (for Ollama LLM provider)
+- The `migrate` command (LLM integration) relies on external libs and network; consider excluding it from the native build or running it via the JVM distribution if integration proves complex for the first pass.
 
-These dependencies are **already included** in the Gradle build, so `./gradlew run` will work.
+## Installing GraalVM & native-image (macOS / Linux)
 
-However, if you distribute the JAR independently, users must ensure these libraries are on the classpath. If missing, the CLI will show a clear error:
+On macOS using Homebrew (preferred for a system-wide install):
 
-```
-ERROR: LangChain4j dependencies not found
-  The 'migrate' command requires LangChain4j libraries.
-  Please ensure the following dependencies are available:
-    - dev.langchain4j:langchain4j:0.36.2
-    - dev.langchain4j:langchain4j-ollama:0.36.2
-  Missing class: ...
+```bash
+brew tap graalvm/tap
+brew install --cask graalvm/tap/graalvm-ce-java21
+export JAVA_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java21.jdk/Contents/Home"
+${JAVA_HOME}/bin/gu install native-image
 ```
 
-Other commands (`validate`, `sql`, `diagram`, `register`, `list`, `show`, `delete`, `diff`) work without LangChain4j dependencies.
+If you prefer SDKMAN (cross-platform):
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install 24.0.1-graalce
+sdk use java 24.0.1-graalce
+gu install native-image
+```
+
+After installing GraalVM, verify `native-image` is available:
+
+```bash
+native-image --version
+```
+
+If `native-image` reports a version number, you can re-run:
+
+```bash
+./scripts/generate-native-config.sh
+./gradlew :state-modeler-app:nativeCompile
+```
+
+## SDR Repository Management
+ 
+ See [SDR Repository Guide](REPOSITORY.md) for detailed instructions on managing the repository.
+ 
+ ## DDL Comparison & Migration
+ 
+ See [CLI Documentation](state-modeler-app/README.md#migration--diff) for migration commands.
 
 ## Project Structure
 
@@ -281,56 +259,13 @@ sdd-modeler/
 ### Testing
 - **JUnit 5.11.3**: Testing framework
 - **JaCoCo 0.8.12**: Code coverage
-- **Gradle 8.11.1**: Build system
-
-## SDR Repository Details
-
-### Database Schema
-
-The H2 repository uses a single table:
-
-```sql
-CREATE TABLE sdr_records (
-    schema_hash VARCHAR(64) PRIMARY KEY,
-    model_name VARCHAR(255) NOT NULL,
-    model_version VARCHAR(50) NOT NULL,
-    schema CLOB NOT NULL,
-    content_type VARCHAR(50) NOT NULL,
-    ddl CLOB NOT NULL,
-    ddl_hash VARCHAR(64) NOT NULL,
-    sdr_version VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_name (model_name),
-    INDEX idx_name_version (model_name, model_version)
-);
-```
-
-### Repository Configuration
-
-Repository path resolution follows this cascade:
-
-1. **CLI option**: `--repository /custom/path`
-2. **Environment variable**: `SDD_REPOSITORY_PATH`
-3. **Config file**: (planned)
-4. **Default**: `~/.sdd-modeler/repository`
-
-### SDR Record Structure
-
-```java
-record SdrRecord(
-    String schema,          // Canonical JSON model
-    String contentType,     // "application/yaml" or "application/json"
-    String ddl,             // Generated PostgreSQL DDL
-    String schemaHash,      // SHA-256 of schema
-    String ddlHash,         // SHA-256 of DDL
-    String version          // SDR format version
-)
-```
-
-### Hash Computation
-
-- **Schema hash**: SHA-256 of canonical JSON (format-independent)
-- **DDL hash**: SHA-256 of generated DDL
-- **Build fingerprint**: `schemaHash + ddlHash + version`
-
-Identical models produce identical hashes regardless of YAML vs JSON input.
+- **Gradle 8.14.3**: Build system
+ 
+ ## See Also
+ 
+ - [Main Documentation](README.md)
+ - [Core Library Documentation](state-modeler-core/README.md)
+ - [CLI Documentation](state-modeler-app/README.md)
+ - [Gradle Plugin Documentation](state-modeler-gradle-plugin/README.md)
+ - [Architecture Guide](instructions/ARCHITECTURE.md)
+ - [Examples](scripts/examples/)

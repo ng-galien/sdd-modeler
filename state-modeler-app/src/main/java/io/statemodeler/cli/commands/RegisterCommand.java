@@ -64,6 +64,11 @@ public class RegisterCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        // Attempt to resolve provided path; CLI runs may be launched from different
+        // working directories (e.g., Gradle project dir). When a relative path is
+        // provided and not found, try to locate it relative to the repository root
+        // (project workspace), or by searching typical example locations.
+        modelFile = resolveModelFile(modelFile);
         spec.commandLine().getOut().println("Registering SDD model: " + modelFile);
 
         return io.vavr.control.Try.of(() -> {
@@ -130,9 +135,65 @@ public class RegisterCommand implements Callable<Integer> {
                 })
                 .getOrElseGet(throwable -> {
                     spec.commandLine().getErr().println("ERROR: Failed to register SDR");
-                    spec.commandLine().getErr().println("  " + throwable.getMessage());
+                    // Print the full stack trace to the CLI error writer to aid debugging
+                    try {
+                        var pw = spec.commandLine().getErr();
+                        throwable.printStackTrace(pw);
+                        pw.flush();
+                    } catch (Exception e) {
+                        // Best-effort: fallback to message
+                        spec.commandLine().getErr().println("  " + throwable.getMessage());
+                    }
                     return 1;
                 });
+    }
+
+    private Path resolveModelFile(Path requested) {
+        if (requested == null) {
+            return requested;
+        }
+        if (Files.exists(requested)) {
+            return requested;
+        }
+
+        var cwd = Path.of(System.getProperty("user.dir"));
+        // Search upwards for project root (settings.gradle.kts or .git)
+        Path repoRoot = cwd;
+        while (repoRoot != null) {
+            if (Files.exists(repoRoot.resolve("settings.gradle.kts")) || Files.exists(repoRoot.resolve(".git"))) {
+                break;
+            }
+            repoRoot = repoRoot.getParent();
+        }
+
+        if (repoRoot != null) {
+            var candidate = repoRoot.resolve(requested);
+            if (Files.exists(candidate)) {
+                spec.commandLine().getOut().println("  Resolved model path to: " + candidate);
+                return candidate;
+            }
+
+            // If a path like 'scripts/examples/foo.yaml' was provided relative to workspace
+            // try to find the file name under the scripts folder
+            Path scriptsFolder = repoRoot.resolve("scripts");
+            if (Files.exists(scriptsFolder)) {
+                try (var stream = java.nio.file.Files.walk(scriptsFolder)) {
+                    var fileName = requested.getFileName().toString();
+                    var found = stream.filter(p -> p.getFileName().toString().equals(fileName))
+                            .findFirst();
+                    if (found.isPresent()) {
+                        var f = found.get();
+                        spec.commandLine().getOut().println("  Resolved model path to: " + f);
+                        return f;
+                    }
+                } catch (Exception ignored) {
+                    // Best-effort resolution, ignore exceptions and fallback to original path
+                }
+            }
+        }
+
+        // Fallback: unchanged requested path (original behavior)
+        return requested;
     }
 
     /**

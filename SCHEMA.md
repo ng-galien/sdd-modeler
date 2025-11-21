@@ -56,7 +56,10 @@ Ce schéma est **généré automatiquement** lors du build à partir du code Jav
 ./gradlew :state-modeler-core:generateJsonSchema
 
 # Copie aussi vers la racine du projet pour GitHub
-./gradlew distributeSchema
+# (La tâche Gradle `distributeSchema` a été supprimée.)
+# Générer le schéma et copiez le fichier manuellement si nécessaire:
+./gradlew :state-modeler-core:generateJsonSchema
+cp state-modeler-core/src/main/resources/sdd-model-schema.json ./sdd-model-schema.json
 
 # Ou génère automatiquement avec le build complet
 ./gradlew build

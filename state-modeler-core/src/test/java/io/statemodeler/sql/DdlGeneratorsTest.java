@@ -43,7 +43,7 @@ class DdlGeneratorsTest {
     }
 
     private SddModel createSimpleModel() {
-        var database = new DatabaseConfig("postgres", "public", null);
+        var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
 
         // Simple entity with one initial state
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);

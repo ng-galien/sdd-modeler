@@ -13,7 +13,8 @@ public record YamlModelDto(String version, String name, YamlDatabaseDto database
     public record YamlDatabaseDto(
             String dialect,
             String schema,
-            @JsonProperty("state_schema") String stateSchema) {}
+            @JsonProperty("state_schema") String stateSchema,
+            @JsonProperty("generator_options") Map<String, String> generatorOptions) {}
 
     public record YamlEntityDto(
             String table,

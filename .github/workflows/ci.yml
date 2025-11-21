@@ -18,7 +18,7 @@ jobs:
     
     strategy:
       matrix:
-        java-version: [ 17, 21 ]
+        java-version: [ 21 ]
     
     steps:
     - name: Checkout code
@@ -42,15 +42,9 @@ jobs:
           
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      
-    - name: Run Spotless check
-      run: ./gradlew spotlessCheck
-      
-    - name: Build with Gradle
-      run: ./gradlew build
-      
-    - name: Run tests with coverage
-      run: ./gradlew test jacocoAggregatedReport
+
+    - name: Build, check and test with Gradle
+      run: ./gradlew spotlessCheck build jacocoAggregatedReport
       
     - name: Generate test report
       uses: dorny/test-reporter@v1
@@ -68,38 +62,7 @@ jobs:
         fail_ci_if_error: false
         verbose: true
 
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
-    - name: Check code formatting
-      run: ./gradlew spotlessCheck
-      
-    - name: Run static analysis (future)
-      run: echo "Static analysis with SpotBugs/PMD will be added later"
+  # The `quality` job was merged into the `build` job so a single job does both build and checks.
       
     # TODO: Re-enable Gradle wrapper validation when v2 is fixed
     # - name: Validate Gradle Wrapper

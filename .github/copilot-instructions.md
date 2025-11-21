@@ -13,12 +13,13 @@ Quick summary
 - Formatting: `./gradlew spotlessApply`. CI enforces Spotless.
 
 What to read first (order matters)
-- README.md and DEV_README.md — high-level architecture and dev setup (LangChain4j note).
-- state-modeler-core/src/main/java/io/statemodeler/dsl — DSL, model parsing, and validation (SddModel, EntityDef, StateDef).
-- state-modeler-core/src/main/java/io/statemodeler/sql/postgres — Postgres DDL generation (PostgresDdlGenerator and helpers).
-- state-modeler-app/src/main/java/io/statemodeler/cli — Picocli commands (ShowCommand, DiffCommand, MigrateCommand, etc.).
-- state-modeler-app/src/main/java/io/statemodeler/migration — LLM integration (`LangChainModelProvider`, `ChatModelProvider`, `MockChatModelProvider`).
-- state-modeler-app/src/test/java/io/statemodeler/cli — CLI command tests (Picocli harness patterns).
+- README.md — high-level project overview and module links.
+- state-modeler-core/README.md — DSL, modeling concepts, and architecture.
+- state-modeler-app/README.md — CLI commands, repository management, and migration.
+- state-modeler-gradle-plugin/README.md — Gradle plugin configuration.
+- DEV_README.md — developer setup and contribution guidelines.
+- state-modeler-core/src/main/java/io/statemodeler/dsl — DSL parsing (SddModel, EntityDef).
+- state-modeler-core/src/main/java/io/statemodeler/sql/postgres — SQL generation logic.
 
 Key project patterns & conventions
 - Java 21 records for domain objects and DTOs. Use compact constructors to validate inputs (throw IllegalArgumentException for invalid data).
@@ -89,7 +90,7 @@ If anything is missing or unclear, leave a short note as a PR comment referencin
 Purpose: Help AI coding agents be productive quickly in this Java 21, Gradle-managed, multi-module project.
 
 Overview
-- Two modules: `state-modeler-core` (model DSL, SDD -> SqlPlan -> Postgres DDL) and `state-modeler-app` (Picocli CLI, H2 SDR persistence, LLM migration orchestration).
+- Three modules: `state-modeler-core` (DSL, validation, SQL gen), `state-modeler-app` (CLI, Repository, AI), and `state-modeler-gradle-plugin` (Build integration).
 
 Quick commands
 - Build & tests: `./gradlew build` / `./gradlew test`.

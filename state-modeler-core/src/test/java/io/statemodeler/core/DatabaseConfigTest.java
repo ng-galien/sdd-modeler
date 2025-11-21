@@ -9,7 +9,7 @@ class DatabaseConfigTest {
     @Test
     void shouldCreateValidDatabaseConfig() {
         // Given & When
-        var config = new DatabaseConfig("postgres", "public", null);
+        var config = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
 
         // Then
         assertEquals("postgres", config.dialect());
@@ -21,7 +21,7 @@ class DatabaseConfigTest {
     @Test
     void shouldCreateConfigWithNullSchema() {
         // Given & When (schema can be null for default schema)
-        var config = new DatabaseConfig("mysql", null, null);
+        var config = new DatabaseConfig("mysql", null, null, java.util.Map.of());
 
         // Then
         assertEquals("mysql", config.dialect());
@@ -32,18 +32,19 @@ class DatabaseConfigTest {
 
     @Test
     void shouldRejectNullDialect() {
-        var ex = assertThrows(IllegalArgumentException.class, () -> new DatabaseConfig(null, "public", null));
+        var ex = assertThrows(
+                IllegalArgumentException.class, () -> new DatabaseConfig(null, "public", null, java.util.Map.of()));
         assertTrue(ex.getMessage().contains("dialect cannot be null"));
     }
 
     @Test
     void shouldImplementEqualsAndHashCode() {
         // Given
-        var config1 = new DatabaseConfig("postgres", "public", null);
-        var config2 = new DatabaseConfig("postgres", "public", null);
-        var config3 = new DatabaseConfig("mysql", "public", null);
-        var config4 = new DatabaseConfig("postgres", "private", null);
-        var config5 = new DatabaseConfig("postgres", "public", "custom_states");
+        var config1 = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
+        var config2 = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
+        var config3 = new DatabaseConfig("mysql", "public", null, java.util.Map.of());
+        var config4 = new DatabaseConfig("postgres", "private", null, java.util.Map.of());
+        var config5 = new DatabaseConfig("postgres", "public", "custom_states", java.util.Map.of());
 
         // Then
         assertEquals(config2, config1);
@@ -56,7 +57,7 @@ class DatabaseConfigTest {
     @Test
     void shouldImplementToString() {
         // Given
-        var config = new DatabaseConfig("postgres", "public", null);
+        var config = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
 
         // When
         var result = config.toString();
@@ -70,10 +71,10 @@ class DatabaseConfigTest {
     @Test
     void shouldHandleVariousDialects() {
         // Test common SQL dialects
-        var postgres = new DatabaseConfig("postgres", "public", null);
-        var mysql = new DatabaseConfig("mysql", "test", null);
-        var sqlite = new DatabaseConfig("sqlite", null, null);
-        var sqlserver = new DatabaseConfig("sqlserver", "dbo", null);
+        var postgres = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
+        var mysql = new DatabaseConfig("mysql", "test", null, java.util.Map.of());
+        var sqlite = new DatabaseConfig("sqlite", null, null, java.util.Map.of());
+        var sqlserver = new DatabaseConfig("sqlserver", "dbo", null, java.util.Map.of());
 
         assertEquals("postgres", postgres.dialect());
         assertEquals("mysql", mysql.dialect());
@@ -84,7 +85,7 @@ class DatabaseConfigTest {
     @Test
     void shouldHandleEmptyStringSchema() {
         // Given & When - empty string schema should be treated as null
-        var config = new DatabaseConfig("postgres", "", null);
+        var config = new DatabaseConfig("postgres", "", null, java.util.Map.of());
 
         // Then
         assertTrue(config.schema().isEmpty());
@@ -95,8 +96,8 @@ class DatabaseConfigTest {
     @Test
     void shouldHandleEmptyStringStateSchema() {
         // Given & When - empty string stateSchema should be treated as null
-        var configWithSchema = new DatabaseConfig("postgres", "myapp", "");
-        var configWithoutSchema = new DatabaseConfig("postgres", "", "");
+        var configWithSchema = new DatabaseConfig("postgres", "myapp", "", java.util.Map.of());
+        var configWithoutSchema = new DatabaseConfig("postgres", "", "", java.util.Map.of());
 
         // Then - empty stateSchema falls back to default
         assertEquals("myapp_states", configWithSchema.effectiveStateSchema());
@@ -106,7 +107,7 @@ class DatabaseConfigTest {
     @Test
     void shouldUseCustomStateSchema() {
         // Given & When
-        var config = new DatabaseConfig("postgres", "public", "custom_states");
+        var config = new DatabaseConfig("postgres", "public", "custom_states", java.util.Map.of());
 
         // Then
         assertEquals("custom_states", config.stateSchema());
@@ -116,8 +117,8 @@ class DatabaseConfigTest {
     @Test
     void shouldDefaultStateSchemaWhenNull() {
         // Given & When
-        var configWithSchema = new DatabaseConfig("postgres", "myapp", null);
-        var configWithoutSchema = new DatabaseConfig("postgres", null, null);
+        var configWithSchema = new DatabaseConfig("postgres", "myapp", null, java.util.Map.of());
+        var configWithoutSchema = new DatabaseConfig("postgres", null, null, java.util.Map.of());
 
         // Then
         assertEquals("myapp_states", configWithSchema.effectiveStateSchema());

@@ -319,6 +319,20 @@ class RegisterCommandTest {
     }
 
     @Test
+    void shouldResolveFileFromWorkspaceScriptsFolder() {
+        // Given - path referencing the sample model relative to the workspace root
+        var command = new RegisterCommand();
+        command.repositoryMixin = createMixin();
+        var cmd = new CommandLine(command);
+
+        // When
+        int exitCode = cmd.execute("scripts/examples/orders-sdd-model.yaml");
+
+        // Then
+        assertEquals(0, exitCode, "Should resolve model from workspace scripts/examples and register");
+    }
+
+    @Test
     void shouldHandleFilenameWithoutExtension() throws IOException {
         // Given - file without extension (edge case for resolveName)
         Path noExtensionFile = tempDir.resolve("noextension");

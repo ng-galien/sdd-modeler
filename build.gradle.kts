@@ -1,16 +1,32 @@
 plugins {
-    id("com.diffplug.spotless") version "6.25.0"
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.axion.release)
     jacoco
+}
+
+scmVersion {
+    tag {
+        prefix.set("v")
+    }
+    versionCreator("versionWithBranch")
+    checks {
+        uncommittedChanges.set(false)
+    }
 }
 
 allprojects {
     group = "io.statemodeler"
-    version = "0.1.0-SNAPSHOT"
+    version = rootProject.scmVersion.version
 
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 }
+
+// Extract versions from catalog to avoid scope issues in subprojects
+val palantirJavaFormatVersion = libs.versions.palantir.java.format.get()
+val jacocoVersion = libs.versions.jacoco.get()
 
 subprojects {
     apply(plugin = "java-library")
@@ -32,7 +48,7 @@ subprojects {
 
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         java {
-            palantirJavaFormat("2.82.0")
+            palantirJavaFormat(palantirJavaFormatVersion)
             removeUnusedImports()
             trimTrailingWhitespace()
             endWithNewline()
@@ -49,7 +65,7 @@ subprojects {
 
     // JaCoCo configuration for code coverage
     jacoco {
-        toolVersion = "0.8.12"
+        toolVersion = jacocoVersion
     }
 
     tasks.withType<Test> {
@@ -67,35 +83,19 @@ subprojects {
         }
         executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")).include("**/*.exec"))
     }
-}
 
-// Version catalog for shared dependencies
-val jacksonVersion = "2.18.0"
-val picocliVersion = "4.7.6"
-val jspecifyVersion = "1.0.0"
-val testcontainersVersion = "1.20.4"
-val postgresqlVersion = "42.7.4"
-
-ext["jacksonVersion"] = jacksonVersion
-ext["picocliVersion"] = picocliVersion
-ext["jspecifyVersion"] = jspecifyVersion
-ext["testcontainersVersion"] = testcontainersVersion
-ext["postgresqlVersion"] = postgresqlVersion
-
-// Task to copy schema from core resources to project root for GitHub distribution
-tasks.register<Copy>("distributeSchema") {
-    group = "distribution"
-    description = "Copies the generated JSON Schema from core module to project root for GitHub distribution"
-    
-    dependsOn(":state-modeler-core:generateJsonSchema")
-    from("state-modeler-core/src/main/resources/sdd-model-schema.json")
-    into(projectDir)
-    
-    doLast {
-        println("📋 Schema distributed to project root for GitHub")
-        println("🌍 Available at: https://github.com/user/repo/blob/main/sdd-model-schema.json")
+    // Ensure an SLF4J provider is available for all subprojects to avoid per-module duplications
+    afterEvaluate {
+        dependencies {
+            // Use the version catalog `libs` to add logback so the version is synchronized across the project
+            add("runtimeOnly", libs.logback.classic)
+            add("testRuntimeOnly", libs.logback.classic)
+        }
     }
 }
+
+// If the core project is present in this build, we can reference it for ordering tasks
+val coreProject = findProject(":state-modeler-core")
 
 // Aggregated JaCoCo report for all modules
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
@@ -103,7 +103,13 @@ tasks.register<JacocoReport>("jacocoAggregatedReport") {
     description = "Generates an aggregated JaCoCo coverage report for all modules"
     
     dependsOn(subprojects.map { it.tasks.withType<Test>() })
-    mustRunAfter(":state-modeler-core:generateJsonSchema")
+    // Only enforce ordering if the core project exists in this build. When the core
+    // is part of a composite (included) build, the generateJsonSchema task is not
+    // visible via the project path `:state-modeler-core:generateJsonSchema` and would
+    // cause a configuration-time error.
+    if (coreProject != null) {
+        mustRunAfter(":state-modeler-core:generateJsonSchema")
+    }
     
     sourceDirectories.setFrom(subprojects.flatMap { project ->
         project.the<SourceSetContainer>()["main"].allJava.srcDirs
@@ -136,6 +142,9 @@ tasks.register<JacocoCoverageVerification>("jacocoAggregatedCoverageVerification
     
     violationRules {
         rule {
+            // NOTE: The previous `distributeSchema` task was removed. If you need the schema
+            // copied to the repository root for GitHub distribution, run the generation and copy
+            // it manually using the commands below instead of the removed Gradle task.
             limit {
                 minimum = "0.80".toBigDecimal()
             }

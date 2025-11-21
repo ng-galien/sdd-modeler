@@ -1,0 +1,6 @@
+package {{ options.packageName | default('com.example') }};
+
+import java.util.UUID;
+
+public record {{ entity.className }}Id(UUID value) {
+}

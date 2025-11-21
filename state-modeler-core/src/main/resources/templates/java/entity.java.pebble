@@ -1,0 +1,26 @@
+package {{ options.packageName | default('com.example') }};
+
+{% if imports is defined %}{% for imp in imports %}import {{ imp }};
+{% endfor %}{% endif %}
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
+
+/**
+ * Generated ADT for {{ entity.name }} states.
+ */
+public sealed interface {{ entity.className }}State {
+
+    {% for state in entity.states %}
+    /**
+     * State: {{ state.name }}
+     */
+    @Table("{{ entity.table }}")
+    record {{ state.className }}(
+        @Id {{ entity.className }}Id {{ entity.id.propertyName }}{% if not state.attributes.isEmpty() %}, {% endif %}
+        {% for attribute in state.attributes %}
+        {{ attribute.javaType }} {{ attribute.propertyName }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ) implements {{ entity.className }}State {}
+    {% endfor %}
+}

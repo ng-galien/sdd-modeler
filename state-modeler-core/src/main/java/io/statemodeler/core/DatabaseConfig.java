@@ -1,5 +1,6 @@
 package io.statemodeler.core;
 
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,11 +14,12 @@ import org.jspecify.annotations.Nullable;
  *                    Empty strings are treated the same as null.
  */
 public record DatabaseConfig(
-        String dialect, @Nullable String schema, @Nullable String stateSchema) {
+        String dialect, @Nullable String schema, @Nullable String stateSchema, Map<String, String> generatorOptions) {
 
     public DatabaseConfig {
         if (dialect == null) throw new IllegalArgumentException("dialect cannot be null");
         // schema and stateSchema can be null or empty for defaults
+        if (generatorOptions == null) generatorOptions = Map.of();
     }
 
     /**

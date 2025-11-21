@@ -24,6 +24,9 @@
         "dialect" : {
           "type" : "string"
         },
+        "generatorOptions" : {
+          "$ref" : "#/$defs/Map(String,String)"
+        },
         "schema" : {
           "type" : "string"
         },
@@ -100,6 +103,12 @@
       "type" : "object",
       "additionalProperties" : {
         "$ref" : "#/$defs/StateDef"
+      }
+    },
+    "Map(String,String)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "type" : "string"
       }
     },
     "ProjectionDef" : {

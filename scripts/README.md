@@ -17,11 +17,16 @@ Tests the complete DDL generation pipeline from YAML/JSON models to PostgreSQL D
 - ✅ Statistics extraction (table count, view count, FK count, etc.)
 - ✅ V1 vs V2 model differences
 
+Note: This script now defaults to using the `--examples-test` models (the test resources under `state-modeler-app/src/test/resources/examples`) unless `--examples-doc` is passed. This ensures the model files used by the tests include projections and richer validation scenarios. Use `--examples-doc` to explicitly select the documentation examples directory instead.
+
 **Usage:**
 
 ```bash
 ./scripts/test-ddl-generation.sh
 ```
+ 
+Behavior note: The structural verification step will skip the "Projection views" check if the selected model does not declare any projections (i.e., there is no `projections:` block). This avoids false failures for models that don't include projections.
+
 
 **Output:**
 Generated files are saved to `build/test-output/`:
@@ -40,7 +45,6 @@ Generated files are saved to `build/test-output/`:
 ---
 
 ### `test-ddl-functional.sh`
-
 Tests generated DDL with real PostgreSQL database and data operations. Automatically uses Docker if PostgreSQL is not available locally.
 
 **What it tests:**
@@ -87,6 +91,7 @@ export POSTGRES_PORT=5432            # default: 5432
    - Waits for PostgreSQL to be ready
    - Runs all tests via `docker exec`
    - Cleans up container on exit
+   - Ensures leftover Docker containers are removed even if the script fails early (e.g. Gradle/Spotless failures). The script registers an early cleanup trap and tolerates container removal errors during cleanup to avoid blocking future runs.
 4. Creates temporary test database
 5. Applies generated DDL
 6. Runs 11 functional tests with real data

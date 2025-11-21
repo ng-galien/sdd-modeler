@@ -29,21 +29,8 @@ tasks.withType<Test> {
     systemProperty("java.awt.headless", "true")
 }
 
-configure<com.diffplug.gradle.spotless.SpotlessExtension> {
-    java {
-        palantirJavaFormat(palantirJavaFormatVersion)
-        removeUnusedImports()
-        trimTrailingWhitespace()
-        endWithNewline()
-        formatAnnotations()
-    }
-    
-    flexmark {
-        target("*.md", "**/*.md")
-        flexmark()
-        endWithNewline()
-    }
-}
+// Spotless configuration is centralized in root build.gradle (subprojects). Module-specific
+// exclusions or formatting differences should be applied in the module's build where necessary.
 
 jacoco {
     toolVersion = jacocoVersion

@@ -43,14 +43,8 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Run Spotless check
-      run: ./gradlew spotlessCheck
-      
-    - name: Build with Gradle
-      run: ./gradlew build
-      
-    - name: Run tests with coverage
-      run: ./gradlew test jacocoAggregatedReport
+    - name: Build, check and test with Gradle
+      run: ./gradlew spotlessCheck build jacocoAggregatedReport
       
     - name: Generate test report
       uses: dorny/test-reporter@v1

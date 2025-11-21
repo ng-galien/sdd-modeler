@@ -94,13 +94,10 @@ subprojects {
     }
 }
 
-// Version catalog for shared dependencies
-// Versions are now managed in gradle/libs.versions.toml
-
+// If the core project is present in this build, we can reference it for ordering tasks
+val coreProject = findProject(":state-modeler-core")
 
 // Aggregated JaCoCo report for all modules
-// Re-evaluate presence of the core project so we can safely handle composite builds
-val coreProject = findProject(":state-modeler-core")
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
     group = "verification"
     description = "Generates an aggregated JaCoCo coverage report for all modules"
@@ -145,6 +142,9 @@ tasks.register<JacocoCoverageVerification>("jacocoAggregatedCoverageVerification
     
     violationRules {
         rule {
+            // NOTE: The previous `distributeSchema` task was removed. If you need the schema
+            // copied to the repository root for GitHub distribution, run the generation and copy
+            // it manually using the commands below instead of the removed Gradle task.
             limit {
                 minimum = "0.80".toBigDecimal()
             }

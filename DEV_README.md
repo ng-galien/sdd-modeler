@@ -259,7 +259,7 @@ sdd-modeler/
 ### Testing
 - **JUnit 5.11.3**: Testing framework
 - **JaCoCo 0.8.12**: Code coverage
-- **Gradle 8.11.1**: Build system
+- **Gradle 8.14.3**: Build system
  
  ## See Also
  

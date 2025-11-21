@@ -24,3 +24,13 @@ include("state-modeler-core")
 // it resolves as a plugin dependency (plugin DSL). We don't include it as a subproject here to
 // avoid duplicate project names across the main build and included Builds.
 
+// Additionally, include the plugin build at the root level so we can configure dependency
+// substitution for development convenience: when the plugin requests the binary artifact
+// 'io.statemodeler:state-modeler-core', map it to the local project ':state-modeler-core'.
+// This avoids the need to publish the core artifact to mavenLocal during local development.
+includeBuild("state-modeler-gradle-plugin") {
+    dependencySubstitution {
+        substitute(module("io.statemodeler:state-modeler-core")).using(project(":state-modeler-core"))
+    }
+}
+

@@ -67,3 +67,23 @@ sdd {
 
 // The generated code will be automatically compiled
 ```
+
+## 🛠️ Development notes
+
+This repository is configured for local development with a Gradle composite build. The root `settings.gradle.kts` includes a dependency substitution so the plugin can be built and tested against the local `:state-modeler-core` project without publishing the core module to a Maven repository.
+
+- To build the plugin during local development (uses dependency substitution if available):
+
+```bash
+./gradlew :state-modeler-gradle-plugin:build
+```
+
+- If you prefer to publish the `state-modeler-core` artifact to your local Maven repository instead of using dependency substitution:
+
+```bash
+./gradlew :state-modeler-core:publishToMavenLocal
+./gradlew :state-modeler-gradle-plugin:build
+```
+
+If you run into resolution problems, ensure your root settings include the `includeBuild("state-modeler-gradle-plugin")` and the substitution rule that maps `io.statemodeler:state-modeler-core` to `:state-modeler-core`.
+

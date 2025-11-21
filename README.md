@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/ng-galien/sdd-modeler/graph/badge.svg)](https://codecov.io/gh/ng-galien/sdd-modeler)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java Version](https://img.shields.io/badge/Java-21%2B-blue.svg)](https://openjdk.java.net/)
-[![Gradle](https://img.shields.io/badge/Gradle-8.11.1-blue.svg)](https://gradle.org/)
+[![Gradle](https://img.shields.io/badge/Gradle-8.14.3-blue.svg)](https://gradle.org/)
 
 A Java library and CLI tool for implementing **State-Driven Design (SDD)** with automatic SQL schema generation.
 

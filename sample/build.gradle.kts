@@ -1,9 +1,7 @@
 plugins {
     id("org.springframework.boot") version "3.2.3"
     id("io.spring.dependency-management") version "1.1.4"
-    // Use the codegen plugin declared in the included build
-    // Plugin application temporarily commented to allow local mavenLocal publish flow during CI
-    // id("io.statemodeler.sdd-codegen")
+    // id("io.statemodeler.sdd-codegen") // temporary comment for build diagnostics
 }
 
 dependencies {
@@ -29,12 +27,13 @@ val modelFileUsedAbs = project.file(modelFileProp ?: "src/main/resources/sdd.yam
 val resolvedOutDirFile = if (outDirProp != null) project.file(outDirProp) else project.buildDir.resolve("generated/sdd")
 val sddOutDirAbs = resolvedOutDirFile.absolutePath
 
-sddCodegen {
-    modelFile.set(file(modelFileProp ?: "src/main/resources/sdd.yaml"))
-    outputDir.set(layout.buildDirectory.dir(outDirProp ?: "generated/sdd"))
-    language.set(languageProp ?: "java")
-    addToSourceSet.set(addToSourceSetProp)
-}
+// sddCodegen configuration temporarily disabled while publishing plugin locally
+// sddCodegen {
+//    modelFile.set(file(modelFileProp ?: "src/main/resources/sdd.yaml"))
+//    outputDir.set(layout.buildDirectory.dir(outDirProp ?: "generated/sdd"))
+//    language.set(languageProp ?: "java")
+//    addToSourceSet.set(addToSourceSetProp)
+//}
 
 // Ensure generated sources are reformatted with Spotless immediately after generation so
 // format checks pass in the lifecycle (e.g., `build`).

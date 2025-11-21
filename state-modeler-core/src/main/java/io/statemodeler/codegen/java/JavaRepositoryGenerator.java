@@ -46,9 +46,7 @@ public class JavaRepositoryGenerator {
         Object modelImps = modelCtx.get("imports");
         Set<String> imports = new HashSet<>();
         if (modelImps instanceof Set<?> mis) {
-            for (Object o : mis)
-                if (o instanceof String str)
-                    imports.add(str);
+            for (Object o : mis) if (o instanceof String str) imports.add(str);
         }
         context.put("imports", imports);
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());

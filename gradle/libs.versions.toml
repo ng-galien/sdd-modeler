@@ -61,3 +61,4 @@ commons-text = { module = "org.apache.commons:commons-text", version.ref = "comm
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 graalvm-buildtools-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-buildtools" }
+axion-release = { id = "pl.allegro.tech.build.axion-release", version = "1.18.16" }

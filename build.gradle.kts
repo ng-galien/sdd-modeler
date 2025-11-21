@@ -1,11 +1,22 @@
 plugins {
     alias(libs.plugins.spotless)
+    alias(libs.plugins.axion.release)
     jacoco
+}
+
+scmVersion {
+    tag {
+        prefix.set("v")
+    }
+    versionCreator("versionWithBranch")
+    checks {
+        uncommittedChanges.set(false)
+    }
 }
 
 allprojects {
     group = "io.statemodeler"
-    version = "0.1.0-SNAPSHOT"
+    version = rootProject.scmVersion.version
 
     repositories {
         mavenLocal()

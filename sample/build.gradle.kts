@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":state-modeler-core"))
+    implementation("io.statemodeler:state-modeler-core")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-web")
     runtimeOnly("com.h2database:h2")

@@ -30,7 +30,7 @@ graalvmNative {
 
 dependencies {
     //Depends on core module
-    implementation(project(":state-modeler-core"))
+    implementation("io.statemodeler:state-modeler-core")
 
     // Lombok for reducing boilerplate
     compileOnly(libs.lombok)

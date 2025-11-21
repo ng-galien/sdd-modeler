@@ -1,6 +1,7 @@
 plugins {
     `java-library`
     `maven-publish`
+    alias(libs.plugins.spotless)
     jacoco
 }
 
@@ -29,8 +30,21 @@ tasks.withType<Test> {
     systemProperty("java.awt.headless", "true")
 }
 
-// Spotless configuration is centralized in root build.gradle (subprojects). Module-specific
-// exclusions or formatting differences should be applied in the module's build where necessary.
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    java {
+        palantirJavaFormat(palantirJavaFormatVersion)
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+        formatAnnotations()
+    }
+    
+    flexmark {
+        target("*.md", "**/*.md")
+        flexmark()
+        endWithNewline()
+    }
+}
 
 jacoco {
     toolVersion = jacocoVersion

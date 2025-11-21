@@ -29,12 +29,12 @@ graalvmNative {
 }
 
 dependencies {
+    //Depends on core module
+    implementation(project(":state-modeler-core"))
+
     // Lombok for reducing boilerplate
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    
-    // Depend on core module
-    implementation("io.statemodeler:state-modeler-core")
     
     // Vavr for functional programming (needed for Try<T> from core)
     implementation(libs.vavr)
@@ -60,9 +60,8 @@ dependencies {
     implementation(libs.langchain4j.ollama)
     implementation(libs.langchain4j.open.ai)
     
-    // SLF4J for logging
+    // SLF4J for logging (runtime provider is centralized by root `subprojects` configuration)
     implementation(libs.slf4j.api)
-    runtimeOnly(libs.logback.classic)
 
     // Test dependencies specific to CLI
     testImplementation(libs.junit.jupiter)

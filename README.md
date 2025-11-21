@@ -53,6 +53,8 @@ Contributions welcome! Please:
 4. Ensure `./gradlew spotlessApply` passes
 5. Submit a pull request
 
+Note about scripts: The manual testing scripts under `scripts/` now default to using the `--examples-test` models (test resources in `state-modeler-app/src/test/resources/examples`) for richer validation. Additionally, the functional tests (`test-ddl-functional.sh`) include an early cleanup trap that removes any leftover Docker containers if the script fails early to avoid blocking subsequent test runs.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.

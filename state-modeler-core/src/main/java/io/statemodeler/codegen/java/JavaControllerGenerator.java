@@ -4,10 +4,14 @@ import io.pebbletemplates.pebble.PebbleEngine;
 import io.pebbletemplates.pebble.template.PebbleTemplate;
 import io.statemodeler.core.EntityDef;
 import io.statemodeler.core.SddModel;
+import io.statemodeler.core.StateDef;
+
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,11 +28,6 @@ public class JavaControllerGenerator {
     public Map<String, String> generate(SddModel model) {
         Map<String, String> generatedFiles = new HashMap<>();
         for (EntityDef entity : model.entities().values()) {
-            // Skip controller generation for entities with states
-            // (they don't have a unified repository)
-            if (entity.states() != null && !entity.states().isEmpty()) {
-                continue;
-            }
             String content = generateController(entity, model);
             String filename = resolveControllerFilename(entity, model);
             generatedFiles.put(filename, content);
@@ -43,6 +42,24 @@ public class JavaControllerGenerator {
         context.put("entity", entityCtx);
         Map<String, Object> modelCtx = contextBuilder.buildModelContext(model);
         context.put("model", modelCtx);
+
+        // Add transitions context for state-based entities
+        if (!entity.states().isEmpty()) {
+            List<Map<String, Object>> transitions = contextBuilder.buildTransitionsContext(entity);
+            context.put("transitions", transitions);
+
+            // Add state repositories as list
+            List<Map<String, String>> stateRepositories = new ArrayList<>();
+            for (StateDef state : entity.states().values()) {
+                Map<String, String> stateRepo = new HashMap<>();
+                stateRepo.put("stateName", state.name());
+                stateRepo.put("className", contextBuilder.toPascal(state.name()));
+                stateRepo.put("repositoryName", contextBuilder.toPascal(state.name()) + "Repository");
+                stateRepo.put("propertyName", contextBuilder.toCamel(state.name()));
+                stateRepositories.add(stateRepo);
+            }
+            context.put("stateRepositories", stateRepositories);
+        }
 
         Set<String> imports = new HashSet<>();
         Object modelImps = modelCtx.get("imports");

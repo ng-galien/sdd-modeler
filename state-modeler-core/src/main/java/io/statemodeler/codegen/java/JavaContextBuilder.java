@@ -75,6 +75,7 @@ public class JavaContextBuilder {
         }
         ctx.put("attributes", attrs);
         ctx.put("imports", imports);
+        ctx.put("hasStates", !entity.states().isEmpty());
         return ctx;
     }
 
@@ -183,5 +184,75 @@ public class JavaContextBuilder {
         // Normalize existing camel/pascal case boundaries so CaseUtils keeps word
         // breaks
         return s.replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_");
+    }
+
+    /**
+     * Build context for all transitions of an entity.
+     * Each transition context includes:
+     * - sourceStates: list of state names that can transition to the target
+     * - targetState: the target state name, className, propertyName
+     * - methodName: the service method name (transitionTo{TargetState})
+     * - commandClassName: the command record class name
+     * - commandFields: list of field contexts from target state attributes
+     */
+    public List<Map<String, Object>> buildTransitionsContext(EntityDef entity) {
+        List<Map<String, Object>> transitions = new ArrayList<>();
+
+        // For each state (except initial states), create a transition context
+        for (StateDef targetState : entity.states().values()) {
+            // Skip initial states (they have no 'from' transitions)
+            if (targetState.from().isEmpty() && targetState.fromAnyOf().isEmpty()) {
+                continue;
+            }
+
+            Map<String, Object> transitionCtx = new HashMap<>();
+
+            // Target state info
+            Map<String, String> targetCtx = new HashMap<>();
+            targetCtx.put("name", targetState.name());
+            targetCtx.put("className", toPascal(targetState.name()));
+            targetCtx.put("propertyName", toCamel(targetState.name()));
+            transitionCtx.put("targetState", targetCtx);
+
+            // Source states (from regular 'from' or 'fromAnyOf')
+            List<Map<String, String>> sources = new ArrayList<>();
+            for (String from : targetState.from()) {
+                Map<String, String> sourceCtx = new HashMap<>();
+                sourceCtx.put("name", from);
+                sourceCtx.put("className", toPascal(from));
+                sourceCtx.put("repositoryName", toPascal(from) + "Repository");
+                sources.add(sourceCtx);
+            }
+            for (String from : targetState.fromAnyOf()) {
+                Map<String, String> sourceCtx = new HashMap<>();
+                sourceCtx.put("name", from);
+                sourceCtx.put("className", toPascal(from));
+                sourceCtx.put("repositoryName", toPascal(from) + "Repository");
+                sources.add(sourceCtx);
+            }
+            transitionCtx.put("sourceStates", sources);
+
+            // Method name and command class name
+            String methodName = "transitionTo" + toPascal(targetState.name());
+            transitionCtx.put("methodName", methodName);
+            transitionCtx.put("commandClassName", "TransitionTo" + toPascal(targetState.name()) + "Command");
+
+            // Command fields (from target state attributes)
+            List<Map<String, Object>> commandFields = new ArrayList<>();
+            for (var attr : targetState.attributes().values()) {
+                Map<String, Object> fieldCtx = new HashMap<>();
+                fieldCtx.put("name", attr.name());
+                fieldCtx.put("propertyName", toCamel(attr.name()));
+                fieldCtx.put("nullable", attr.nullable());
+                var mapped = mapSqlTypeToJavaType(attr.type());
+                fieldCtx.put("javaType", mapped.javaType());
+                commandFields.add(fieldCtx);
+            }
+            transitionCtx.put("commandFields", commandFields);
+
+            transitions.add(transitionCtx);
+        }
+
+        return transitions;
     }
 }

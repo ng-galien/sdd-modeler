@@ -2,14 +2,60 @@ package {{ options.packageName }};
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
-{% for import in imports %}
-import {{ import }};
-{% endfor %}
+{% if entity.hasStates %}
+import org.springframework.http.HttpStatus;
+{% endif %}
 
 @RestController
 @RequestMapping("/api/{{ entity.name | lower }}s")
 public class {{ entity.className }}Controller {
 
+{% if entity.hasStates %}
+    // State-based entity - inject service and all state repositories
+    private final {{ entity.className }}Service service;
+    {% for stateRepo in stateRepositories %}
+    private final {{ stateRepo.repositoryName }} {{ stateRepo.propertyName }}Repository;
+    {% endfor %}
+
+    public {{ entity.className }}Controller(
+        {{ entity.className }}Service service{% if stateRepositories is not empty %},{% endif %}
+        {% for stateRepo in stateRepositories %}
+        {{ stateRepo.repositoryName }} {{ stateRepo.propertyName }}Repository{{ loop.last ? "" : "," }}
+        {% endfor %}
+    ) {
+        this.service = service;
+        {% for stateRepo in stateRepositories %}
+        this.{{ stateRepo.propertyName }}Repository = {{ stateRepo.propertyName }}Repository;
+        {% endfor %}
+    }
+
+    // GET endpoints per state
+    {% for stateRepo in stateRepositories %}
+    @GetMapping("/{{ stateRepo.stateName | lower }}/{id}")
+    public ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}(@PathVariable {{ entity.id.className }} id) {
+        return {{ stateRepo.propertyName }}Repository.findById(id)
+            .map(entity -> ResponseEntity.ok(new {{ entity.className }}Dto(entity.id()
+                {%- for attr in entity.attributes -%}
+                , entity.{{ attr.propertyName }}()
+                {%- endfor -%}
+            )))
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    {% endfor %}
+    // POST endpoints for transitions
+    {% for transition in transitions %}
+    @PostMapping("/{id}/transitions/to{{ transition.targetState.className }}")
+    public ResponseEntity<{{ entity.className }}Dto> {{ transition.methodName }}(
+        @PathVariable {{ entity.id.className }} id,
+        @RequestBody {{ entity.className }}Service.{{ transition.commandClassName }} command
+    ) {
+        {{ entity.className }}Dto dto = service.{{ transition.methodName }}(id, command);
+        return ResponseEntity.ok(dto);
+    }
+    {% endfor %}
+{% else %}
+    // Simple entity - inject repository
     private final {{ entity.className }}Repository repository;
 
     public {{ entity.className }}Controller({{ entity.className }}Repository repository) {
@@ -28,4 +74,5 @@ public class {{ entity.className }}Controller {
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
+{% endif %}
 }

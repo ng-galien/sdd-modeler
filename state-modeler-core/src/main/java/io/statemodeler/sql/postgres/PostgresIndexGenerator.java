@@ -59,18 +59,6 @@ final class PostgresIndexGenerator {
         return new IndexDefinition(indexName, tableName, schema, columns, false);
     }
 
-    /**
-     * Renders an index definition as PostgreSQL DDL.
-     *
-     * @param index the index definition to render
-     * @return a CREATE INDEX statement
-     */
-    String renderIndex(IndexDefinition index) {
-        var ddl = new StringBuilder();
-        ddl.append("CREATE INDEX ").append(index.name());
-        ddl.append(" ON ").append(index.fullTableName());
-        ddl.append(" (").append(String.join(", ", index.columns())).append(");");
-
-        return ddl.toString();
-    }
+    // Index DDL rendering is handled by Pebble templates inside the
+    // PebblePostgresDdlGenerator; remove legacy string-based rendering.
 }

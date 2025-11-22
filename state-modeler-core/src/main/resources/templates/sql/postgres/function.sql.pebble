@@ -1,2 +1,3 @@
-CREATE OR REPLACE FUNCTION {{ function.schema }}.{{ function.name }}({{ function.parameters | join(", ") }}) RETURNS {{ function.returnType }} AS $$
-{{ function.body }}$$ LANGUAGE {{ function.language }};
+{%- set tag = "$fn_" ~ function.name ~ "$" -%}
+CREATE OR REPLACE FUNCTION {{ function.schema }}.{{ function.name }}({{ function.parameters | join(", ") }}) RETURNS {{ function.returnType }} AS {{ tag }}
+{{ function.body }}{{ tag }} LANGUAGE {{ function.language }};

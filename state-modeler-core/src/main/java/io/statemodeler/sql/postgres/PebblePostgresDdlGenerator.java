@@ -1,7 +1,6 @@
 package io.statemodeler.sql.postgres;
 
 import io.pebbletemplates.pebble.PebbleEngine;
-import io.pebbletemplates.pebble.loader.ClasspathLoader;
 import io.pebbletemplates.pebble.template.PebbleTemplate;
 import io.statemodeler.core.SddModel;
 import io.statemodeler.sql.*;
@@ -60,8 +59,10 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
     }
 
     /**
-     * Generate an abstract SQL plan from the SDD model.
-     * Duplicated from PostgresDdlGenerator to avoid modifying existing code.
+    * Generate an abstract SQL plan from the SDD model.
+    * Generates the SQL plan from the provided SDD model. The plan building logic
+    * mirrors the prior in-memory SQL plan construction, but the final DDL
+    * rendering is performed via Pebble templates.
      */
     private SqlPlan generateSqlPlan(SddModel model) {
         var tables = new ArrayList<TableDefinition>();
@@ -99,8 +100,8 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
             // Extension tables in state schema (created WITHOUT FK to avoid circular
             // dependencies)
             for (var extension : entity.extensions().values()) {
-                var extensionTable = tableGenerator.generateExtensionTable(entity, extension, entitySchema,
-                        stateSchema);
+                var extensionTable =
+                        tableGenerator.generateExtensionTable(entity, extension, entitySchema, stateSchema);
                 tables.add(extensionTable);
             }
 
@@ -120,8 +121,8 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
             }
             for (var state : entity.states().values()) {
                 if (state.hasOrTransitions()) {
-                    var uniqueConstraints = constraintGenerator.generateOrTransitionUniqueConstraints(entity, state,
-                            stateSchema);
+                    var uniqueConstraints =
+                            constraintGenerator.generateOrTransitionUniqueConstraints(entity, state, stateSchema);
                     constraints.addAll(uniqueConstraints);
                 }
             }
@@ -141,8 +142,8 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
             }
             // 2b. FK from state tables to entity and previous states
             for (var state : entity.states().values()) {
-                var fkConstraints = constraintGenerator.generateStateForeignKeys(entity, state, entitySchema,
-                        stateSchema);
+                var fkConstraints =
+                        constraintGenerator.generateStateForeignKeys(entity, state, entitySchema, stateSchema);
                 constraints.addAll(fkConstraints);
                 // Generate indexes for FK columns (skip entity_id FK - UNIQUE constraint
                 // creates implicit index)
@@ -174,14 +175,12 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
             entity.projections().values().stream()
                     .sorted((p1, p2) -> {
                         // intervals before current_state (current_state depends on intervals view)
-                        boolean p1IsIntervals = p1
-                                .kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS;
-                        boolean p2IsIntervals = p2
-                                .kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS;
-                        if (p1IsIntervals && !p2IsIntervals)
-                            return -1;
-                        if (!p1IsIntervals && p2IsIntervals)
-                            return 1;
+                        boolean p1IsIntervals =
+                                p1.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS;
+                        boolean p2IsIntervals =
+                                p2.kind() == io.statemodeler.core.ProjectionDef.ProjectionKind.INTERVALS;
+                        if (p1IsIntervals && !p2IsIntervals) return -1;
+                        if (!p1IsIntervals && p2IsIntervals) return 1;
                         return p1.name().compareTo(p2.name()); // stable sort for same kind
                     })
                     .forEach(projection -> views.add(

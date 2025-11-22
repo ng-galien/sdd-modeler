@@ -34,24 +34,7 @@ final class PostgresTriggerGenerator {
                 triggerName, tableName, "AFTER", List.of("INSERT"), "ROW", functionName, List.of(stateTypeArg));
     }
 
-    /**
-     * Render trigger definition to PostgreSQL DDL.
-     *
-     * @param trigger trigger definition to render
-     * @return PostgreSQL CREATE TRIGGER statement
-     */
-    String renderTrigger(TriggerDefinition trigger) {
-        var events = String.join(" OR ", trigger.events());
-        var args = trigger.functionArgs().isEmpty() ? "" : String.join(", ", trigger.functionArgs());
-
-        return String.format(
-                "CREATE TRIGGER %s\n%s %s ON %s\nFOR EACH %s\nEXECUTE FUNCTION %s(%s);",
-                trigger.name(),
-                trigger.timing(),
-                events,
-                trigger.table(),
-                trigger.forEach(),
-                trigger.functionName(),
-                args);
-    }
+    // Trigger DDL rendering is done in Pebble templates; legacy string-based
+    // rendering methods were removed to keep generator logic focused on
+    // generating definitions rather than rendering SQL text.
 }

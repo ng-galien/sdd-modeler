@@ -1,7 +1,6 @@
 package io.statemodeler.sql.postgres;
 
 import io.statemodeler.core.EntityDef;
-import io.statemodeler.core.StateDef;
 import io.statemodeler.sql.FunctionDefinition;
 import java.util.List;
 
@@ -28,8 +27,7 @@ final class PostgresFunctionGenerator {
         var entityIdColumn = entity.name() + "_id";
         var stateTableName = entity.name() + "_state";
 
-        String body = String.format(
-                """
+        String body = String.format("""
                         DECLARE
                             v_state_type text := TG_ARGV[0];
                         BEGIN
@@ -51,32 +49,13 @@ final class PostgresFunctionGenerator {
 
                             RETURN NEW;
                         END;
-                        """,
-                stateSchema,
-                stateTableName,
-                entityIdColumn,
-                entityIdColumn,
-                entityIdColumn);
+                        """, stateSchema, stateTableName, entityIdColumn, entityIdColumn, entityIdColumn);
 
         return new FunctionDefinition(
                 "sync_" + entity.name() + "_state", stateSchema, List.of(), "TRIGGER", "plpgsql", body);
     }
 
-    /**
-     * Render function definition to PostgreSQL DDL.
-     *
-     * @param function function definition to render
-     * @return PostgreSQL CREATE FUNCTION statement
-     */
-    String renderFunction(FunctionDefinition function) {
-        var params = String.join(", ", function.parameters());
-        return String.format(
-                "CREATE OR REPLACE FUNCTION %s.%s(%s) RETURNS %s AS $$\n%s$$ LANGUAGE %s;",
-                function.schema(),
-                function.name(),
-                params,
-                function.returnType(),
-                function.body(),
-                function.language());
-    }
+    // Rendering of the function DDL is handled by the canonical Pebble-based
+    // generator (PebblePostgresDdlGenerator) using templates. Legacy string
+    // rendering methods were removed to simplify generators.
 }

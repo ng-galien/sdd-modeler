@@ -4,6 +4,7 @@ import io.statemodeler.core.EntityDef;
 import io.statemodeler.core.ProjectionDef;
 import io.statemodeler.sql.ViewDefinition;
 import java.util.ArrayList;
+import java.util.Optional;
 
 /**
  * Generates PostgreSQL view definitions for SDD projections (intervals and current_state).
@@ -136,11 +137,7 @@ final class PostgresViewGenerator {
      */
     private ViewDefinition generateCurrentStateView(EntityDef entity, ProjectionDef projection, String schema) {
         // Current state view is simple: filter intervals where end_at IS NULL
-        var intervalsViewName = findIntervalsViewName(entity);
-        if (intervalsViewName == null) {
-            // Fallback if no intervals view found
-            intervalsViewName = entity.name() + "_state_intervals";
-        }
+        var intervalsViewName = findIntervalsViewName(entity).orElse(entity.name() + "_state_intervals");
 
         var sql = new StringBuilder();
         sql.append("SELECT\n");
@@ -157,14 +154,14 @@ final class PostgresViewGenerator {
      * Find the intervals view name for an entity (if defined in projections).
      *
      * @param entity entity definition
-     * @return intervals view name or null if not found
+     * @return Optional containing the intervals view name if present, otherwise Optional.empty()
      */
-    private String findIntervalsViewName(EntityDef entity) {
+    private Optional<String> findIntervalsViewName(EntityDef entity) {
         for (var projection : entity.projections().values()) {
             if (projection.kind() == ProjectionDef.ProjectionKind.INTERVALS) {
-                return projection.viewName();
+                return Optional.of(projection.viewName());
             }
         }
-        return null;
+        return Optional.empty();
     }
 }

@@ -9,6 +9,7 @@ import io.statemodeler.core.DatabaseConfig;
 import io.statemodeler.core.EntityDef;
 import io.statemodeler.core.SddModel;
 import io.statemodeler.core.StateDef;
+import io.statemodeler.sql.DdlGenerators;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -16,29 +17,29 @@ import org.junit.jupiter.api.Test;
 class PebblePostgresDdlGeneratorTest {
 
     @Test
-    void shouldGenerateSameOutputAsLegacyGenerator() {
+    void shouldGenerateSameOutputAsFactoryGenerator() {
         // Given
         var model = createSimpleOrderModel();
-        var legacyGenerator = new PostgresDdlGenerator();
         var pebbleGenerator = new PebblePostgresDdlGenerator();
+        var factoryGenerator = DdlGenerators.forDialect("postgres");
 
         // When
-        var legacyDdl = legacyGenerator.generateDdl(model);
+        var factoryDdl = factoryGenerator.generateDdl(model);
         var pebbleDdl = pebbleGenerator.generateDdl(model);
 
         // Then
         // Normalize using SQL Formatter for both outputs
-        String normLegacy = SqlFormatter.of(Dialect.PostgreSql).format(legacyDdl);
+        String normFactory = SqlFormatter.of(Dialect.PostgreSql).format(factoryDdl);
         String normPebble = SqlFormatter.of(Dialect.PostgreSql).format(pebbleDdl);
 
-        if (!normLegacy.equals(normPebble)) {
-            System.out.println("LEGACY:\n" + legacyDdl);
+        if (!normFactory.equals(normPebble)) {
+            System.out.println("FACTORY:\n" + factoryDdl);
             System.out.println("PEBBLE:\n" + pebbleDdl);
-            System.out.println("NORM LEGACY:\n" + normLegacy);
+            System.out.println("NORM FACTORY:\n" + normFactory);
             System.out.println("NORM PEBBLE:\n" + normPebble);
         }
 
-        assertEquals(normLegacy, normPebble);
+        assertEquals(normFactory, normPebble);
     }
 
     @Test
@@ -80,8 +81,7 @@ class PebblePostgresDdlGeneratorTest {
                 true, // initial
                 List.of(), // no from states (initial)
                 List.of(), // no OR transitions
-                Map.of("pending_reason",
-                        new AttributeDef("pending_reason", "text", false, false, null, null)));
+                Map.of("pending_reason", new AttributeDef("pending_reason", "text", false, false, null, null)));
 
         var entity = new EntityDef(
                 "order",

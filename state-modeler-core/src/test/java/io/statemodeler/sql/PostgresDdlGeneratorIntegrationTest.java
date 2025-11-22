@@ -338,7 +338,9 @@ class PostgresDdlGeneratorIntegrationTest {
 
         // Verify sync function creation
         assertTrue(ddl.contains("CREATE OR REPLACE FUNCTION public_states.sync_order_state()"));
-        assertTrue(ddl.contains("RETURNS TRIGGER AS $$"));
+        // The generator now uses a unique dollar-quote tag per function name,
+        // so we only assert the presence of the AS clause for trigger functions.
+        assertTrue(ddl.contains("RETURNS TRIGGER AS "), "Should declare trigger return type and AS clause");
         assertTrue(ddl.contains("INSERT INTO public_states.order_state"));
         assertTrue(ddl.contains("ON CONFLICT (order_id) DO UPDATE"));
 

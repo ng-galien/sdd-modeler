@@ -55,21 +55,7 @@ final class PostgresFunctionGenerator {
                 "sync_" + entity.name() + "_state", stateSchema, List.of(), "TRIGGER", "plpgsql", body);
     }
 
-    /**
-     * Render function definition to PostgreSQL DDL.
-     *
-     * @param function function definition to render
-     * @return PostgreSQL CREATE FUNCTION statement
-     */
-    String renderFunction(FunctionDefinition function) {
-        var params = String.join(", ", function.parameters());
-        return String.format(
-                "CREATE OR REPLACE FUNCTION %s.%s(%s) RETURNS %s AS $$\n%s$$ LANGUAGE %s;",
-                function.schema(),
-                function.name(),
-                params,
-                function.returnType(),
-                function.body(),
-                function.language());
-    }
+    // Rendering of the function DDL is handled by the canonical Pebble-based
+    // generator (PebblePostgresDdlGenerator) using templates. Legacy string
+    // rendering methods were removed to simplify generators.
 }

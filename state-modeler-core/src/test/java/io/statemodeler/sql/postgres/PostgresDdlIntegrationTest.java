@@ -10,11 +10,15 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Integration tests for PostgreSQL DDL generation.
@@ -43,6 +47,8 @@ class PostgresDdlIntegrationTest {
         }
     }
 
+    // Use shared SQL splitter utility (see SqlSplitter)
+
     @Test
     void shouldExecuteGeneratedDdlSuccessfully() throws Exception {
         // Given - Load the orders example model
@@ -67,8 +73,9 @@ class PostgresDdlIntegrationTest {
 
             try (Statement stmt = conn.createStatement()) {
                 // Split DDL by statements (each ending with semicolon + newline)
-                // and execute them one by one
-                for (String statement : ddl.split(";\\s*\\n")) {
+                // and execute them one by one. Use a safe splitter that ignores
+                // semicolons inside dollar-quoted function bodies ($$ ... $$).
+                for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl)) {
                     statement = statement.trim();
                     if (!statement.isEmpty()) {
                         // Debugging print removed: rely on test failure logs
@@ -147,7 +154,7 @@ class PostgresDdlIntegrationTest {
                 DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
 
             try (Statement stmt = conn.createStatement()) {
-                for (String statement : ddl.split(";\\s*\\n")) {
+                for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl)) {
                     statement = statement.trim();
                     if (!statement.isEmpty()) {
                         stmt.execute(statement + ";");
@@ -204,7 +211,7 @@ class PostgresDdlIntegrationTest {
                 DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
 
             try (Statement stmt = conn.createStatement()) {
-                for (String statement : ddl.split(";\\s*\\n")) {
+                for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl)) {
                     statement = statement.trim();
                     if (!statement.isEmpty()) {
                         stmt.execute(statement + ";");

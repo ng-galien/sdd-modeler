@@ -30,6 +30,11 @@ public class {{ entity.className }}Controller {
     }
 
     // GET endpoints per state
+    @GetMapping
+    public java.util.List<{{ entity.className }}State> findAll() {
+        return service.findAll();
+    }
+
     {% for stateRepo in stateRepositories %}
     @GetMapping("/{{ stateRepo.stateName | lower }}/{id}")
     public ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}(@PathVariable {{ entity.id.className }} id) {

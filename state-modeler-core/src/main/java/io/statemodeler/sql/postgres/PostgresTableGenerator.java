@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Generates PostgreSQL table definitions for SDD entities, states, extensions, and OR transition
+ * Generates PostgreSQL table definitions for SDD entities, states, extensions,
+ * and OR transition
  * mapping tables.
  */
 final class PostgresTableGenerator {
@@ -47,10 +48,10 @@ final class PostgresTableGenerator {
     /**
      * Generate state table definition.
      *
-     * @param entity entity definition
-     * @param state state definition
+     * @param entity       entity definition
+     * @param state        state definition
      * @param entitySchema schema for entity tables
-     * @param stateSchema schema for state tables
+     * @param stateSchema  schema for state tables
      * @return table definition for state
      */
     TableDefinition generateStateTable(EntityDef entity, StateDef state, String entitySchema, String stateSchema) {
@@ -91,10 +92,10 @@ final class PostgresTableGenerator {
     /**
      * Generate extension table definition.
      *
-     * @param entity entity definition
-     * @param extension extension definition
+     * @param entity       entity definition
+     * @param extension    extension definition
      * @param entitySchema schema for entity tables
-     * @param stateSchema schema for state/extension tables
+     * @param stateSchema  schema for state/extension tables
      * @return table definition for extension
      */
     TableDefinition generateExtensionTable(
@@ -119,10 +120,10 @@ final class PostgresTableGenerator {
     /**
      * Generate OR transition mapping table definition.
      *
-     * @param entity entity definition
-     * @param state state definition with OR transitions
+     * @param entity       entity definition
+     * @param state        state definition with OR transitions
      * @param entitySchema schema for entity tables
-     * @param stateSchema schema for state tables
+     * @param stateSchema  schema for state tables
      * @return table definition for OR transition mapping
      */
     TableDefinition generateOrTransitionTable(
@@ -135,7 +136,8 @@ final class PostgresTableGenerator {
         // Entity reference (required for composite FK)
         columns.add(new ColumnDefinition(entity.name() + "_id", "INTEGER", false, false, null, null, null));
 
-        // References to possible source states (FK added separately to avoid circular dependency)
+        // References to possible source states (FK added separately to avoid circular
+        // dependency)
         for (var fromState : state.fromAnyOf()) {
             columns.add(new ColumnDefinition(
                     fromState + "_state_id",
@@ -148,5 +150,42 @@ final class PostgresTableGenerator {
         }
 
         return new TableDefinition(state.name() + "_source", stateSchema, columns, List.of("id"));
+    }
+
+    /**
+     * Generate domain state table for current state projection.
+     *
+     * <p>
+     * This table maintains the current state of each entity instance, updated
+     * automatically via
+     * triggers on state tables.
+     *
+     * @param entity      entity definition
+     * @param stateSchema schema for state tables
+     * @return table definition for domain state
+     */
+    TableDefinition generateDomainStateTable(EntityDef entity, String stateSchema) {
+        var columns = new ArrayList<ColumnDefinition>();
+        var entityIdColumn = entity.name() + "_id";
+
+        // Primary key (entity_id)
+        columns.add(new ColumnDefinition(entityIdColumn, "BIGINT", false, true, null, null, null));
+
+        // Current state type
+        columns.add(new ColumnDefinition("state_type", "TEXT", false, false, null, null, null));
+
+        // Reference to state row
+        columns.add(new ColumnDefinition("state_row_id", "BIGINT", false, false, null, null, null));
+
+        // State timestamp
+        columns.add(new ColumnDefinition("state_at", "TIMESTAMPTZ", false, false, null, null, null));
+
+        // JSON snapshot
+        columns.add(new ColumnDefinition("state_json", "JSONB", false, false, null, null, null));
+
+        // Updated timestamp
+        columns.add(new ColumnDefinition("updated_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
+
+        return new TableDefinition(entity.name() + "_state", stateSchema, columns, List.of(entityIdColumn));
     }
 }

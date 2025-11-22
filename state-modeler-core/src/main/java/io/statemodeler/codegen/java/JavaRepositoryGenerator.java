@@ -30,6 +30,10 @@ public class JavaRepositoryGenerator {
                 String filename = resolveRepositoryFilename(entity, state, model);
                 generatedFiles.put(filename, content);
             }
+
+            String domainContent = generateDomainStateRepository(entity, model);
+            String domainFilename = resolveDomainStateRepositoryFilename(entity, model);
+            generatedFiles.put(domainFilename, domainContent);
         }
         return generatedFiles;
     }
@@ -46,7 +50,9 @@ public class JavaRepositoryGenerator {
         Object modelImps = modelCtx.get("imports");
         Set<String> imports = new HashSet<>();
         if (modelImps instanceof Set<?> mis) {
-            for (Object o : mis) if (o instanceof String str) imports.add(str);
+            for (Object o : mis)
+                if (o instanceof String str)
+                    imports.add(str);
         }
         context.put("imports", imports);
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
@@ -64,5 +70,38 @@ public class JavaRepositoryGenerator {
         var options = model.database().generatorOptions();
         var pkg = options != null ? options.getOrDefault("packageName", "com.example") : "com.example";
         return pkg.replace('.', '/') + "/" + contextBuilder.toPascal(state.name()) + "Repository.java";
+    }
+
+    private String generateDomainStateRepository(EntityDef entity, SddModel model) {
+        PebbleTemplate template = engine.getTemplate("templates/java/domain_state_repository.java.pebble");
+        Map<String, Object> context = new HashMap<>();
+        Map<String, Object> entityCtx = contextBuilder.buildEntityContext(entity);
+        context.put("entity", entityCtx);
+        Map<String, Object> modelCtx = contextBuilder.buildModelContext(model);
+        context.put("model", modelCtx);
+
+        Object modelImps = modelCtx.get("imports");
+        Set<String> imports = new HashSet<>();
+        if (modelImps instanceof Set<?> mis) {
+            for (Object o : mis)
+                if (o instanceof String str)
+                    imports.add(str);
+        }
+        context.put("imports", imports);
+        context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
+
+        Writer writer = new StringWriter();
+        try {
+            template.evaluate(writer, context);
+            return writer.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate domain state repository for " + entity.name(), e);
+        }
+    }
+
+    private String resolveDomainStateRepositoryFilename(EntityDef entity, SddModel model) {
+        var options = model.database().generatorOptions();
+        var pkg = options != null ? options.getOrDefault("packageName", "com.example") : "com.example";
+        return pkg.replace('.', '/') + "/" + contextBuilder.toPascal(entity.name()) + "DomainStateRepository.java";
     }
 }

@@ -11,6 +11,21 @@ import org.junit.jupiter.api.Test;
 
 class PostgresDdlGeneratorIntegrationTest {
 
+        /**
+         * Normalize DDL for comparison by collapsing whitespace.
+         * This allows tests to work regardless of formatting differences.
+         */
+        private String normalize(String ddl) {
+                return ddl.replaceAll("\\s+", " ").trim().toLowerCase();
+        }
+
+        /**
+         * Check if normalized DDL contains the normalized expected string.
+         */
+        private boolean containsNormalized(String ddl, String expected) {
+                return normalize(ddl).contains(normalize(expected));
+        }
+
         @Test
         void shouldGenerateEntityTableDdl() throws Exception {
                 var generator = DdlGenerators.forDialect("postgres");

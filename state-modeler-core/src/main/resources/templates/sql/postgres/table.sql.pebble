@@ -1,0 +1,5 @@
+CREATE TABLE {{ table.fullName }} (
+{% for column in table.columns %}
+    {{ column.name }} {{ column.type }}{% if column.primaryKey %} PRIMARY KEY{% endif %}{% if not column.nullable %} NOT NULL{% endif %}{% if column.defaultValue is not null %} DEFAULT {{ column.defaultValue }}{% endif %}{% if not loop.last %},{% endif %}
+{% endfor %}
+);

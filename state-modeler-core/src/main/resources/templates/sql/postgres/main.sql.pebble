@@ -1,0 +1,32 @@
+{% if entitySchema is not empty and entitySchema != "public" %}
+CREATE SCHEMA IF NOT EXISTS {{ entitySchema }};
+
+{% endif %}
+{% if stateSchema is not empty and stateSchema != "public" %}
+CREATE SCHEMA IF NOT EXISTS {{ stateSchema }};
+
+{% endif %}
+{% for table in plan.tables %}
+{% include "templates/sql/postgres/table.sql.pebble" %}
+
+{% endfor %}
+{% for function in plan.functions %}
+{% include "templates/sql/postgres/function.sql.pebble" %}
+
+{% endfor %}
+{% for constraint in plan.constraints %}
+{% include "templates/sql/postgres/constraint.sql.pebble" %}
+
+{% endfor %}
+{% for trigger in plan.triggers %}
+{% include "templates/sql/postgres/trigger.sql.pebble" %}
+
+{% endfor %}
+{% for index in plan.indexes %}
+{% include "templates/sql/postgres/index.sql.pebble" %}
+
+{% endfor %}
+{% for view in plan.views %}
+{% include "templates/sql/postgres/view.sql.pebble" %}
+
+{% endfor %}

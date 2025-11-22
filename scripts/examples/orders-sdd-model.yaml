@@ -16,6 +16,7 @@ entities:
       customer_id:
         type: int
         nullable: false
+        description: "Référence vers le client"
       total_amount:
         type: numeric(10,2)
         nullable: false
@@ -42,3 +43,47 @@ entities:
           paid_amount:
             type: numeric(10,2)
             nullable: false
+
+      cancelled:
+        from_any_of: [pending, paid]
+        table: order_cancelled
+        attributes:
+          cancel_reason:
+            type: text
+            nullable: false
+
+      refunded:
+        from: [paid]
+        table: order_refunded
+        attributes:
+          refund_amount:
+            type: numeric(10,2)
+            nullable: false
+          refund_method:
+            type: text
+            nullable: false
+
+    extensions:
+      paid_extensions:
+        table: order_paid_extensions
+        target_state: paid
+        attributes:
+          additional_notes:
+            type: text
+            nullable: true
+
+      cancelled_extensions:
+        table: order_cancelled_extensions
+        target_state: cancelled
+        attributes:
+          admin_comments:
+            type: text
+            nullable: true
+
+    projections:
+      state_intervals:
+        kind: intervals
+        name: order_state_intervals
+      current_state:
+        kind: current_state
+        name: current_order_states

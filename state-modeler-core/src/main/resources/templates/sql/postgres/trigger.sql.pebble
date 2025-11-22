@@ -1,0 +1,4 @@
+CREATE TRIGGER {{ trigger.name }}
+ {{ trigger.timing }} {{ trigger.events | join(" OR ") }} ON {{ trigger.table }}
+ FOR EACH {{ trigger.forEach }}
+ EXECUTE FUNCTION {{ trigger.functionName }}({{ trigger.functionArgs | join(", ") }});

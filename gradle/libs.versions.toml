@@ -59,6 +59,7 @@ testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", ve
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+palantir-java-format = { module = "com.palantir.javaformat:palantir-java-format", version.ref = "palantir-java-format" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

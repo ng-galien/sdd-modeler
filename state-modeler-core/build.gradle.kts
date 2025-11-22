@@ -89,6 +89,8 @@ dependencies {
     implementation(libs.pebble)
     // Apache Commons Text for robust case conversions in code generation
     implementation(libs.commons.text)
+    // Palantir Java Format for formatting generated code
+    implementation(libs.palantir.java.format)
 
     // Test dependencies for core functionality
     testImplementation(libs.junit.jupiter)

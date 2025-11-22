@@ -39,6 +39,12 @@ public class SqlCommand implements Callable<Integer> {
             description = "Output file (default: stdout)")
     private Path outputFile;
 
+    @Option(
+            names = {"--format-ddl"},
+            description = "Format the generated DDL for better readability",
+            defaultValue = "false")
+    private boolean formatDdl;
+
     @Override
     public Integer call() {
         logger.info("Generating SQL for model file: {}", modelFile);
@@ -79,8 +85,8 @@ public class SqlCommand implements Callable<Integer> {
 
                             // Generate DDL
                             var generator = DdlGenerators.forDialect(dialect);
-                            var ddlStatements = generator.generateDdl(model);
-                            var ddlContent = String.join(";\n", ddlStatements) + ";\n";
+                            var ddlContent =
+                                    formatDdl ? generator.generateFormattedDdl(model) : generator.generateDdl(model);
 
                             // Write to file or stdout
                             if (outputFile != null) {

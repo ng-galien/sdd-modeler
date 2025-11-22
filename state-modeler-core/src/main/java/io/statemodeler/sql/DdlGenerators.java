@@ -1,6 +1,6 @@
 package io.statemodeler.sql;
 
-import io.statemodeler.sql.postgres.PostgresDdlGenerator;
+import io.statemodeler.sql.postgres.PebblePostgresDdlGenerator;
 
 /**
  * Factory for creating DDL generators based on SQL dialect.
@@ -20,7 +20,7 @@ public final class DdlGenerators {
      */
     public static DdlGenerator forDialect(String dialect) {
         return switch (dialect.toLowerCase()) {
-            case "postgres", "postgresql" -> new PostgresDdlGenerator();
+            case "postgres", "postgresql" -> new PebblePostgresDdlGenerator();
             default -> throw new IllegalArgumentException("Unsupported SQL dialect: " + dialect);
         };
     }
@@ -31,7 +31,7 @@ public final class DdlGenerators {
      * @return array of supported dialect names
      */
     public static String[] getSupportedDialects() {
-        return new String[] {"postgres"};
+        return new String[] { "postgres" };
     }
 
     /**

@@ -91,6 +91,8 @@ dependencies {
     implementation(libs.commons.text)
     // Palantir Java Format for formatting generated code
     implementation(libs.palantir.java.format)
+    // SQL Formatter for formatting generated SQL
+    implementation(libs.sql.formatter)
 
     // Test dependencies for core functionality
     testImplementation(libs.junit.jupiter)

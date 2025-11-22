@@ -1,0 +1,1 @@
+CREATE INDEX {{ index.name }} ON {{ index.fullTableName }} ({{ index.columns | join(", ") }});

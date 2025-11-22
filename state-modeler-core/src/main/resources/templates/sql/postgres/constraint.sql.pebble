@@ -1,0 +1,6 @@
+ALTER TABLE {{ constraint.table }} ADD CONSTRAINT {{ constraint.name }}
+{% if constraint.type == "CHECK" %}
+ CHECK ({{ constraint.definition }});
+{% else %}
+ {{ constraint.definition }};
+{% endif %}

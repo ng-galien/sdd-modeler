@@ -1,0 +1,2 @@
+CREATE OR REPLACE FUNCTION {{ function.schema }}.{{ function.name }}({{ function.parameters | join(", ") }}) RETURNS {{ function.returnType }} AS $$
+{{ function.body }}$$ LANGUAGE {{ function.language }};

@@ -31,7 +31,7 @@ Implémente la génération automatique d'index sur les colonnes de clés étran
 
 ### Classes modifiées
 - `SqlPlan` : Ajout de `List<IndexDefinition> indexes`
-- `PostgresDdlGenerator` : 
+- `PebblePostgresDdlGenerator` :
   - Méthode `generateIndexesForTable()` pour créer les index FK
   - Méthode `renderIndex()` pour le rendu DDL
 - `DefaultModelValidator` : Ajout de `validateAttributeTypes()` pour le dialecte postgres
@@ -39,7 +39,7 @@ Implémente la génération automatique d'index sur les colonnes de clés étran
 ## ✅ Tests
 
 - 3 nouveaux tests ajoutés :
-  - `PostgresDdlGeneratorIntegrationTest.shouldGenerateIndexesOnForeignKeys()`
+  - `PostgresDdlIntegrationTest.shouldGenerateIndexesOnForeignKeys()`
   - `DefaultModelValidatorTest.shouldRejectInvalidAttributeTypes()`
   - `DefaultModelValidatorTest.shouldAcceptValidPostgresTypes()`
 - Total : **107 tests** (tous passent ✅)

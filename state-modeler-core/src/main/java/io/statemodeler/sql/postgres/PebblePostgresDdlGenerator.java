@@ -61,7 +61,9 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
 
     /**
      * Generate an abstract SQL plan from the SDD model.
-     * Duplicated from PostgresDdlGenerator to avoid modifying existing code.
+    * Generates the SQL plan from the provided SDD model. The plan building logic
+    * mirrors the legacy in-memory SQL plan construction, but the final DDL
+    * rendering is performed via Pebble templates.
      */
     private SqlPlan generateSqlPlan(SddModel model) {
         var tables = new ArrayList<TableDefinition>();

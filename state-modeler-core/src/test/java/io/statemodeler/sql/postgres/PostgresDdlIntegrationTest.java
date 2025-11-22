@@ -71,6 +71,7 @@ class PostgresDdlIntegrationTest {
                 for (String statement : ddl.split(";\\s*\\n")) {
                     statement = statement.trim();
                     if (!statement.isEmpty()) {
+                        // Debugging print removed: rely on test failure logs
                         stmt.execute(statement + ";");
                     }
                 }

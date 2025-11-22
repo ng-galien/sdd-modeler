@@ -26,10 +26,10 @@ Key project patterns & conventions
 - Use Vavr (`io.vavr.control.Try`, `Validation`) extensively for functionally-returned errors. Methods (especially repo methods) return `Try<T>` rather than throwing.
 - SQL design: entity vs state schema separation; append-only state tables; composite predecessor columns like `previous_<state>_id` paired with `entity_id` and Composite FKs `(previous_xxx_id, entity_id) -> (id, entity_id)` to ensure same-entity transitions.
 - Naming: indexes are prefixed with `idx_<table>_<columns>`. Unique constraints often include `(id, entity_id)` and a `(entity_id)` unique constraint where appropriate.
-- Constraint & index order matters: create UNIQUE constraints before foreign keys which reference them. `PostgresDdlGenerator` and integration tests rely on a specific ordering.
+ - Constraint & index order matters: create UNIQUE constraints before foreign keys which reference them. The Postgres DDL generator and integration tests rely on a specific ordering.
 
 SQL generation & migration
-- Edit DDL generation in: `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (PostgresDdlGenerator and generator classes). Unit & integration tests live next to generator code (look for tests in core module).
+- Edit DDL generation in: `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (Pebble-based generator and generator classes). Unit & integration tests live next to generator code (look for tests in core module).
 - `migrate` command uses LangChain4j (Ollama by default). OpenAI is supported via `OPENAI_API_KEY`. The `migrate` command expects the LLM to output a JSON structure with `confidence`, `migrationScript`, and `comments`. See outputs in `build/test-migration-output/` for examples.
 - For tests and deterministic behavior use `MockChatModelProvider` (`state-modeler-app/src/test/java/io/statemodeler/migration`) instead of calling a real LLM.
 
@@ -104,7 +104,7 @@ Core conventions
 - No global `status` column — current state is derived via `state_intervals` / `current_state` views.
 
 Where to edit key behavior
-- SQL generation: `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (look at `PostgresDdlGenerator` and generator classes).
+- SQL generation: `state-modeler-core/src/main/java/io/statemodeler/sql/postgres/` (look at `PebblePostgresDdlGenerator` and generator classes).
 - DSL & validation: `state-modeler-core/src/main/java/io/statemodeler/dsl/` and `.../core` (SddModel, EntityDef, StateDef).
 - CLI & persistence: `state-modeler-app/src/main/java/io/statemodeler/cli/` and `.../repository/` (H2 DAOs).
 - LLM/migration: `state-modeler-app/src/main/java/io/statemodeler/migration/` (`ChatModelProvider`, `LangChainModelProvider`, `MockChatModelProvider`).

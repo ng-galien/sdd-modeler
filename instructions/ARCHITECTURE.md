@@ -209,7 +209,7 @@ Si `state_schema` est omis, la valeur par défaut est `<schema>_states` :
 
 - `io.statemodeler.sql.postgres`
   - Rendu du plan SQL en DDL PostgreSQL :
-    - `PostgresDdlGenerator` — génère le DDL PostgreSQL complet à partir d'un
+    - `PebblePostgresDdlGenerator` — génère le DDL PostgreSQL complet à partir d'un
       `SddModel`. Gère la séparation des schémas : tables d'entités dans le
       schéma entité (`schema`), tables d'états/extensions/OR transitions/projections
       dans le schéma d'états (`stateSchema` ou `<schema>_states` par défaut).

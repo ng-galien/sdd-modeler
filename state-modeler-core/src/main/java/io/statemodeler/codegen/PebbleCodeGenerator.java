@@ -15,11 +15,13 @@ public class PebbleCodeGenerator implements CodeGenerator {
     private final PebbleEngine engine;
     private final String language;
     private final JavaContextBuilder javaContextBuilder;
+    private final JavaCodeFormatter javaFormatter;
 
     public PebbleCodeGenerator(String language) {
         this.engine = new PebbleEngine.Builder().build();
         this.language = language;
         this.javaContextBuilder = new JavaContextBuilder();
+        this.javaFormatter = new JavaCodeFormatter();
     }
 
     @Override
@@ -39,6 +41,13 @@ public class PebbleCodeGenerator implements CodeGenerator {
             generatedFiles.putAll(new JavaServiceGenerator(engine, javaContextBuilder).generate(model));
             generatedFiles.putAll(new JavaConverterGenerator(engine, javaContextBuilder).generate(model));
             generatedFiles.putAll(new JavaConfigGenerator(engine, javaContextBuilder).generate(model));
+
+            // Apply formatting to all Java files
+            for (Map.Entry<String, String> entry : generatedFiles.entrySet()) {
+                if (entry.getKey().endsWith(".java")) {
+                    entry.setValue(javaFormatter.format(entry.getValue()));
+                }
+            }
         } else {
             // Fallback or other languages (not fully implemented in this refactor)
             // For now, we only support Java fully with the new structure.

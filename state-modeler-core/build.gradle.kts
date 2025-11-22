@@ -94,6 +94,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.assertj)
     // Test/runtime logback deps are provided globally by the root `subprojects` configuration
     
     // PostgreSQL integration tests with Testcontainers

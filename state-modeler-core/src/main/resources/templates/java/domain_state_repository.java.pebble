@@ -1,0 +1,6 @@
+package {{ options.packageName }};
+
+import org.springframework.data.repository.CrudRepository;
+
+public interface {{ entity.className }}DomainStateRepository extends CrudRepository<{{ entity.className }}DomainState, {{ entity.id.className }}> {
+}

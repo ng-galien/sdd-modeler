@@ -13,15 +13,40 @@ public class {{ entity.className }}Service {
     {% for state in entity.states %}
     private final {{ state.className }}Repository {{ state.propertyName }}Repository;
     {% endfor %}
+    private final {{ entity.className }}DomainStateRepository domainStateRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public {{ entity.className }}Service(
         {% for state in entity.states %}
-        {{ state.className }}Repository {{ state.propertyName }}Repository{% if not loop.last %},{% endif %}
+        {{ state.className }}Repository {{ state.propertyName }}Repository,
         {% endfor %}
+        {{ entity.className }}DomainStateRepository domainStateRepository,
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper
     ) {
         {% for state in entity.states %}
         this.{{ state.propertyName }}Repository = {{ state.propertyName }}Repository;
         {% endfor %}
+        this.domainStateRepository = domainStateRepository;
+        this.objectMapper = objectMapper;
+    }
+
+    public java.util.List<{{ entity.className }}State> findAll() {
+        var domainStates = domainStateRepository.findAll();
+        var states = new java.util.ArrayList<{{ entity.className }}State>();
+        for (var ds : domainStates) {
+            try {
+                Class<? extends {{ entity.className }}State> stateClass = switch(ds.stateType()) {
+                    {% for state in entity.states %}
+                    case "{{ state.name | upper }}" -> {{ entity.className }}State.{{ state.className }}.class;
+                    {% endfor %}
+                    default -> throw new IllegalStateException("Unknown state type: " + ds.stateType());
+                };
+                states.add(objectMapper.readValue(ds.stateJson(), stateClass));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to deserialize state", e);
+            }
+        }
+        return states;
     }
 
     {% for state in entity.states %}

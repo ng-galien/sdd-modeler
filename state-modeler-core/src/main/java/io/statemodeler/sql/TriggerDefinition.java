@@ -52,8 +52,7 @@ public record TriggerDefinition(
         }
         for (var event : events) {
             if (!event.equals("INSERT") && !event.equals("UPDATE") && !event.equals("DELETE")) {
-                throw new IllegalArgumentException(
-                        "event must be 'INSERT', 'UPDATE', or 'DELETE', got: " + event);
+                throw new IllegalArgumentException("event must be 'INSERT', 'UPDATE', or 'DELETE', got: " + event);
             }
         }
 

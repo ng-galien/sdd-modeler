@@ -9,7 +9,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Additional tests to achieve 100% coverage of PostgresDdlGenerator.
+ * Additional tests to exercise Postgres DDL generator behavior and coverage.
  * These tests cover edge cases and error paths not exercised by integration tests.
  */
 class PostgresDdlGeneratorCoverageTest {

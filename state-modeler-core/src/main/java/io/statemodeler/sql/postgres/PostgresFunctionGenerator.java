@@ -1,7 +1,6 @@
 package io.statemodeler.sql.postgres;
 
 import io.statemodeler.core.EntityDef;
-import io.statemodeler.core.StateDef;
 import io.statemodeler.sql.FunctionDefinition;
 import java.util.List;
 
@@ -28,8 +27,7 @@ final class PostgresFunctionGenerator {
         var entityIdColumn = entity.name() + "_id";
         var stateTableName = entity.name() + "_state";
 
-        String body = String.format(
-                """
+        String body = String.format("""
                         DECLARE
                             v_state_type text := TG_ARGV[0];
                         BEGIN
@@ -51,12 +49,7 @@ final class PostgresFunctionGenerator {
 
                             RETURN NEW;
                         END;
-                        """,
-                stateSchema,
-                stateTableName,
-                entityIdColumn,
-                entityIdColumn,
-                entityIdColumn);
+                        """, stateSchema, stateTableName, entityIdColumn, entityIdColumn, entityIdColumn);
 
         return new FunctionDefinition(
                 "sync_" + entity.name() + "_state", stateSchema, List.of(), "TRIGGER", "plpgsql", body);

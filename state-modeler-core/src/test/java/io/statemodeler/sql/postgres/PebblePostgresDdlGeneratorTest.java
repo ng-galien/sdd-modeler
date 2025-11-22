@@ -81,8 +81,7 @@ class PebblePostgresDdlGeneratorTest {
                 true, // initial
                 List.of(), // no from states (initial)
                 List.of(), // no OR transitions
-                Map.of("pending_reason",
-                        new AttributeDef("pending_reason", "text", false, false, null, null)));
+                Map.of("pending_reason", new AttributeDef("pending_reason", "text", false, false, null, null)));
 
         var entity = new EntityDef(
                 "order",

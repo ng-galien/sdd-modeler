@@ -31,7 +31,7 @@ public final class DdlGenerators {
      * @return array of supported dialect names
      */
     public static String[] getSupportedDialects() {
-        return new String[] { "postgres" };
+        return new String[] {"postgres"};
     }
 
     /**

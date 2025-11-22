@@ -10,8 +10,7 @@ class FunctionDefinitionTest {
 
     @Test
     void shouldCreateFunctionDefinition() {
-        var func = new FunctionDefinition(
-                "my_func", "public", List.of("arg1 text"), "void", "plpgsql", "BEGIN END;");
+        var func = new FunctionDefinition("my_func", "public", List.of("arg1 text"), "void", "plpgsql", "BEGIN END;");
 
         assertThat(func.name()).isEqualTo("my_func");
         assertThat(func.schema()).isEqualTo("public");

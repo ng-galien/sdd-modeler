@@ -12,8 +12,8 @@ class PebbleCodeGeneratorDomainStateTest {
     void shouldGenerateDomainStateComponents() {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var createdAtAttr = new AttributeDef("created_at", "timestamptz", false, false, null, null);
-        var created = new StateDef("created", "order_created", true, java.util.List.of(), java.util.List.of(),
-                Map.of());
+        var created =
+                new StateDef("created", "order_created", true, java.util.List.of(), java.util.List.of(), Map.of());
         var states = Map.of("created", created);
         var entity = new EntityDef(
                 "order_item", "orders", idAttr, Map.of("created_at", createdAtAttr), states, Map.of(), Map.of());
@@ -25,7 +25,8 @@ class PebbleCodeGeneratorDomainStateTest {
 
         // 1. Verify Domain State Entity
         var domainStateFilename = "com/example/OrderItemDomainState.java";
-        assertTrue(generated.containsKey(domainStateFilename),
+        assertTrue(
+                generated.containsKey(domainStateFilename),
                 "Expected generated Domain State Entity: " + domainStateFilename);
         var domainStateContent = generated.get(domainStateFilename);
         assertTrue(domainStateContent.contains("public record OrderItemDomainState("));
@@ -34,7 +35,8 @@ class PebbleCodeGeneratorDomainStateTest {
 
         // 2. Verify Domain State Repository
         var domainRepoFilename = "com/example/OrderItemDomainStateRepository.java";
-        assertTrue(generated.containsKey(domainRepoFilename),
+        assertTrue(
+                generated.containsKey(domainRepoFilename),
                 "Expected generated Domain State Repository: " + domainRepoFilename);
         var domainRepoContent = generated.get(domainRepoFilename);
         assertTrue(domainRepoContent.contains(

@@ -1,0 +1,32 @@
+package {{ options.packageName }};
+
+import java.util.List;
+
+{% for import in imports %}
+import {{ import }};
+{% endfor %}
+
+public interface {{ entity.className }}Service {
+
+    List<{{ entity.className }}State> findAll();
+
+    {% for state in entity.states %}
+    {% if not state.from.isEmpty() %}
+    {{ entity.className }}Dto transitionTo{{ state.className }}({{ entity.id.className }} id, TransitionTo{{ state.className }}Command command);
+
+    record TransitionTo{{ state.className }}Command(
+        {% for attr in state.attributes %}
+        {{ attr.javaType }} {{ attr.propertyName }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ) {
+        public TransitionTo{{ state.className }}Command {
+            {% for attr in state.attributes %}
+            {% if not attr.nullable %}
+            java.util.Objects.requireNonNull({{ attr.propertyName }}, "{{ attr.propertyName }} cannot be null");
+            {% endif %}
+            {% endfor %}
+        }
+    }
+    {% endif %}
+    {% endfor %}
+}

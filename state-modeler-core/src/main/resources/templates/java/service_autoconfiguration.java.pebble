@@ -1,0 +1,30 @@
+package {{ options.packageName }};
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+{% for import in imports %}
+import {{ import }};
+{% endfor %}
+
+@Configuration
+public class {{ entity.className }}ServiceAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean({{ entity.className }}Service.class)
+    public {{ entity.className }}Service {{ entity.propertyName }}Service(
+        {% for state in entity.states %}
+        {{ state.className }}Repository {{ state.propertyName }}Repository,
+        {% endfor %}
+        {{ entity.className }}DomainStateRepository domainStateRepository,
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper
+    ) {
+        return new Default{{ entity.className }}Service(
+            {% for state in entity.states %}
+            {{ state.propertyName }}Repository,
+            {% endfor %}
+            domainStateRepository,
+            objectMapper
+        );
+    }
+}

@@ -5,6 +5,8 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.cli.dto.MigrationDto;
+import io.statemodeler.cli.util.PathUtils;
+// Locale not needed when using Jackson for JSON serialization
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
@@ -14,11 +16,9 @@ import io.statemodeler.sdr.SdrRecord;
 import io.vavr.control.Try;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.nio.file.Path;
-import io.statemodeler.cli.util.PathUtils;
-// Locale not needed when using Jackson for JSON serialization
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;

@@ -1,10 +1,8 @@
-# Lead CRM - SDD Modeler Sample
+# Lead CRM — SDD Modeler Sample (English working copy)
 
-Exemple d'application Spring Boot démontrant l'utilisation de SDD Modeler pour gérer un système de Lead CRM avec 4 états.
+This folder contains a small Spring Boot sample application that demonstrates SDD Modeler features and generated code. The sample includes a state model, generated Java sources, a CLI for generating PostgreSQL DDL, and helper scripts to run Postgres locally and populate it with sample data.
 
-## 🎯 Modèle Lead CRM
-
-Ce projet implémente un système de gestion de leads avec les états suivants:
+## Lead state model
 
 ```mermaid
 stateDiagram-v2
@@ -15,289 +13,135 @@ stateDiagram-v2
     Converted --> [*]
 ```
 
-- **New**: Nouveau lead entrant (email, téléphone, source)
-- **Contacted**: Lead contacté (date, par qui, notes)
-- **Qualified**: Lead qualifié (budget, timeline, notes)
-- **Converted**: Lead converti en client (valeur contrat, commercial)
+States:
 
-## 🐳 Configuration PostgreSQL avec Docker
+- New — a newly created lead
+- Contacted — the lead was contacted by a salesperson
+- Qualified — the lead is qualified (budget / timeline)
+- Converted — the lead is converted into a customer
 
-### Démarrer PostgreSQL
+## Local Postgres (Docker Compose)
 
-```shell
-# Depuis le répertoire sample
-docker-compose up -d
+Start a local Postgres instance for the sample:
+
+```bash
+docker compose -f sample/docker-compose.yml up -d
 ```
 
-### Vérifier que PostgreSQL est démarré
+Stop the container:
 
-```shell
-docker-compose ps
+```bash
+docker compose -f sample/docker-compose.yml down
 ```
 
-### Arrêter PostgreSQL
+Reset the database by removing the volume (fresh initialization):
 
-```shell
-docker-compose down
+```bash
+docker compose -f sample/docker-compose.yml down -v
 ```
 
-### Supprimer les données (reset complet)
+The Compose file starts a container named `lead-crm-db`. The `sample/scripts/` directory is mounted into the container for convenience.
 
-```shell
-docker-compose down -v
+Note: the application connects to the `public_states` schema (where the generated DDL creates state tables). The sample `application.yml` sets the JDBC parameter `currentSchema=public_states,public` so entity mappings without a schema will resolve correctly. If you modify the DDL schema or the JDBC settings, ensure the `currentSchema` is updated accordingly.
+
+## Helper script: generate & apply schema + data
+
+Use the helper script to generate the DDL, ensure the `uuid-ossp` extension exists (if needed), and apply the schema and sample data in the correct order. The script supports `--fresh` which clears the Postgres volume so the DB starts clean.
+
+```bash
+# From the repository root
+./sample/scripts/apply-schema.sh --fresh
 ```
 
-## 🛠️ Génération du Code et du Schéma
+## (Optional) Manual generation & application steps
 
-### 1. Générer le code Java
-
-Le code generator SDD Modeler produit automatiquement:
-
-- Code Java (DTOs, Repositories, Services, Controllers)
-- Tests HTTP dans `build/generated/sdd/http/`
-
-```shell
-# Depuis le répertoire racine du projet
+```bash
+# Generate Java sources
 ./gradlew :sample:clean :sample:generateSdd
-```
 
-### 2. Générer le DDL SQL
-
-Le schéma PostgreSQL est généré via la commande CLI `sql`:
-
-```shell
+# Generate DDL with CLI (optional)
 ./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"
+
+# Apply DDL and sample data (container must be running)
+# Note: the sample script applies UUID extension and inserts the sample data in the correct order.
+docker exec -i lead-crm-db psql -U postgres -d postgres < sample/build/schema.sql
+docker exec -i lead-crm-db psql -U postgres -d postgres < sample/scripts/sample-data.sql
 ```
 
-### Note
+## Verify the sample data
 
-- Le CLI résout maintenant automatiquement les chemins relatifs basés sur le
-  répertoire où vous avez exécuté la commande Gradle (shell PWD) et prend en
-  charge des chemins relatifs de la forme `sample/...` lorsque vous lancez la
-  commande depuis la racine du dépôt. Si vous préférez, vous pouvez aussi
-  utiliser des chemins absolus via `$(pwd)/...`.
-- Si le répertoire de sortie (`sample/build`) n'existe pas, la CLI créera
-  automatiquement les dossiers parents nécessaires avant d'écrire `schema.sql`.
-
-Le fichier `sample/build/schema.sql` contient le DDL complet.
-
-### 3. Initialiser le schéma de base de données
-
-Appliquez le DDL généré à PostgreSQL:
-
-```shell
-# Exécuter le schéma généré
-docker-compose exec -T postgres psql -U lead_user -d lead_crm < sample/build/schema.sql
+```bash
+docker exec -i lead-crm-db psql -U postgres -d postgres -c "SELECT state_type, COUNT(*) FROM public_states.lead_state GROUP BY state_type;"
 ```
 
-### 4. Charger les données d'exemple
-
-```shell
-# Depuis le répertoire sample
-docker-compose exec -T postgres psql -U lead_user -d lead_crm < src/main/resources/db/sample-data.sql
+```bash
+docker exec -i lead-crm-db psql -U postgres -d postgres -c "SELECT state_type, COUNT(*) FROM public_states.lead_state GROUP BY state_type;"
 ```
 
-### 5. Vérifier les données
+## Run the sample application
 
-```shell
-# Depuis le répertoire sample
-docker-compose exec postgres psql -U lead_user -d lead_crm -c "SELECT state_type, COUNT(*) FROM public_states.Lead_state GROUP BY state_type;"
-```
-
-## 🚀 Exécution de l'Application
-
-### Démarrer l'application Spring Boot
-
-```shell
-# Depuis le répertoire racine
+```bash
 ./gradlew :sample:bootRun
 ```
 
-L'application démarre sur **http://localhost:8080**
+The application will be accessible at <http://localhost:8080>.
 
-### Endpoints disponibles
+## API endpoints
 
-- `GET /api/leads` - Tous les leads (tous états)
-- `GET /api/leads/new/{id}` - Lead en état "New"
-- `GET /api/leads/contacted/{id}` - Lead en état "Contacted"
-- `GET /api/leads/qualified/{id}` - Lead en état "Qualified"
-- `GET /api/leads/converted/{id}` - Lead en état "Converted"
-- `POST /api/leads/{id}/transitions/toContacted` - Transition New → Contacted
-- `POST /api/leads/{id}/transitions/toQualified` - Transition Contacted → Qualified
-- `POST /api/leads/{id}/transitions/toConverted` - Transition Qualified → Converted
+- `GET /api/leads` — list all leads
+- `GET /api/leads/new/{id}` — lead in New state
+- `GET /api/leads/contacted/{id}` — lead in Contacted state
+- `GET /api/leads/qualified/{id}` — lead in Qualified state
+- `GET /api/leads/converted/{id}` — lead in Converted state
+- `POST /api/leads/{id}/transitions/toContacted` — New → Contacted
+- `POST /api/leads/{id}/transitions/toQualified` — Contacted → Qualified
+- `POST /api/leads/{id}/transitions/toConverted` — Qualified → Converted
 
-## 🧪 Tests
+## Tests
 
-### Tests unitaires
+Unit tests:
 
-```shell
+```bash
 ./gradlew :sample:test
 ```
 
-### Tests HTTP avec IntelliJ/VSCode
+Open `sample/build/generated/sdd/http/lead.http` in your editor to run HTTP sample requests.
 
-Ouvrez le fichier généré: `build/generated/sdd/http/lead.http`
+## Project layout (sample)
 
-Cliquez sur ► à côté de chaque requête pour l'exécuter.
-
-### Tests manuels avec curl
-
-```shell
-# Lister tous les leads
-curl http://localhost:8080/api/leads
-
-# Récupérer un lead spécifique en état "New"
-curl http://localhost:8080/api/leads/new/11111111-1111-1111-1111-111111111111
-
-# Transition d'un lead: New → Contacted
-curl -X POST http://localhost:8080/api/leads/11111111-1111-1111-1111-111111111111/transitions/toContacted \
-  -H "Content-Type: application/json" \
-  -d '{
-    "contactedAt": "2025-11-23T10:00:00",
-    "contactedBy": "Marie Vendeur",
-    "notes": "Premier contact réussi"
-  }'
-```
-
-## 📂 Structure du Projet
-
-```
+```text
 sample/
 ├── src/main/
-│   ├── java/                          # Code applicatif
+│   ├── java/                 # application sources
 │   └── resources/
-│       ├── sdd.yaml                   # ⭐ Modèle SDD (Lead CRM)
-│       ├── application.yml            # Configuration Spring Boot
-│       └── db/
-│           └── sample-data.sql        # Données d'exemple
+│       ├── sdd.yaml          # SDD model
+│       └── application.yml   # Spring Boot configuration
 ├── build/
-│   ├── schema.sql                     # ⭐ DDL généré via CLI
-│   └── generated/sdd/                 # Code Java généré
-│       ├── java/
-│       │   └── com/example/leadcrm/domain/
-│       │       ├── Lead.java          # Entité principale
-│       │       ├── New.java           # État "New"
-│       │       ├── Contacted.java     # État "Contacted"
-│       │       ├── Qualified.java     # État "Qualified"
-│       │       ├── Converted.java     # État "Converted"
-│       │       ├── LeadDto.java       # DTO
-│       │       ├── LeadState.java     # Union des états
-│       │       ├── *Repository.java   # Repositories Spring Data JDBC
-│       │       ├── LeadService.java   # Interface service
-│       │       ├── DefaultLeadService.java # Implémentation service
-│       │       ├── LeadApi.java       # Interface API (@HttpExchange)
-│       │       └── LeadController.java # Contrôleur REST
-│       └── http/
-│           └── lead.http              # Tests HTTP
-├── docker-compose.yml                 # Configuration PostgreSQL
-└── build.gradle.kts                   # Configuration Gradle + plugin SDD
+│   ├── schema.sql            # generated DDL
+│   └── generated/sdd/        # generated Java sources
+├── docker-compose.yml        # local Postgres configuration
+└── scripts/
+    ├── apply-schema.sh       # helper: generate & apply DDL + sample data
+    └── sample-data.sql       # sample data insertion script (PL/pgSQL)
 ```
 
-## 🎯 Fonctionnalités Démontrées
+## Sample data & UUIDs
 
-### Interface Controller avec @HttpExchange
+The sample uses `uuid_generate_v4()` from the `uuid-ossp` extension in a PL/pgSQL script that inserts leads and state rows while capturing generated IDs to maintain proper FK references. This avoids hardcoding sequence numbers and ensures the correct insertion order.
 
-L'interface `LeadApi` utilise les annotations Spring `@HttpExchange`, permettant:
-- Génération déclarative de clients HTTP
-- Séparation claire entre contrat API et implémentation
-- Création type-safe de clients
+## Modify the sample model
 
-### Couche Service avec AutoConfiguration
+1. Edit `sample/src/main/resources/sdd.yaml` to change the model.
+2. Re-generate Java sources: `./gradlew :sample:generateSdd`.
+3. Re-generate the DDL: `./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"`.
+4. Re-apply the schema & sample data using `sample/scripts/apply-schema.sh` or the manual steps above.
 
-La couche service générée inclut:
-- `LeadService` - Contrat du service
-- `DefaultLeadService` - Implémentation par défaut
-- `LeadServiceAutoConfiguration` avec `@ConditionalOnMissingBean` - Personnalisation facile
+## Links
 
-### Pattern State Machine
+- SDD Modeler docs: `../README.md`
+- Model DSL guide: `../state-modeler-core/README.md`
+- Gradle plugin guide: `../state-modeler-gradle-plugin/README.md`
 
-L'entité Lead démontre une conception orientée états avec:
-- 4 états: New, Contacted, Qualified, Converted
-- Transitions définies dans le modèle SDD
-- Repositories et endpoints spécifiques par état
-- Table `domain_state` pour le tracking
+---
 
-docker-compose exec -T postgres psql -U lead_user -d lead_crm < build/schema.sql
-docker-compose down -v
-
-## 🔄 Quickstart (rapide)
-
-1. Démarrer Postgres (le service `sample/docker-compose.yml` montera automatiquement
-   `src/main/resources/db` dans le container) :
-
-```bash
-cd sample
-docker compose up -d
-```
-
-2. Générer le code et le DDL (depuis la racine du projet) :
-
-```bash
-./gradlew :sample:clean :sample:generateSdd
-./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"
-```
-
-3. Appliquer le schéma (exécuter depuis `sample` ou avec `-f`) :
-
-```bash
-cd sample
-docker compose exec -T postgres psql -U lead_user -d lead_crm < build/schema.sql
-```
-
-4. Charger les données samples :
-
-```bash
-docker compose exec -T postgres psql -U lead_user -d lead_crm < src/main/resources/db/sample-data.sql
-```
-
-5. Lancer l'application :
-
-```bash
-cd ..
-./gradlew :sample:bootRun
-```
-
-6. Tester :
-
-```bash
-curl http://localhost:8080/api/leads
-```
-
-7. Arrêter et nettoyer :
-
-```bash
-cd sample
-docker compose down -v
-```
-
-Notes :
-
-- Vous pouvez aussi utiliser `docker-compose -f sample/docker-compose.yml` depuis la racine si vous préférez ne pas changer de répertoire.
-- Les chemins relatifs `sample/...` fonctionnent lorsque vous lancez Gradle depuis la racine du dépôt.
-
-## 📝 Données d'Exemple
-
-Le fichier `src/main/resources/db/sample-data.sql` contient:
-
-- **5 leads** en état "New"
-- **3 leads** en état "Contacted"
-- **2 leads** en état "Qualified"
-- **1 lead** en état "Converted"
-
-Total: **11 leads** avec des données réalistes en français.
-
-## 🔧 Modification du Modèle
-
-Pour modifier le modèle Lead CRM:
-
-1. Éditez `src/main/resources/sdd.yaml`
-2. Régénérez le code: `./gradlew :sample:generateSdd`
-3. Régénérez le DDL: `./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"`
-4. Recréez le schéma dans PostgreSQL (voir section ci-dessus)
-5. Redémarrez l'application
-
-## 📚 Pour Aller Plus Loin
-
-- [Documentation SDD Modeler](../README.md)
-- [Guide du Modèle YAML](../state-modeler-core/README.md)
-- [Plugin Gradle](../state-modeler-gradle-plugin/README.md)
+This file is a working English copy of `sample/README.md`. Use it as a base for edits or translation updates.

@@ -5,6 +5,8 @@ package {{ options.packageName | default('com.example') }};
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.relational.core.mapping.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Generated ADT for {{ entity.name }} states.
@@ -15,11 +17,12 @@ public sealed interface {{ entity.className }}State {
     /**
      * State: {{ state.name }}
      */
-    @Table("{{ entity.table }}")
+    @Table("{{ state.table }}")
     record {{ state.className }}(
-        @Id {{ entity.className }}Id {{ entity.id.propertyName }}{% if not state.attributes.isEmpty() %}, {% endif %}
+        @Column("{{ state.idColumnName }}") {{ state.idJavaType }} {{ state.idPropertyName }},
+        @Id @Column("{{ entity.idColumnName }}") @JsonProperty("{{ entity.idColumnName }}") {{ entity.className }}Id {{ state.entityIdPropertyName }}{% if not state.attributes.isEmpty() %}, {% endif %}
         {% for attribute in state.attributes %}
-        {{ attribute.javaType }} {{ attribute.propertyName }}{% if not loop.last %}, {% endif %}
+        @Column("{{ attribute.columnName }}") @JsonProperty("{{ attribute.columnName }}") {{ attribute.javaType }} {{ attribute.propertyName }}{% if not loop.last %}, {% endif %}
         {% endfor %}
     ) implements {{ entity.className }}State {}
     {% endfor %}

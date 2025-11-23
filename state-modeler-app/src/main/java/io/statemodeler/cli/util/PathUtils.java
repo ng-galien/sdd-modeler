@@ -24,7 +24,9 @@ public final class PathUtils {
         if (p.isAbsolute()) return p.normalize();
         // Prefer the shell's PWD if available (Gradle forwards it). Fallback to user.dir.
         String envPwd = System.getenv("PWD");
-        Path cwd = envPwd != null && !envPwd.isBlank() ? Paths.get(envPwd).toAbsolutePath() : Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+        Path cwd = envPwd != null && !envPwd.isBlank()
+                ? Paths.get(envPwd).toAbsolutePath()
+                : Paths.get(System.getProperty("user.dir")).toAbsolutePath();
         return cwd.resolve(p).normalize();
     }
 

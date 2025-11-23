@@ -1,12 +1,12 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
 import io.statemodeler.validation.ModelValidators;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.statemodeler.cli.util.PathUtils;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

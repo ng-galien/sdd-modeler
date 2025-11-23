@@ -1,12 +1,12 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.codegen.CodeGenerators;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.validation.ModelValidators;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.statemodeler.cli.util.PathUtils;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
@@ -93,7 +93,7 @@ public class GenerateCommand implements Callable<Integer> {
                                     return 1;
                                 }
                                 for (var entry : generated.entrySet()) {
-                                        var path = resolvedOutDir.resolve(entry.getKey());
+                                    var path = resolvedOutDir.resolve(entry.getKey());
                                     try {
                                         Files.createDirectories(path.getParent());
                                         Files.writeString(path, entry.getValue());

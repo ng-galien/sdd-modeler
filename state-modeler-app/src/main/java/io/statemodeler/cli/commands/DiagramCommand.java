@@ -1,12 +1,12 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.diagram.DiagramGenerators;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.validation.ModelValidators;
 import io.vavr.control.Try;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.statemodeler.cli.util.PathUtils;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,11 +108,16 @@ public class DiagramCommand implements Callable<Integer> {
                                             try {
                                                 PathUtils.ensureParentDirectoryExists(resolvedOutputFile);
                                             } catch (Exception e) {
-                                                spec.commandLine().getErr().println("Error: Could not create output directory: " + e.getMessage());
+                                                spec.commandLine()
+                                                        .getErr()
+                                                        .println("Error: Could not create output directory: "
+                                                                + e.getMessage());
                                                 return 1;
                                             }
                                             Files.writeString(resolvedOutputFile, diagram);
-                                            spec.commandLine().getOut().println("✓ Diagram written to: " + resolvedOutputFile);
+                                            spec.commandLine()
+                                                    .getOut()
+                                                    .println("✓ Diagram written to: " + resolvedOutputFile);
                                         } else {
                                             spec.commandLine().getOut().println("\n" + diagram);
                                         }

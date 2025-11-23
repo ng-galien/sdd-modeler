@@ -17,7 +17,12 @@ class PathUtilsTest {
         var relative = Path.of("README.md");
         var resolved = PathUtils.resolveFromProcess(relative);
         assertTrue(resolved.endsWith("README.md"));
-        assertTrue(resolved.toAbsolutePath().startsWith(Path.of(System.getProperty("user.dir")).toAbsolutePath()));
+        // The resolver prefers the shell's PWD when available; otherwise it falls back to user.dir.
+        String envPwd = System.getenv("PWD");
+        var expectedBase = envPwd != null && !envPwd.isBlank()
+                ? Path.of(envPwd).toAbsolutePath()
+                : Path.of(System.getProperty("user.dir")).toAbsolutePath();
+        assertTrue(resolved.toAbsolutePath().startsWith(expectedBase));
     }
 
     @Test

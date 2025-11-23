@@ -16,6 +16,11 @@ import java.util.stream.Collectors;
  */
 final class PostgresConstraintGenerator {
 
+        private static String toSnake(String s) {
+                if (s == null) return null;
+                return s.replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase();
+        }
+
     /**
      * Generate UNIQUE constraints for state table.
      * Creates two UNIQUE constraints:
@@ -35,16 +40,16 @@ final class PostgresConstraintGenerator {
         // UNIQUE constraint on entity_id to enforce SDD invariant:
         // An entity can only have ONE entry in each state table (prevents cyclic
         // transitions)
-        var uniqueEntityName = state.table() + "_" + entity.name() + "_id_unique";
-        var uniqueEntityDef = "UNIQUE (" + entity.name() + "_id)";
+        var uniqueEntityName = state.table() + "_" + toSnake(entity.name()) + "_id_unique";
+        var uniqueEntityDef = "UNIQUE (" + toSnake(entity.name()) + "_id)";
         constraints.add(new ConstraintDefinition(
                 uniqueEntityName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueEntityDef));
 
         // UNIQUE composite constraint (id, entity_id) to serve as target for composite
         // foreign keys
         // This ensures transitions stay within the same aggregate
-        var uniqueCompositeName = state.table() + "_id_" + entity.name() + "_id_unique";
-        var uniqueCompositeDef = "UNIQUE (id, " + entity.name() + "_id)";
+        var uniqueCompositeName = state.table() + "_id_" + toSnake(entity.name()) + "_id_unique";
+        var uniqueCompositeDef = "UNIQUE (id, " + toSnake(entity.name()) + "_id)";
         constraints.add(new ConstraintDefinition(
                 uniqueCompositeName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueCompositeDef));
 
@@ -66,8 +71,8 @@ final class PostgresConstraintGenerator {
         var tableName = stateSchema + "." + state.name() + "_source";
 
         // Add UNIQUE composite constraint (id, entity_id) for this mapping table
-        var uniqueName = state.name() + "_source_id_" + entity.name() + "_id_unique";
-        var uniqueDef = "UNIQUE (id, " + entity.name() + "_id)";
+        var uniqueName = state.name() + "_source_id_" + toSnake(entity.name()) + "_id_unique";
+        var uniqueDef = "UNIQUE (id, " + toSnake(entity.name()) + "_id)";
         constraints.add(
                 new ConstraintDefinition(uniqueName, tableName, ConstraintDefinition.ConstraintType.UNIQUE, uniqueDef));
 
@@ -93,9 +98,9 @@ final class PostgresConstraintGenerator {
         var tableName = stateSchema + "." + state.table();
 
         // FK to entity table
-        var entityFkName = state.table() + "_" + entity.name() + "_id_fk";
+        var entityFkName = state.table() + "_" + toSnake(entity.name()) + "_id_fk";
         var entityFkDef =
-                "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
+                "FOREIGN KEY (" + toSnake(entity.name()) + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
         constraints.add(new ConstraintDefinition(
                 entityFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, entityFkDef));
 
@@ -116,10 +121,10 @@ final class PostgresConstraintGenerator {
                 // (previous_x_id, entity_id) -> (id, entity_id)
                 for (var fromState : state.from()) {
                     var fromStateTable = entity.states().get(fromState).table();
-                    var prevFkName = state.table() + "_previous_" + fromState + "_id_fk";
-                    var prevFkDef = "FOREIGN KEY (previous_" + fromState + "_id, " + entity.name()
+                    var prevFkName = state.table() + "_previous_" + toSnake(fromState) + "_id_fk";
+                    var prevFkDef = "FOREIGN KEY (previous_" + toSnake(fromState) + "_id, " + toSnake(entity.name())
                             + "_id) REFERENCES "
-                            + stateSchema + "." + fromStateTable + "(id, " + entity.name()
+                            + stateSchema + "." + fromStateTable + "(id, " + toSnake(entity.name())
                             + "_id)";
                     constraints.add(new ConstraintDefinition(
                             prevFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, prevFkDef));
@@ -148,21 +153,21 @@ final class PostgresConstraintGenerator {
         var tableName = stateSchema + "." + state.name() + "_source";
 
         // Add FK to entity table first
-        var entityFkName = state.name() + "_source_" + entity.name() + "_id_fk";
+        var entityFkName = state.name() + "_source_" + toSnake(entity.name()) + "_id_fk";
         var entityFkDef =
-                "FOREIGN KEY (" + entity.name() + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
+                "FOREIGN KEY (" + toSnake(entity.name()) + "_id) REFERENCES " + entitySchema + "." + entity.table() + "(id)";
         constraints.add(new ConstraintDefinition(
                 entityFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, entityFkDef));
 
         // Add composite FK constraints to source state tables
         // (x_state_id, entity_id) -> (id, entity_id) ensures sources are from same
         // aggregate
-        for (var fromState : state.fromAnyOf()) {
+            for (var fromState : state.fromAnyOf()) {
             var sourceState = entity.states().get(fromState);
-            var constraintName = state.name() + "_source_" + fromState + "_fk";
-            var fkDefinition = "FOREIGN KEY (" + fromState + "_state_id, " + entity.name()
+            var constraintName = state.name() + "_source_" + toSnake(fromState) + "_fk";
+            var fkDefinition = "FOREIGN KEY (" + toSnake(fromState) + "_state_id, " + toSnake(entity.name())
                     + "_id) REFERENCES "
-                    + stateSchema + "." + sourceState.table() + "(id, " + entity.name() + "_id)";
+                    + stateSchema + "." + sourceState.table() + "(id, " + toSnake(entity.name()) + "_id)";
             constraints.add(new ConstraintDefinition(
                     constraintName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDefinition));
         }
@@ -185,7 +190,7 @@ final class PostgresConstraintGenerator {
 
         // Generate CHECK constraint ensuring exactly one source is set
         var conditions = state.fromAnyOf().stream()
-                .map(fromState -> fromState + "_state_id IS NOT NULL")
+                .map(fromState -> toSnake(fromState) + "_state_id IS NOT NULL")
                 .collect(Collectors.joining(" OR "));
 
         var exclusiveConditions = new ArrayList<String>();
@@ -194,7 +199,7 @@ final class PostgresConstraintGenerator {
                 var state1 = state.fromAnyOf().get(i);
                 var state2 = state.fromAnyOf().get(j);
                 exclusiveConditions.add(
-                        "NOT (" + state1 + "_state_id IS NOT NULL AND " + state2 + "_state_id IS NOT NULL)");
+                        "NOT (" + toSnake(state1) + "_state_id IS NOT NULL AND " + toSnake(state2) + "_state_id IS NOT NULL)");
             }
         }
 
@@ -216,8 +221,8 @@ final class PostgresConstraintGenerator {
     ConstraintDefinition generateExtensionForeignKey(EntityDef entity, ExtensionDef extension, String stateSchema) {
         var tableName = stateSchema + "." + extension.table();
         var targetState = entity.states().get(extension.targetState());
-        var fkName = extension.table() + "_" + extension.targetState() + "_id_fk";
-        var fkDef = "FOREIGN KEY (" + extension.targetState() + "_id) REFERENCES " + stateSchema + "."
+        var fkName = extension.table() + "_" + toSnake(extension.targetState()) + "_id_fk";
+        var fkDef = "FOREIGN KEY (" + toSnake(extension.targetState()) + "_id) REFERENCES " + stateSchema + "."
                 + targetState.table() + "(id)";
         return new ConstraintDefinition(fkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDef);
     }
@@ -232,9 +237,11 @@ final class PostgresConstraintGenerator {
      * @return FK constraint
      */
     ConstraintDefinition generateDomainStateForeignKey(EntityDef entity, String entitySchema, String stateSchema) {
-        var entityIdColumn = entity.name() + "_id";
-        var domainStateTable = stateSchema + "." + entity.name() + "_state";
-        var fkName = entity.name() + "_state_" + entityIdColumn + "_fk";
+        var entityIdColumn = toSnake(entity.name()) + "_id";
+        var snakeName =
+                toSnake(entity.name());
+        var domainStateTable = stateSchema + "." + snakeName + "_state";
+        var fkName = toSnake(entity.name()) + "_state_" + entityIdColumn + "_fk";
         var fkDef = "FOREIGN KEY (" + entityIdColumn + ") REFERENCES " + entitySchema + "." + entity.table() + "(id)";
         return new ConstraintDefinition(
                 fkName, domainStateTable, ConstraintDefinition.ConstraintType.FOREIGN_KEY, fkDef);

@@ -11,7 +11,7 @@ public interface {{ entity.className }}Api {
 
 {% if entity.hasStates %}
     @GetExchange
-    java.util.List<{{ entity.className }}State> findAll();
+    java.util.List<{{ entity.className }}Service.{{ entity.className }}StateInfo> findAll();
 
     {% for stateRepo in stateRepositories %}
     @GetExchange("/{{ stateRepo.stateName | lower }}/{id}")

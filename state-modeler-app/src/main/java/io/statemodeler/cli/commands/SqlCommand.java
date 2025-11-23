@@ -1,11 +1,11 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
 import io.statemodeler.validation.ModelValidators;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.statemodeler.cli.util.PathUtils;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,15 +98,26 @@ public class SqlCommand implements Callable<Integer> {
                                 try {
                                     PathUtils.ensureParentDirectoryExists(resolvedOutputFile);
                                 } catch (Exception e) {
-                                    logger.error("Failed to create directory {}: {}", resolvedOutputFile.getParent(), e.getMessage());
-                                    spec.commandLine().getErr().println("Error: Could not create output directory: " + resolvedOutputFile.getParent());
+                                    logger.error(
+                                            "Failed to create directory {}: {}",
+                                            resolvedOutputFile.getParent(),
+                                            e.getMessage());
+                                    spec.commandLine()
+                                            .getErr()
+                                            .println("Error: Could not create output directory: "
+                                                    + resolvedOutputFile.getParent());
                                     return 1;
                                 }
 
-                                var writeResult = io.vavr.control.Try.of(() -> Files.writeString(resolvedOutputFile, ddlContent));
+                                var writeResult =
+                                        io.vavr.control.Try.of(() -> Files.writeString(resolvedOutputFile, ddlContent));
                                 if (writeResult.isFailure()) {
-                                    logger.error("Error writing DDL output: {}", writeResult.getCause().getMessage());
-                                    spec.commandLine().getErr().println("Error: Could not write DDL to file: " + outputFile);
+                                    logger.error(
+                                            "Error writing DDL output: {}",
+                                            writeResult.getCause().getMessage());
+                                    spec.commandLine()
+                                            .getErr()
+                                            .println("Error: Could not write DDL to file: " + outputFile);
                                     return 1;
                                 }
                                 logger.info("✓ DDL written to: {}", resolvedOutputFile);

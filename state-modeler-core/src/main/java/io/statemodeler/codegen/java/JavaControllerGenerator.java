@@ -86,6 +86,10 @@ public class JavaControllerGenerator {
                 stateRepo.put("className", contextBuilder.toPascal(state.name()));
                 stateRepo.put("repositoryName", contextBuilder.toPascal(state.name()) + "Repository");
                 stateRepo.put("propertyName", contextBuilder.toCamel(state.name()));
+                // include the property name for the entity id (e.g., leadId) used in state records
+                Map<String, Object> stateCtx = contextBuilder.buildStateContext(state, entityCtx);
+                Object entIdProp = stateCtx.get("entityIdPropertyName");
+                if (entIdProp instanceof String) stateRepo.put("entityIdPropertyName", (String) entIdProp);
                 stateRepositories.add(stateRepo);
             }
             context.put("stateRepositories", stateRepositories);

@@ -25,9 +25,11 @@ final class PostgresTriggerGenerator {
      * @return trigger definition for state sync
      */
     TriggerDefinition generateStateSyncTrigger(EntityDef entity, StateDef state, String stateSchema) {
-        var triggerName = state.table() + "_sync_" + entity.name() + "_state";
+        var snakeName =
+                entity.name().replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase();
+        var triggerName = state.table() + "_sync_" + snakeName + "_state";
         var tableName = stateSchema + "." + state.table();
-        var functionName = stateSchema + ".sync_" + entity.name() + "_state";
+        var functionName = stateSchema + ".sync_" + snakeName + "_state";
         var stateTypeArg = "'" + state.name().toUpperCase() + "'";
 
         return new TriggerDefinition(

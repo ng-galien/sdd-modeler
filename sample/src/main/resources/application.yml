@@ -3,17 +3,16 @@ spring:
     name: lead-crm
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/lead_crm
-    username: lead_user
-    password: lead_pass
+    # Ensure JDBC client resolves unqualified table names against the `public_states` schema
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=public,public_states
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
   
+  # Database initialization is handled by external script in `sample/scripts/`.
   sql:
     init:
-      mode: always
-      # Schema will be created by running the generated DDL from build/generated/sdd/sql/
-      # Data will be loaded from db/sample-data.sql
-      data-locations: classpath:db/sample-data.sql
+      mode: never
 
 server:
   port: 8080

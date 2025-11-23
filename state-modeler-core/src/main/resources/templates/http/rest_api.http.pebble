@@ -16,19 +16,19 @@ Accept: application/json
 
 {% for state in entity.states %}
 ### Get {{ entity.name | lower }} in {{ state.className }} state
-GET {{ "{{baseUrl}}" }}/api/{{ entity.name | lower }}s/{{ state.name | lower }}/{{ "{{" }}{{ entity.propertyName }}Id{{ "}}" }}
+GET {{ "{{baseUrl}}" }}/api/{{ entity.name | lower }}s/{{ state.name | lower }}/{{ '{{' ~ entity.propertyName ~ 'Id' ~ '}}' }} 
 Accept: application/json
 
 {% endfor %}
 {% for state in entity.states %}
 {% if not state.from.isEmpty() %}
-### Transition to {{ state.className }}
-POST {{ "{{baseUrl}}" }}/api/{{ entity.name | lower }}s/{{ "{{" }}{{ entity.propertyName }}Id{{ "}}" }}/transitions/to{{ state.className }}
+### Transition to {{ state.className }} 
+POST {{ "{{baseUrl}}" }}/api/{{ entity.name | lower }}s/{{ '{{' ~ entity.propertyName ~ 'Id' ~ '}}' }}/transitions/to{{ state.className }} 
 Content-Type: application/json
 
 {
 {% for attr in state.attributes %}
-  "{{ attr.propertyName }}": {% if attr.javaType == "String" %}"example-{{ attr.name | lower }}"{% elseif attr.javaType == "Integer" or attr.javaType == "Long" %}0{% elseif attr.javaType == "Boolean" %}true{% elseif attr.javaType == "UUID" or attr.javaType == "java.util.UUID" %}"00000000-0000-0000-0000-000000000000"{% else %}null{% endif %}{% if not loop.last %},
+  "{{ attr.columnName }}": {% if attr.javaType == "String" %}"example-{{ attr.name | lower }}"{% elseif attr.javaType == "Integer" or attr.javaType == "Long" %}0{% elseif attr.javaType == "Boolean" %}true{% elseif attr.javaType == "UUID" or attr.javaType == "java.util.UUID" %}"00000000-0000-0000-0000-000000000000"{% else %}null{% endif %}{% if not loop.last %},
 {% endif %}
 {% endfor %}
 }

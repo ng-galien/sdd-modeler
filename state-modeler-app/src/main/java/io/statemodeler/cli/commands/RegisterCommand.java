@@ -2,13 +2,13 @@ package io.statemodeler.cli.commands;
 
 import com.github.zafarkhaja.semver.Version;
 import io.statemodeler.cli.RepositoryMixin;
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.dsl.YamlModelLoader;
 import io.statemodeler.sdr.DefaultSdrFactory;
 import io.statemodeler.sdr.SdrFactory;
 import io.statemodeler.validation.DefaultModelValidator;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.statemodeler.cli.util.PathUtils;
 import java.util.Comparator;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.*;

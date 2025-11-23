@@ -8,7 +8,10 @@ import {{ import }};
 
 public interface {{ entity.className }}Service {
 
-    List<{{ entity.className }}State> findAll();
+    // Returned record with state type and state payload for each entity
+    record {{ entity.className }}StateInfo(String stateType, {{ entity.className }}State state) {}
+
+    List<{{ entity.className }}StateInfo> findAll();
 
     {% for state in entity.states %}
     {% if not state.from.isEmpty() %}

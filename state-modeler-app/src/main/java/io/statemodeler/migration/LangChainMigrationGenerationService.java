@@ -3,7 +3,6 @@ package io.statemodeler.migration;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.V;
 import io.vavr.control.Try;
 import java.util.List;
 import org.slf4j.Logger;

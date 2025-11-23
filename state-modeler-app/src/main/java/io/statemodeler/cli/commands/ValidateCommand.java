@@ -4,6 +4,7 @@ import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.validation.ModelValidators;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import io.statemodeler.cli.util.PathUtils;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,16 +29,17 @@ public class ValidateCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        logger.info("Validating model file: {}", modelFile);
-        if (!Files.exists(modelFile)) {
-            spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
+        var resolvedModelFile = PathUtils.resolveFromProcess(modelFile);
+        logger.info("Validating model file: {}", resolvedModelFile);
+        if (!Files.exists(resolvedModelFile)) {
+            spec.commandLine().getErr().println("Error: Model file does not exist: " + resolvedModelFile);
             return 1;
         }
 
         return io.vavr.control.Try.of(() -> modelFile)
                 // create loader and load model
                 .map(f -> ModelLoader.forFile(f))
-                .flatMap(loader -> loader.loadFromFile(modelFile))
+                .flatMap(loader -> loader.loadFromFile(resolvedModelFile))
                 // handle load/validate result
                 .fold(
                         throwable -> {

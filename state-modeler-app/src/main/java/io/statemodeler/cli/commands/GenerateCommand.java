@@ -6,6 +6,7 @@ import io.statemodeler.validation.ModelValidators;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import io.statemodeler.cli.util.PathUtils;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
@@ -51,14 +52,17 @@ public class GenerateCommand implements Callable<Integer> {
             return 1;
         }
 
-        if (!Files.exists(modelFile)) {
-            spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
+        var resolvedModelFile = PathUtils.resolveFromProcess(modelFile);
+        var resolvedOutDir = outDir == null ? null : PathUtils.resolveFromProcess(outDir);
+
+        if (!Files.exists(resolvedModelFile)) {
+            spec.commandLine().getErr().println("Error: Model file does not exist: " + resolvedModelFile);
             return 1;
         }
 
         return io.vavr.control.Try.of(() -> modelFile)
                 .map(f -> ModelLoader.forFile(f))
-                .flatMap(loader -> loader.loadFromFile(modelFile))
+                .flatMap(loader -> loader.loadFromFile(resolvedModelFile))
                 .fold(
                         throwable -> {
                             spec.commandLine().getErr().println("✗ Failed to parse model file:");
@@ -79,9 +83,9 @@ public class GenerateCommand implements Callable<Integer> {
                             var generator = CodeGenerators.forLanguage(language);
                             Map<String, String> generated = generator.generate(model);
 
-                            if (outDir != null) {
+                            if (resolvedOutDir != null) {
                                 try {
-                                    Files.createDirectories(outDir);
+                                    PathUtils.ensureDirectoryExists(resolvedOutDir);
                                 } catch (IOException e) {
                                     spec.commandLine()
                                             .getErr()
@@ -89,7 +93,7 @@ public class GenerateCommand implements Callable<Integer> {
                                     return 1;
                                 }
                                 for (var entry : generated.entrySet()) {
-                                    var path = outDir.resolve(entry.getKey());
+                                        var path = resolvedOutDir.resolve(entry.getKey());
                                     try {
                                         Files.createDirectories(path.getParent());
                                         Files.writeString(path, entry.getValue());

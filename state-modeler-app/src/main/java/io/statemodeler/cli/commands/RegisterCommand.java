@@ -8,6 +8,7 @@ import io.statemodeler.sdr.SdrFactory;
 import io.statemodeler.validation.DefaultModelValidator;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import io.statemodeler.cli.util.PathUtils;
 import java.util.Comparator;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.*;
@@ -66,6 +67,8 @@ public class RegisterCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        // Resolve relative to process to ensure consistent behavior across working dirs
+        modelFile = PathUtils.resolveFromProcess(modelFile);
         // Attempt to resolve provided path; CLI runs may be launched from different
         // working directories (e.g., Gradle project dir). When a relative path is
         // provided and not found, try to locate it relative to the repository root

@@ -1,14 +1,20 @@
 package io.statemodeler.migration;
 
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import java.util.List;
+
 /**
  * Helper class to build LLM prompts for SQL migration script generation.
  *
- * <p>Constructs a detailed prompt containing:
+ * <p>
+ * Constructs a detailed prompt containing:
  * <ul>
- *   <li>System instructions (role, dialect, constraints)</li>
- *   <li>Unified diff between old and new DDL</li>
- *   <li>Complete old DDL</li>
- *   <li>Complete new DDL</li>
+ * <li>System instructions (role, dialect, constraints)</li>
+ * <li>Unified diff between old and new DDL</li>
+ * <li>Complete old DDL</li>
+ * <li>Complete new DDL</li>
  * </ul>
  */
 final class MigrationPromptBuilder {
@@ -20,13 +26,13 @@ final class MigrationPromptBuilder {
     /**
      * Builds the complete prompt for the LLM.
      *
-     * @param oldDdl the original DDL schema
-     * @param newDdl the target DDL schema
+     * @param oldDdl   the original DDL schema
+     * @param newDdl   the target DDL schema
      * @param textDiff the unified diff
-     * @param dialect the SQL dialect (e.g., "postgres", "mysql")
+     * @param dialect  the SQL dialect (e.g., "postgres", "mysql")
      * @return the formatted prompt as a String
      */
-    static String buildPrompt(String oldDdl, String newDdl, String textDiff, String dialect) {
+    static List<ChatMessage> buildPrompt(String oldDdl, String newDdl, String textDiff, String dialect) {
         if (oldDdl == null) {
             throw new IllegalArgumentException("oldDdl cannot be null");
         }
@@ -40,55 +46,58 @@ final class MigrationPromptBuilder {
             throw new IllegalArgumentException("dialect cannot be null");
         }
 
-        // Use a structured-output friendly prompt and an example JSON output. Although the
-        // AI Service will use JSON Schema when available, providing an explicit example
-        // improves the model's likelihood to output the expected format when JSON Schema
-        // is not enabled by the provider.
-        return """
-                                SYSTEM: You are an expert database migration specialist. Reply only with a JSON object
-                                conforming to the described structure -- do NOT include extra text outside the JSON.
+        String systemPrompt = """
+                SYSTEM: You are an expert database migration specialist. Reply only with a JSON object
+                conforming to the described structure -- do NOT include extra text outside the JSON.
 
-                                TASK: Generate a forward SQL migration script to transform the OLD DDL into the NEW DDL.
+                CONSTRAINTS:
+                - SQL Dialect: %s
+                - STRICTLY FORBIDDEN: Do NOT delete, update, or drop any existing data or tables.
+                - STRICTLY FORBIDDEN: Do NOT use ALTER TABLE to modify existing columns if it risks data loss.
+                - GOAL: Create a script that migrates data using `INSERT INTO target_table (...) SELECT ... FROM source_table`.
+                - TRANSACTION: The entire script MUST be wrapped in a single transaction (e.g., `BEGIN; ... COMMIT;`).
+                - TRIGGERS: You MAY disable triggers at the start and re-enable them at the end if necessary to avoid side effects (e.g., `SET session_replication_role = 'replica';` for Postgres).
+                - Assume the target tables (NEW DDL) might need to be created if they don't exist, or data inserted if they do.
+                - If column names changed, map them correctly in the SELECT statement.
+                - If types changed, cast them explicitly.
+                - Add clear inline comments (-- style) explaining the data mapping.
 
-                                CONSTRAINTS:
-                                - SQL Dialect: %s
-                                - Avoid data loss whenever possible.
-                                - Prefer ALTER TABLE / ADD COLUMN / ALTER COLUMN over DROP TABLE when feasible.
-                                - Add clear inline comments (-- style) explaining each major step and any risk.
-                                - Try to make the script idempotent: use IF NOT EXISTS / IF EXISTS where suitable.
-                                - If a column or table must be removed, mark it as an explicit step with a safety note.
-                                - If a data transformation is required, include an explicit data migration step and a brief risk explanation.
+                RESPONSE FORMAT (JSON):
+                {
+                    "confidence": number,                        // 0.0 .. 1.0
+                    "migrationScript": "string containing SQL", // SQL statements without code fences
+                    "comments": "string describing reasoning and risks"
+                }
 
-                                INPUT DIFF (unified):
-                                ```diff
-                                %s
-                                ```
+                EXAMPLE OUTPUT:
+                {
+                    "confidence": 0.95,
+                    "migrationScript": "BEGIN;\\nSET session_replication_role = 'replica';\\n-- Copy data...\\nINSERT INTO new_orders (id, customer_name) SELECT id, CAST(name AS TEXT) FROM orders;\\nSET session_replication_role = 'origin';\\nCOMMIT;",
+                    "comments": "Wrapped in transaction, disabled triggers, mapped 'name' to 'customer_name' and cast to TEXT."
+                }
 
-                                OLD DDL:
-                                ```sql
-                                %s
-                                ```
+                IMPORTANT: The `migrationScript` MUST be only the SQL script as a string (no markdown fences), and `confidence` should be an approximate float between 0.0 and 1.0.
+                """.formatted(dialect.toUpperCase());
 
-                                NEW DDL:
-                                ```sql
-                                %s
-                                ```
+        String userPrompt = """
+                TASK: Generate a forward SQL migration script to copy data from the OLD schema structure to the NEW schema structure.
 
-                                RESPONSE FORMAT (JSON):
-                                {
-                                    "confidence": number,                        // 0.0 .. 1.0
-                                    "migrationScript": "string containing SQL", // SQL statements without code fences
-                                    "comments": "string describing reasoning and risks"
-                                }
+                INPUT DIFF (unified):
+                ```diff
+                %s
+                ```
 
-                                EXAMPLE OUTPUT:
-                                {
-                                    "confidence": 0.88,
-                                    "migrationScript": "-- Safe migration script\nBEGIN;\nALTER TABLE orders ...;\nCOMMIT;",
-                                    "comments": "Changed id type and added customer name column. Applied safe ALTERs and preserved data."
-                                }
+                OLD DDL:
+                ```sql
+                %s
+                ```
 
-                                IMPORTANT: The `migrationScript` MUST be only the SQL script as a string (no markdown fences), and `confidence` should be an approximate float between 0.0 and 1.0.
-                                """.formatted(dialect.toUpperCase(), textDiff, oldDdl, newDdl);
+                NEW DDL:
+                ```sql
+                %s
+                ```
+                """.formatted(textDiff, oldDdl, newDdl);
+
+        return List.of(new SystemMessage(systemPrompt), new UserMessage(userPrompt));
     }
 }

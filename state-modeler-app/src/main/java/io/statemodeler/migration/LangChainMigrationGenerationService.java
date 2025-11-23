@@ -1,18 +1,21 @@
 package io.statemodeler.migration;
 
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.UserMessage;
-import dev.langchain4j.service.V;
 import io.vavr.control.Try;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * LangChain4j-based implementation of {@link MigrationGenerationService}.
  *
- * <p>Uses Ollama LLM with AiServices for structured outputs to generate SQL migration scripts
- * from DDL differences. Returns a {@link MigrationResult} containing the script, confidence,
+ * <p>
+ * Uses Ollama LLM with AiServices for structured outputs to generate SQL
+ * migration scripts
+ * from DDL differences. Returns a {@link MigrationResult} containing the
+ * script, confidence,
  * and explanatory comments.
  */
 public class LangChainMigrationGenerationService implements MigrationGenerationService {
@@ -24,7 +27,8 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
     /**
      * Creates the service with a configured LangChain4j chat model.
      *
-     * @param chatModel the LLM to use for generation (must support structured outputs)
+     * @param chatModel the LLM to use for generation (must support structured
+     *                  outputs)
      * @throws IllegalArgumentException if chatModel is null
      */
     public LangChainMigrationGenerationService(ChatModel chatModel) {
@@ -55,12 +59,12 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
             }
 
             logger.debug("Building migration prompt for dialect: {}", dialect);
-            String prompt = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
+            List<ChatMessage> messages = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
 
             logger.info("Calling LLM to generate migration script with structured output...");
 
             try {
-                MigrationResult result = assistant.generateMigration(prompt, dialect);
+                MigrationResult result = assistant.generateMigration(messages);
                 logger.info(
                         "Migration generated successfully - confidence: {}, script length: {} chars",
                         result.confidence(),
@@ -79,6 +83,6 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
      * LangChain4j automatically handles the structured output mapping.
      */
     interface MigrationAssistant {
-        MigrationResult generateMigration(@UserMessage String prompt, @V("dialect") String dialect);
+        MigrationResult generateMigration(List<ChatMessage> messages);
     }
 }

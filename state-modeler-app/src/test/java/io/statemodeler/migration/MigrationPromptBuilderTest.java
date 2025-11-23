@@ -2,6 +2,10 @@ package io.statemodeler.migration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,17 +29,29 @@ class MigrationPromptBuilderTest {
         String dialect = "postgres";
 
         // When
-        String prompt = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
+        List<ChatMessage> messages = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
 
         // Then
-        assertNotNull(prompt);
-        assertTrue(prompt.contains("POSTGRES"));
-        assertTrue(prompt.contains("forward SQL migration"));
-        assertTrue(prompt.contains(textDiff));
-        assertTrue(prompt.contains(oldDdl));
-        assertTrue(prompt.contains(newDdl));
-        assertTrue(prompt.contains("ALTER TABLE"));
-        assertTrue(prompt.contains("Avoid data loss"));
+        assertNotNull(messages);
+        assertEquals(2, messages.size());
+
+        ChatMessage systemMessage = messages.get(0);
+        assertTrue(systemMessage instanceof SystemMessage);
+        String systemText = ((SystemMessage) systemMessage).text();
+        assertTrue(systemText.contains("POSTGRES"));
+        assertTrue(systemText.contains("INSERT INTO"));
+        assertTrue(systemText.contains("STRICTLY FORBIDDEN"));
+        assertTrue(systemText.contains("TRANSACTION"));
+        assertTrue(systemText.contains("TRIGGERS"));
+        assertTrue(systemText.contains("single transaction"));
+
+        ChatMessage userMessage = messages.get(1);
+        assertTrue(userMessage instanceof UserMessage);
+        String userText = userMessage.toString();
+        assertTrue(userText.contains("copy data"));
+        assertTrue(userText.contains(textDiff));
+        assertTrue(userText.contains(oldDdl));
+        assertTrue(userText.contains(newDdl));
     }
 
     @ParameterizedTest(name = "{3}")
@@ -70,9 +86,10 @@ class MigrationPromptBuilderTest {
         String dialect = "mysql";
 
         // When
-        String prompt = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
+        List<ChatMessage> messages = MigrationPromptBuilder.buildPrompt(oldDdl, newDdl, textDiff, dialect);
 
         // Then
-        assertTrue(prompt.contains("MYSQL"));
+        ChatMessage systemMessage = messages.get(0);
+        assertTrue(((SystemMessage) systemMessage).text().contains("MYSQL"));
     }
 }

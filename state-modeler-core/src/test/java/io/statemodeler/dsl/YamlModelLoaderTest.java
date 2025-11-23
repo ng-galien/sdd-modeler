@@ -41,7 +41,7 @@ class YamlModelLoaderTest {
     void shouldLoadSimpleModel() {
         var yamlLoader = new YamlModelLoader();
         var simpleYaml = """
-                version: "0.1"
+            version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: "postgres"
@@ -53,7 +53,7 @@ class YamlModelLoaderTest {
         assertTrue(result.isSuccess());
         var model = result.get();
         assertNotNull(model);
-        assertEquals("0.1", model.version());
+        assertEquals("0.1.0", model.version());
         assertEquals("test-model", model.name());
         assertEquals("postgres", model.database().dialect());
         assertTrue(model.entities().isEmpty());

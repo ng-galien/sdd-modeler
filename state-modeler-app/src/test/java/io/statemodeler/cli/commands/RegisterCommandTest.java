@@ -33,7 +33,7 @@ class RegisterCommandTest {
         // Valid YAML model
         validModelFile = tempDir.resolve("valid-model.yaml");
         Files.writeString(validModelFile, """
-        version: "0.1"
+        version: "0.1.0"
         name: "test-model"
         database:
           dialect: postgres
@@ -53,7 +53,7 @@ class RegisterCommandTest {
         // Invalid model (no initial state)
         invalidModelFile = tempDir.resolve("invalid-model.yaml");
         Files.writeString(invalidModelFile, """
-        version: "0.1"
+        version: "0.1.0"
         name: "invalid-model"
         database:
           dialect: postgres
@@ -73,7 +73,7 @@ class RegisterCommandTest {
         jsonModelFile = tempDir.resolve("json-model.json");
         Files.writeString(jsonModelFile, """
         {
-          "version": "0.1",
+          "version": "0.1.0",
           "name": "json-test",
           "database": {
             "dialect": "postgres"
@@ -247,7 +247,7 @@ class RegisterCommandTest {
 
         // Then
         assertEquals(0, exitCode);
-        // Version should default to "1.0"
+        // Version should default to "1.0.0"
     }
 
     @Test
@@ -255,7 +255,7 @@ class RegisterCommandTest {
         // Given - model with version in YAML
         Path versionedModel = tempDir.resolve("versioned-model.yaml");
         Files.writeString(versionedModel, """
-        version: "2.0"
+        version: "2.0.0"
         name: "versioned-test"
         database:
           dialect: postgres
@@ -281,7 +281,7 @@ class RegisterCommandTest {
 
         // Then
         assertEquals(0, exitCode);
-        // Should use version "2.0" from model
+        // Should use version "2.0.0" from model
     }
 
     @Test
@@ -289,7 +289,7 @@ class RegisterCommandTest {
         // Given - model with version but CLI override
         Path versionedModel = tempDir.resolve("versioned-model2.yaml");
         Files.writeString(versionedModel, """
-        version: "1.5"
+        version: "1.5.0"
         name: "test-override"
         database:
           dialect: postgres
@@ -315,7 +315,7 @@ class RegisterCommandTest {
 
         // Then
         assertEquals(0, exitCode);
-        // Should use CLI version "3.0.0" instead of "1.5"
+        // Should use CLI version "3.0.0" instead of "1.5.0"
     }
 
     @Test
@@ -337,7 +337,7 @@ class RegisterCommandTest {
         // Given - file without extension (edge case for resolveName)
         Path noExtensionFile = tempDir.resolve("noextension");
         Files.writeString(noExtensionFile, """
-        version: "0.1"
+        version: "0.1.0"
         name: "test-no-ext"
         database:
           dialect: postgres
@@ -381,6 +381,132 @@ class RegisterCommandTest {
 
         // Then
         assertEquals(1, exitCode, "Should fail with exit code 1 for repository error");
+    }
+
+    @Test
+    void shouldFailWhenRegisteringLowerVersion() {
+        // Given
+        var command1 = new RegisterCommand();
+        command1.repositoryMixin = createMixin();
+        var cmd1 = new CommandLine(command1);
+
+        var command2 = new RegisterCommand();
+        command2.repositoryMixin = createMixin();
+        var cmd2 = new CommandLine(command2);
+
+        // When
+        // Register 1.0.0 (default)
+        cmd1.execute(validModelFile.toString(), "--version", "1.0.0");
+        // Try to register 0.9.0
+        int exitCode = cmd2.execute(validModelFile.toString(), "--version", "0.9.0");
+
+        // Then
+        assertEquals(1, exitCode, "Should fail when registering a lower version");
+    }
+
+    @Test
+    void shouldFailWhenRegisteringSameVersionWithDifferentContent() throws IOException {
+        // Given
+        var command1 = new RegisterCommand();
+        command1.repositoryMixin = createMixin();
+        var cmd1 = new CommandLine(command1);
+
+        var command2 = new RegisterCommand();
+        command2.repositoryMixin = createMixin();
+        var cmd2 = new CommandLine(command2);
+
+        // When
+        // Register 1.0.0
+        cmd1.execute(validModelFile.toString(), "--version", "1.0.0");
+
+        // Modify file content to change hash (change database dialect to mysql
+        // temporarily or add a dummy entity)
+        // We need to keep the name the same.
+        Files.writeString(validModelFile, """
+        version: "0.1.0"
+        name: "test-model"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: order_pending
+          dummy:
+             table: dummy
+             id:
+               name: id
+               type: serial
+               primary_key: true
+             states:
+               pending:
+                 initial: true
+                 table: dummy_pending
+        """);
+
+        // Try to register 1.0.0 again
+        int exitCode = cmd2.execute(validModelFile.toString(), "--version", "1.0.0");
+
+        // Then
+        assertEquals(2, exitCode, "Should fail when registering same version with different content");
+    }
+
+    @Test
+    void shouldSucceedWhenRegisteringHigherVersion() throws IOException {
+        // Given
+        var command1 = new RegisterCommand();
+        command1.repositoryMixin = createMixin();
+        var cmd1 = new CommandLine(command1);
+
+        var command2 = new RegisterCommand();
+        command2.repositoryMixin = createMixin();
+        var cmd2 = new CommandLine(command2);
+
+        // When
+        // Register 1.0.0
+        int firstExitCode = cmd1.execute(validModelFile.toString(), "--version", "1.0.0");
+        assertEquals(0, firstExitCode, "First registration should succeed");
+
+        // Modify content to change hash
+        Files.writeString(validModelFile, """
+        version: "0.1.0"
+        name: "test-model"
+        database:
+          dialect: postgres
+        entities:
+          order:
+            table: orders
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: order_pending
+          new_entity:
+            table: new_entity
+            id:
+              name: id
+              type: serial
+              primary_key: true
+            states:
+              pending:
+                initial: true
+                table: new_entity_pending
+        """);
+
+        // Register 1.0.1
+        int exitCode = cmd2.execute(validModelFile.toString(), "--version", "1.0.1");
+
+        // Then
+        assertEquals(0, exitCode, "Should succeed when registering a higher version");
     }
 
     private RepositoryMixin createMixin() {

@@ -66,6 +66,6 @@ class DdlGeneratorsTest {
                 Map.of(), // no extensions
                 Map.of()); // no projections
 
-        return new SddModel("0.1", "test-model", database, Map.of("order", entity));
+        return new SddModel("0.1.0", "test-model", database, Map.of("order", entity));
     }
 }

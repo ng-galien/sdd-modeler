@@ -36,8 +36,8 @@ class ListCommandTest {
     @Test
     void shouldListAllSdrsInTableFormat() {
         // Given - register some SDRs
-        registerTestSdr("model1", "1.0");
-        registerTestSdr("model2", "2.0");
+        registerTestSdr("model1", "1.0.0");
+        registerTestSdr("model2", "2.0.0");
 
         var command = new ListCommand();
         command.format = "table";
@@ -65,7 +65,7 @@ class ListCommandTest {
     @Test
     void shouldListSdrsInJsonFormat() {
         // Given
-        registerTestSdr("json-model", "1.0");
+        registerTestSdr("json-model", "1.0.0");
 
         var command = new ListCommand();
         command.format = "json";
@@ -91,7 +91,7 @@ class ListCommandTest {
     @Test
     void shouldListSdrsInYamlFormat() {
         // Given
-        registerTestSdr("yaml-model", "3.0");
+        registerTestSdr("yaml-model", "3.0.0");
 
         var command = new ListCommand();
         command.format = "yaml";
@@ -139,7 +139,7 @@ class ListCommandTest {
     void shouldRespectLimitOption() {
         // Given - register 5 SDRs
         for (int i = 1; i <= 5; i++) {
-            registerTestSdr("model" + i, "1.0");
+            registerTestSdr("model" + i, "1.0.0");
         }
 
         var command = new ListCommand();
@@ -196,7 +196,7 @@ class ListCommandTest {
     void shouldTruncateLongNames() {
         // Given - model with very long name
         String longName = "a".repeat(50);
-        registerTestSdr(longName, "1.0");
+        registerTestSdr(longName, "1.0.0");
 
         var command = new ListCommand();
         command.format = "table";
@@ -218,7 +218,7 @@ class ListCommandTest {
     @Test
     void shouldEscapeSpecialCharactersInJson() {
         // Given - model with characters that need escaping in JSON
-        registerTestSdr("model-with-newline", "1.0");
+        registerTestSdr("model-with-newline", "1.0.0");
 
         var command = new ListCommand();
         command.format = "json";
@@ -243,7 +243,7 @@ class ListCommandTest {
 
     private void registerTestSdr(String modelName, String modelVersion) {
         String modelSource = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "%s"
                 database:
                   dialect: postgres

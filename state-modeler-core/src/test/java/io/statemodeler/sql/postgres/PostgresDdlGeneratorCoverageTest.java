@@ -34,7 +34,7 @@ class PostgresDdlGeneratorCoverageTest {
                         new ProjectionDef(
                                 "current", "test_current_state", ProjectionDef.ProjectionKind.CURRENT_STATE)));
 
-        var model = new SddModel("1.0", "test", database, Map.of("test", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("test", entity));
         var generator = DdlGenerators.forDialect("postgres");
 
         // When
@@ -70,7 +70,7 @@ class PostgresDdlGeneratorCoverageTest {
                                 new ProjectionDef(
                                         "intervals", "test_state_intervals", ProjectionDef.ProjectionKind.INTERVALS)));
 
-        var model = new SddModel("1.0", "test", database, Map.of("test", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("test", entity));
         var generator = DdlGenerators.forDialect("postgres");
 
         // When
@@ -96,7 +96,7 @@ class PostgresDdlGeneratorCoverageTest {
         var entity = new EntityDef(
                 "test", "test_table", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
 
-        var model = new SddModel("1.0", "test", database, Map.of("test", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("test", entity));
         var generator = DdlGenerators.forDialect("postgres");
 
         // When

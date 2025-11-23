@@ -93,6 +93,8 @@ dependencies {
     implementation(libs.palantir.java.format)
     // SQL Formatter for formatting generated SQL
     implementation(libs.sql.formatter)
+    // SemVer for version validation
+    implementation(libs.java.semver)
 
     // Test dependencies for core functionality
     testImplementation(libs.junit.jupiter)

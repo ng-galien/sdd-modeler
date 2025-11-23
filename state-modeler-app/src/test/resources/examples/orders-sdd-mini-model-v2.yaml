@@ -1,4 +1,4 @@
-version: 0.1
+version: 0.1.0
 name: orders-sdd-mini-example-v2
 
 database:

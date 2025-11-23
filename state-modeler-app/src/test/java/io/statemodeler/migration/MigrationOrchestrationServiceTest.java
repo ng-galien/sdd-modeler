@@ -46,8 +46,8 @@ class MigrationOrchestrationServiceTest {
         var fromSdr = createTestSdr("hash1", "CREATE TABLE users (id INT);");
         var toSdr = createTestSdr("hash2", "CREATE TABLE users (id INT, email VARCHAR(255));");
 
-        repository.save(fromSdr, "test-model", "1.0").get();
-        repository.save(toSdr, "test-model", "2.0").get();
+        repository.save(fromSdr, "test-model", "1.0.0").get();
+        repository.save(toSdr, "test-model", "2.0.0").get();
 
         // When
         var result = service.generateAndSaveMigration(fromSdr, toSdr, "postgres");
@@ -83,8 +83,8 @@ class MigrationOrchestrationServiceTest {
         var fromSdr = createTestSdr("hash1", "CREATE TABLE users (id INT);");
         var toSdr = createTestSdr("hash2", "CREATE TABLE users (id INT, email VARCHAR(255));");
 
-        repository.save(fromSdr, "test-model", "1.0").get();
-        repository.save(toSdr, "test-model", "2.0").get();
+        repository.save(fromSdr, "test-model", "1.0.0").get();
+        repository.save(toSdr, "test-model", "2.0.0").get();
 
         // When
         var result = svc.generateAndSaveMigration(fromSdr, toSdr, "postgres");
@@ -164,8 +164,8 @@ class MigrationOrchestrationServiceTest {
         var fromSdr = createTestSdr("hash1", "CREATE TABLE test;");
         var toSdr = createTestSdr("hash2", "CREATE TABLE test2;");
 
-        repository.save(fromSdr, "test-model", "1.0").get();
-        repository.save(toSdr, "test-model", "2.0").get();
+        repository.save(fromSdr, "test-model", "1.0.0").get();
+        repository.save(toSdr, "test-model", "2.0.0").get();
 
         // When
         var result = failingService.generateAndSaveMigration(fromSdr, toSdr, "postgres");
@@ -181,8 +181,8 @@ class MigrationOrchestrationServiceTest {
         var fromSdr = createTestSdr("hash1", "CREATE TABLE test;");
         var toSdr = createTestSdr("hash2", "CREATE TABLE test2;");
 
-        repository.save(fromSdr, "test-model", "1.0").get();
-        repository.save(toSdr, "test-model", "2.0").get();
+        repository.save(fromSdr, "test-model", "1.0.0").get();
+        repository.save(toSdr, "test-model", "2.0.0").get();
 
         service.generateAndSaveMigration(fromSdr, toSdr, "postgres").get();
 

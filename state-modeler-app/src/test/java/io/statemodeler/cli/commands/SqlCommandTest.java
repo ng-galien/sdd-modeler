@@ -18,7 +18,7 @@ class SqlCommandTest {
     void shouldGenerateSqlToStdout() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -69,7 +69,7 @@ class SqlCommandTest {
     void shouldGenerateSqlToFile() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -120,7 +120,7 @@ class SqlCommandTest {
     void shouldRejectInvalidDialect() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -161,7 +161,7 @@ class SqlCommandTest {
     void shouldRejectInvalidModel() throws Exception {
         // Given - model with validation errors
         var invalidYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "invalid-model"
                 database:
                   dialect: postgres

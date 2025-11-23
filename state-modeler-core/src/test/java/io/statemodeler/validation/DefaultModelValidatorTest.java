@@ -34,7 +34,7 @@ class DefaultModelValidatorTest {
     void shouldRejectModelWithNoEntities() {
         // Given
         var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of());
+        var model = new SddModel("1.0.0", "test", database, Map.of());
 
         // When
         var result = validator.validate(model);
@@ -52,7 +52,7 @@ class DefaultModelValidatorTest {
         var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), Map.of(), Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -72,7 +72,7 @@ class DefaultModelValidatorTest {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var state = new StateDef("pending", "order_pending", false, List.of(), List.of(), Map.of());
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), Map.of("pending", state), Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -94,7 +94,7 @@ class DefaultModelValidatorTest {
         var state2 = new StateDef("processing", "order_processing", true, List.of(), List.of(), Map.of());
         var states = Map.of("pending", state1, "processing", state2);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -116,7 +116,7 @@ class DefaultModelValidatorTest {
         var paidState = new StateDef("paid", "order_paid", false, List.of("unknown_state"), List.of(), Map.of());
         var states = Map.of("pending", pendingState, "paid", paidState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -138,7 +138,7 @@ class DefaultModelValidatorTest {
         var pendingState = new StateDef("pending", "order_pending", true, List.of("some_state"), List.of(), Map.of());
         var states = Map.of("pending", pendingState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -161,7 +161,7 @@ class DefaultModelValidatorTest {
         var paidState = new StateDef("paid", "order_paid", false, List.of("pending"), List.of("pending"), Map.of());
         var states = Map.of("pending", pendingState, "paid", paidState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -186,7 +186,7 @@ class DefaultModelValidatorTest {
                 new StateDef("canceled", "order_canceled", false, List.of(), List.of("pending", "paid"), Map.of());
         var states = Map.of("pending", pendingState, "paid", paidState, "canceled", canceledState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -208,7 +208,7 @@ class DefaultModelValidatorTest {
     void shouldThrowOnInvalidModel() {
         // Given
         var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
-        var model = new SddModel("1.0", "test", database, Map.of());
+        var model = new SddModel("1.0.0", "test", database, Map.of());
 
         // When & Then
         var exception = assertThrows(IllegalArgumentException.class, () -> validator.validateOrThrow(model));
@@ -220,7 +220,7 @@ class DefaultModelValidatorTest {
         // Given
         var validModel = createValidModel();
         var database = new DatabaseConfig("postgres", "public", null, java.util.Map.of());
-        var invalidModel = new SddModel("1.0", "test", database, Map.of());
+        var invalidModel = new SddModel("1.0.0", "test", database, Map.of());
 
         // When & Then
         assertTrue(validator.isValid(validModel));
@@ -238,7 +238,7 @@ class DefaultModelValidatorTest {
         var pendingState = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
         var states = Map.of("pending", pendingState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of("name", invalidAttr), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test-model", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -266,7 +266,7 @@ class DefaultModelValidatorTest {
         var attributes =
                 Map.of("name", nameAttr, "price", priceAttr, "created_at", createdAtAttr, "metadata", metadataAttr);
         var entity = new EntityDef("order", "orders", idAttr, attributes, states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test-model", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -287,7 +287,7 @@ class DefaultModelValidatorTest {
                 "pending", "order_pending", true, List.of(), List.of(), Map.of("reason", invalidStateAttr));
         var states = Map.of("pending", pendingState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test-model", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -312,7 +312,7 @@ class DefaultModelValidatorTest {
         var extensions = Map.of("pending_ext", extension);
 
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, extensions, Map.of());
-        var model = new SddModel("1.0", "test-model", database, Map.of("order", entity));
+        var model = new SddModel("1.0.0", "test-model", database, Map.of("order", entity));
 
         // When
         var result = validator.validate(model);
@@ -331,6 +331,6 @@ class DefaultModelValidatorTest {
         var paidState = new StateDef("paid", "order_paid", false, List.of("pending"), List.of(), Map.of());
         var states = Map.of("pending", pendingState, "paid", paidState);
         var entity = new EntityDef("order", "orders", idAttr, Map.of(), states, Map.of(), Map.of());
-        return new SddModel("1.0", "test-model", database, Map.of("order", entity));
+        return new SddModel("1.0.0", "test-model", database, Map.of("order", entity));
     }
 }

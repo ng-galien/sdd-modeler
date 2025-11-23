@@ -1,5 +1,6 @@
 package io.statemodeler.cli.commands;
 
+import com.github.zafarkhaja.semver.Version;
 import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.dsl.YamlModelLoader;
 import io.statemodeler.sdr.DefaultSdrFactory;
@@ -7,6 +8,7 @@ import io.statemodeler.sdr.SdrFactory;
 import io.statemodeler.validation.DefaultModelValidator;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.*;
 import picocli.CommandLine.Model.CommandSpec;
@@ -48,7 +50,7 @@ public class RegisterCommand implements Callable<Integer> {
 
     @Option(
             names = {"--version", "-v"},
-            description = "Model version (default: derived from model or '1.0')",
+            description = "Model version (default: derived from model or '1.0.0')",
             paramLabel = "<version>")
     String modelVersion;
 
@@ -83,6 +85,9 @@ public class RegisterCommand implements Callable<Integer> {
                     var model = entry.getKey();
                     var pair = entry.getValue();
                     spec.commandLine().getOut().println("  Loaded model: " + model.name());
+                    spec.commandLine()
+                            .getOut()
+                            .println("  Entities: " + model.entities().keySet());
 
                     // Validate
                     validator.validateOrThrow(model);
@@ -111,7 +116,43 @@ public class RegisterCommand implements Callable<Integer> {
                     String finalVersion = resolveVersion(model.version());
 
                     return io.vavr.control.Try.withResources(() -> repositoryMixin.createRepository())
-                            .of(repo -> repo.save(sdr, finalName, finalVersion))
+                            .of(repo -> {
+                                // Enforce monotonic versioning: the new version must be strictly
+                                // greater than any existing version for this model; if it's equal
+                                // to the max version, it must be the same content (idempotent retry).
+                                var existingVersions =
+                                        repo.findByName(finalName).get();
+                                if (!existingVersions.isEmpty()) {
+                                    Version newVer;
+                                    try {
+                                        newVer = Version.parse(finalVersion);
+                                    } catch (Exception e) {
+                                        throw new IllegalArgumentException(
+                                                "version must be a valid SemVer string: " + finalVersion, e);
+                                    }
+                                    var maxVer = existingVersions.stream()
+                                            .map(m -> Version.parse(m.modelVersion()))
+                                            .max(Version::compareTo)
+                                            .orElse(newVer);
+
+                                    var maxMetadata = existingVersions.stream()
+                                            .max(Comparator.comparing(m -> Version.parse(m.modelVersion())))
+                                            .orElse(null);
+
+                                    if (newVer.isLowerThan(maxVer)) {
+                                        throw new IllegalArgumentException(
+                                                "Version must be greater than existing version " + maxVer);
+                                    }
+                                    if (newVer.equals(maxVer)
+                                            && maxMetadata != null
+                                            && !maxMetadata.schemaHash().equals(sdr.schemaHash())) {
+                                        throw new IllegalArgumentException(
+                                                "Version " + finalVersion
+                                                        + " already exists with different content. You must increment the version.");
+                                    }
+                                }
+                                return repo.save(sdr, finalName, finalVersion);
+                            })
                             .flatMap(x -> x)
                             .map(ignored -> {
                                 spec.commandLine().getOut().println("\n✓ Successfully registered SDR");
@@ -222,6 +263,6 @@ public class RegisterCommand implements Callable<Integer> {
         if (modelVersion != null && !modelVersion.isBlank()) {
             return modelVersion;
         }
-        return "1.0";
+        return "1.0.0";
     }
 }

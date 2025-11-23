@@ -34,7 +34,7 @@ Ajoutez en haut de vos fichiers SDD YAML :
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/votre-org/sdd-modeler/main/sdd-model-schema.json
 
-version: "0.1"
+version: "0.1.0"
 name: "my-sdd-model"
 # ... votre modèle SDD
 ```

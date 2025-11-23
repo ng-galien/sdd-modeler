@@ -20,7 +20,7 @@ class ValidateCommandTest {
     void shouldValidateValidYamlModel() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -61,7 +61,7 @@ class ValidateCommandTest {
     void shouldRejectInvalidYamlModel() throws Exception {
         // Given - model with no initial state
         var invalidYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "invalid-model"
                 database:
                   dialect: postgres
@@ -98,7 +98,7 @@ class ValidateCommandTest {
     void shouldRejectMalformedYaml() throws Exception {
         // Given
         var malformedYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test
                   bad indentation
                 """;

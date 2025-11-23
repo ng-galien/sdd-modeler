@@ -36,7 +36,7 @@ class SdrMetadataTest {
     void shouldReturnShortHash() {
         // Given
         String hash = "222fa0d3e1b4c5d6a7f8e9d0c1b2a3f4";
-        var metadata = new SdrMetadata(hash, "model", "1.0", "1.0.0", "fingerprint", Instant.now());
+        var metadata = new SdrMetadata(hash, "model", "1.0.0", "1.0.0", "fingerprint", Instant.now());
 
         // When
         String shortHash = metadata.shortHash();
@@ -50,7 +50,7 @@ class SdrMetadataTest {
     void shouldHandleShortHashWithShortInput() {
         // Given - hash shorter than 8 characters
         String hash = "abc123";
-        var metadata = new SdrMetadata(hash, "model", "1.0", "1.0.0", "fingerprint", Instant.now());
+        var metadata = new SdrMetadata(hash, "model", "1.0.0", "1.0.0", "fingerprint", Instant.now());
 
         // When
         String shortHash = metadata.shortHash();
@@ -64,7 +64,7 @@ class SdrMetadataTest {
     void shouldHandleShortHashWithExactly8Characters() {
         // Given - hash exactly 8 characters
         String hash = "12345678";
-        var metadata = new SdrMetadata(hash, "model", "1.0", "1.0.0", "fingerprint", Instant.now());
+        var metadata = new SdrMetadata(hash, "model", "1.0.0", "1.0.0", "fingerprint", Instant.now());
 
         // When
         String shortHash = metadata.shortHash();
@@ -79,7 +79,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata(null, "model", "1.0", "1.0.0", "fingerprint", Instant.now()),
+                () -> new SdrMetadata(null, "model", "1.0.0", "1.0.0", "fingerprint", Instant.now()),
                 "schemaHash cannot be null or blank");
     }
 
@@ -88,7 +88,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("  ", "model", "1.0", "1.0.0", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("  ", "model", "1.0.0", "1.0.0", "fingerprint", Instant.now()),
                 "schemaHash cannot be null or blank");
     }
 
@@ -97,7 +97,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("", "model", "1.0", "1.0.0", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("", "model", "1.0.0", "1.0.0", "fingerprint", Instant.now()),
                 "schemaHash cannot be null or blank");
     }
 
@@ -106,7 +106,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", null, "1.0", "1.0.0", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("hash123", null, "1.0.0", "1.0.0", "fingerprint", Instant.now()),
                 "modelName cannot be null or blank");
     }
 
@@ -115,7 +115,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "  ", "1.0", "1.0.0", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("hash123", "  ", "1.0.0", "1.0.0", "fingerprint", Instant.now()),
                 "modelName cannot be null or blank");
     }
 
@@ -124,7 +124,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "", "1.0", "1.0.0", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("hash123", "", "1.0.0", "1.0.0", "fingerprint", Instant.now()),
                 "modelName cannot be null or blank");
     }
 
@@ -160,7 +160,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", null, "fingerprint", Instant.now()),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", null, "fingerprint", Instant.now()),
                 "sdrVersion cannot be null or blank");
     }
 
@@ -169,7 +169,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", "  ", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", "  ", "fingerprint", Instant.now()),
                 "sdrVersion cannot be null or blank");
     }
 
@@ -178,7 +178,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", "", "fingerprint", Instant.now()),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", "", "fingerprint", Instant.now()),
                 "sdrVersion cannot be null or blank");
     }
 
@@ -187,7 +187,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", "1.0.0", null, Instant.now()),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", null, Instant.now()),
                 "buildFingerprint cannot be null or blank");
     }
 
@@ -196,7 +196,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", "1.0.0", "  ", Instant.now()),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", "  ", Instant.now()),
                 "buildFingerprint cannot be null or blank");
     }
 
@@ -205,7 +205,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", "1.0.0", "", Instant.now()),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", "", Instant.now()),
                 "buildFingerprint cannot be null or blank");
     }
 
@@ -214,7 +214,7 @@ class SdrMetadataTest {
         // When/Then
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SdrMetadata("hash123", "model", "1.0", "1.0.0", "fingerprint", null),
+                () -> new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", "fingerprint", null),
                 "createdAt cannot be null");
     }
 
@@ -222,9 +222,9 @@ class SdrMetadataTest {
     void shouldSupportRecordEquality() {
         // Given
         Instant now = Instant.now();
-        var metadata1 = new SdrMetadata("hash123", "model", "1.0", "1.0.0", "fingerprint", now);
-        var metadata2 = new SdrMetadata("hash123", "model", "1.0", "1.0.0", "fingerprint", now);
-        var metadata3 = new SdrMetadata("hash456", "model", "1.0", "1.0.0", "fingerprint", now);
+        var metadata1 = new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", "fingerprint", now);
+        var metadata2 = new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", "fingerprint", now);
+        var metadata3 = new SdrMetadata("hash456", "model", "1.0.0", "1.0.0", "fingerprint", now);
 
         // When/Then
         assertEquals(metadata1, metadata2, "Same values should be equal");
@@ -236,7 +236,7 @@ class SdrMetadataTest {
     void shouldSupportRecordToString() {
         // Given
         Instant now = Instant.parse("2024-11-16T10:30:00Z");
-        var metadata = new SdrMetadata("hash123", "model", "1.0", "1.0.0", "fingerprint", now);
+        var metadata = new SdrMetadata("hash123", "model", "1.0.0", "1.0.0", "fingerprint", now);
 
         // When
         String toString = metadata.toString();
@@ -244,7 +244,7 @@ class SdrMetadataTest {
         // Then
         assertTrue(toString.contains("hash123"), "toString should contain hash");
         assertTrue(toString.contains("model"), "toString should contain model name");
-        assertTrue(toString.contains("1.0"), "toString should contain version");
+        assertTrue(toString.contains("1.0.0"), "toString should contain version");
         assertTrue(toString.contains("fingerprint"), "toString should contain fingerprint");
     }
 }

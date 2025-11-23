@@ -149,8 +149,8 @@ state-modeler-core/
 ### Hash Computation (Format-Independent)
 ```java
 // Identical models produce identical hashes regardless of YAML vs JSON
-String yamlInput = "version: \"0.1\"\nname: \"test\"...";
-String jsonInput = "{\"version\": \"0.1\", \"name\": \"test\"...}";
+String yamlInput = "version: \"0.1.0\"\nname: \"test\"...";
+String jsonInput = "{\"version\": \"0.1.0\", \"name\": \"test\"...}";
 
 SdrRecord yamlSdr = factory.create(yamlInput, "application/yaml", "postgres");
 SdrRecord jsonSdr = factory.create(jsonInput, "application/json", "postgres");

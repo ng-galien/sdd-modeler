@@ -176,8 +176,8 @@ if [ -f "$SDR_REPO_PATH" ]; then
     echo -e "${GREEN}  ✓ Repository cleaned${NC}"
 fi
 
-echo -e "${CYAN}  Registering v1 as 'orders:1.0'...${NC}"
-if ! "$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V1 -n orders -v 1.0" > "$OUTPUT_DIR/register-v1.log" 2>&1; then
+echo -e "${CYAN}  Registering v1 as 'orders:1.0.0'...${NC}"
+if ! "$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V1 -n orders -v 1.0.0" > "$OUTPUT_DIR/register-v1.log" 2>&1; then
     echo -e "${RED}✗ Failed to register v1${NC}"
     cat "$OUTPUT_DIR/register-v1.log"
     exit 1
@@ -185,8 +185,8 @@ fi
 V1_HASH=$(grep -o "hash: [a-f0-9]*" "$OUTPUT_DIR/register-v1.log" | head -1 | cut -d' ' -f2 || echo "unknown")
 echo -e "${GREEN}  ✓ Registered with hash: $V1_HASH${NC}"
 
-echo -e "${CYAN}  Registering v2 as 'orders:2.0'...${NC}"
-if ! "$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V2 -n orders -v 2.0" > "$OUTPUT_DIR/register-v2.log" 2>&1; then
+echo -e "${CYAN}  Registering v2 as 'orders:2.0.0'...${NC}"
+if ! "$GRADLE" -q :state-modeler-app:run --args="register $MODEL_V2 -n orders -v 2.0.0" > "$OUTPUT_DIR/register-v2.log" 2>&1; then
     echo -e "${RED}✗ Failed to register v2${NC}"
     cat "$OUTPUT_DIR/register-v2.log"
     exit 1
@@ -199,14 +199,14 @@ echo -e "\n${BLUE}Step 5: Generating migration with ${LLM_PROVIDER} (${LLM_MODEL
 echo -e "${YELLOW}  This may take 30-60 seconds depending on model size...${NC}"
 
 START_TIME=$(date +%s)
-MIGRATE_ARGS=("migrate" "orders:1.0" "orders:2.0" "--llm" "$LLM_PROVIDER" "--model" "$LLM_MODEL" "-o" "$OUTPUT_DIR/migration.sql" "--output-json" "$OUTPUT_DIR/llm-response.json")
+MIGRATE_ARGS=("migrate" "orders:1.0.0" "orders:2.0.0" "--llm" "$LLM_PROVIDER" "--model" "$LLM_MODEL" "-o" "$OUTPUT_DIR/migration.sql" "--output-json" "$OUTPUT_DIR/llm-response.json")
 if "$GRADLE" -q :state-modeler-app:run --args="${MIGRATE_ARGS[*]}" > "$OUTPUT_DIR/migrate.log" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     echo -e "${GREEN}✓ Migration generated successfully in ${DURATION}s${NC}"
     # Also call show-migration to export consolidated JSON report for the migration
     echo -e "\n${CYAN}  Fetching consolidated migration JSON via CLI (show-migration)...${NC}"
-    if "$GRADLE" -q :state-modeler-app:run --args="show-migration orders:1.0 orders:2.0 --output-json $OUTPUT_DIR/show-migration.json" > "$OUTPUT_DIR/show-migration.log" 2>&1; then
+    if "$GRADLE" -q :state-modeler-app:run --args="show-migration orders:1.0.0 orders:2.0.0 --output-json $OUTPUT_DIR/show-migration.json" > "$OUTPUT_DIR/show-migration.log" 2>&1; then
         echo -e "${GREEN}  ✓ show-migration JSON written to $OUTPUT_DIR/show-migration.json${NC}"
     else
         echo -e "${YELLOW}  ⚠ show-migration failed, check $OUTPUT_DIR/show-migration.log${NC}"
@@ -350,7 +350,7 @@ cat > "$OUTPUT_DIR/migration-report-full.md" <<FULL
 
 ✅ **Status:** SUCCESS  
 📊 **LLM Confidence:** $CONFIDENCE  
-🔄 **Migration Path:** orders:1.0 → orders:2.0  
+🔄 **Migration Path:** orders:1.0.0 → orders:2.0.0  
 
 ---
 

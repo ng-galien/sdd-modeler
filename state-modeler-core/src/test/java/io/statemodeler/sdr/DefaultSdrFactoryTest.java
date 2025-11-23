@@ -9,8 +9,8 @@ class DefaultSdrFactoryTest {
 
     private DefaultSdrFactory factory;
 
-    private static final String YAML_MODEL = """
-            version: "0.1"
+        private static final String YAML_MODEL = """
+          version: "0.1.0"
             name: "test-model"
             database:
               dialect: postgres
@@ -34,7 +34,7 @@ class DefaultSdrFactoryTest {
 
     private static final String JSON_MODEL = """
             {
-              "version": "0.1",
+              "version": "0.1.0",
               "name": "test-model",
               "database": {
                 "dialect": "postgres",
@@ -242,7 +242,7 @@ class DefaultSdrFactoryTest {
     void shouldHandleDifferentFieldOrdering() {
         // Given - YAML with different field order
         String yaml1 = """
-                version: "0.1"
+          version: "0.1.0"
                 name: "test"
                 database:
                   dialect: postgres
@@ -253,7 +253,7 @@ class DefaultSdrFactoryTest {
                 name: "test"
                 database:
                   dialect: postgres
-                version: "0.1"
+                version: "0.1.0"
                 entities: {}
                 """;
 

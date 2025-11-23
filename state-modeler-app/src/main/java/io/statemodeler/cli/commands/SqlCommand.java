@@ -90,12 +90,22 @@ public class SqlCommand implements Callable<Integer> {
 
                             // Write to file or stdout
                             if (outputFile != null) {
-                                var writeResult =
-                                        io.vavr.control.Try.of(() -> Files.writeString(outputFile, ddlContent));
+                                // Ensure the parent directory exists before writing
+                                var parent = outputFile.getParent();
+                                if (parent != null && !Files.exists(parent)) {
+                                    try {
+                                        Files.createDirectories(parent);
+                                    } catch (Exception e) {
+                                        logger.error("Failed to create directory {}: {}", parent, e.getMessage());
+                                        spec.commandLine().getErr().println("Error: Could not create output directory: " + parent);
+                                        return 1;
+                                    }
+                                }
+
+                                var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile, ddlContent));
                                 if (writeResult.isFailure()) {
-                                    logger.error(
-                                            "Error writing DDL output: {}",
-                                            writeResult.getCause().getMessage());
+                                    logger.error("Error writing DDL output: {}", writeResult.getCause().getMessage());
+                                    spec.commandLine().getErr().println("Error: Could not write DDL to file: " + outputFile);
                                     return 1;
                                 }
                                 logger.info("✓ DDL written to: {}", outputFile);

@@ -9,7 +9,7 @@ class DefaultSdrFactoryTest {
 
     private DefaultSdrFactory factory;
 
-        private static final String YAML_MODEL = """
+    private static final String YAML_MODEL = """
           version: "0.1.0"
             name: "test-model"
             database:

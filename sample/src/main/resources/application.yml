@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: lead-crm
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lead_crm
+    username: lead_user
+    password: lead_pass
+    driver-class-name: org.postgresql.Driver
+  
+  sql:
+    init:
+      mode: always
+      # Schema will be created by running the generated DDL from build/generated/sdd/sql/
+      # Data will be loaded from db/sample-data.sql
+      data-locations: classpath:db/sample-data.sql
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example.leadcrm: DEBUG
+    org.springframework.jdbc: DEBUG

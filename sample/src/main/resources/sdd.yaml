@@ -1,31 +1,61 @@
 version: "1.0.0"
-name: "sample"
+name: "lead-crm"
 database:
   dialect: "postgres"
   schema: "public"
   generator_options:
-    packageName: "com.example.sample.domain"
+    packageName: "com.example.leadcrm.domain"
 entities:
-  User:
-    table: "users"
+  Lead:
+    table: "leads"
     id:
       name: "id"
       type: "uuid"
     states:
-      active:
-        table: "users_active"
+      new:
+        table: "leads_new"
         initial: true
         from: []
         from_any_of: []
         attributes:
-          username:
+          name:
             type: "TEXT"
           email:
             type: "TEXT"
-      inactive:
-        table: "users_inactive"
-        from: ["active"]
+          phone:
+            type: "TEXT"
+          source:
+            type: "TEXT"
+      contacted:
+        table: "leads_contacted"
+        from: ["new"]
         from_any_of: []
         attributes:
-          reason:
+          contactedAt:
+            type: "TIMESTAMP"
+          contactedBy:
+            type: "TEXT"
+          notes:
+            type: "TEXT"
+      qualified:
+        table: "leads_qualified"
+        from: ["contacted"]
+        from_any_of: []
+        attributes:
+          budget:
+            type: "DECIMAL"
+          timeline:
+            type: "TEXT"
+          qualificationNotes:
+            type: "TEXT"
+      converted:
+        table: "leads_converted"
+        from: ["qualified"]
+        from_any_of: []
+        attributes:
+          convertedAt:
+            type: "TIMESTAMP"
+          contractValue:
+            type: "DECIMAL"
+          salesRepId:
             type: "TEXT"

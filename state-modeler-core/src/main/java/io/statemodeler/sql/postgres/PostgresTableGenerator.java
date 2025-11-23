@@ -61,7 +61,7 @@ final class PostgresTableGenerator {
         columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
 
         // Entity reference (FK added later as constraint)
-        columns.add(new ColumnDefinition(entity.name() + "_id", "INTEGER", false, false, null, null, null));
+        columns.add(new ColumnDefinition(entity.name() + "_id", entity.id().type(), false, false, null, null, null));
 
         // Timestamp
         columns.add(new ColumnDefinition("created_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
@@ -134,7 +134,7 @@ final class PostgresTableGenerator {
         columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
 
         // Entity reference (required for composite FK)
-        columns.add(new ColumnDefinition(entity.name() + "_id", "INTEGER", false, false, null, null, null));
+        columns.add(new ColumnDefinition(entity.name() + "_id", entity.id().type(), false, false, null, null, null));
 
         // References to possible source states (FK added separately to avoid circular
         // dependency)
@@ -169,7 +169,7 @@ final class PostgresTableGenerator {
         var entityIdColumn = entity.name() + "_id";
 
         // Primary key (entity_id)
-        columns.add(new ColumnDefinition(entityIdColumn, "BIGINT", false, true, null, null, null));
+        columns.add(new ColumnDefinition(entityIdColumn, entity.id().type(), false, true, null, null, null));
 
         // Current state type
         columns.add(new ColumnDefinition("state_type", "TEXT", false, false, null, null, null));

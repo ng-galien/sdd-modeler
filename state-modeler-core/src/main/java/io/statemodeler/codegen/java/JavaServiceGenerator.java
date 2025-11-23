@@ -50,8 +50,8 @@ public class JavaServiceGenerator {
         // Generate AutoConfiguration.imports
         if (!autoConfigurationClasses.isEmpty()) {
             String importsContent = String.join("\n", autoConfigurationClasses);
-            generatedFiles.put("META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
-                    importsContent);
+            generatedFiles.put(
+                    "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports", importsContent);
         }
 
         return generatedFiles;
@@ -68,15 +68,11 @@ public class JavaServiceGenerator {
         Set<String> imports = new HashSet<>();
         Object modelImps = modelCtx.get("imports");
         if (modelImps instanceof Set<?> mis) {
-            for (Object o : mis)
-                if (o instanceof String str)
-                    imports.add(str);
+            for (Object o : mis) if (o instanceof String str) imports.add(str);
         }
         Object entityImps = entityCtx.get("imports");
         if (entityImps instanceof Set<?> eis) {
-            for (Object o : eis)
-                if (o instanceof String str)
-                    imports.add(str);
+            for (Object o : eis) if (o instanceof String str) imports.add(str);
         }
         context.put("imports", imports);
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());

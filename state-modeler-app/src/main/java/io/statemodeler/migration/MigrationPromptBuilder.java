@@ -77,8 +77,7 @@ final class MigrationPromptBuilder {
                 }
 
                 IMPORTANT: The `migrationScript` MUST be only the SQL script as a string (no markdown fences), and `confidence` should be an approximate float between 0.0 and 1.0.
-                """
-                .formatted(dialect.toUpperCase());
+                """.formatted(dialect.toUpperCase());
 
         String userPrompt = """
                 TASK: Generate a forward SQL migration script to copy data from the OLD schema structure to the NEW schema structure.
@@ -97,11 +96,8 @@ final class MigrationPromptBuilder {
                 ```sql
                 %s
                 ```
-                """
-                .formatted(textDiff, oldDdl, newDdl);
+                """.formatted(textDiff, oldDdl, newDdl);
 
-        return List.of(
-                new SystemMessage(systemPrompt),
-                new UserMessage(userPrompt));
+        return List.of(new SystemMessage(systemPrompt), new UserMessage(userPrompt));
     }
 }

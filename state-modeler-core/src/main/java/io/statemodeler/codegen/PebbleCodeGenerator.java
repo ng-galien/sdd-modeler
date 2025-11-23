@@ -1,6 +1,7 @@
 package io.statemodeler.codegen;
 
 import io.pebbletemplates.pebble.PebbleEngine;
+import io.statemodeler.codegen.http.JavaHttpClientGenerator;
 import io.statemodeler.codegen.java.*;
 import io.statemodeler.core.SddModel;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ public class PebbleCodeGenerator implements CodeGenerator {
             generatedFiles.putAll(new JavaServiceGenerator(engine, javaContextBuilder).generate(model));
             generatedFiles.putAll(new JavaConverterGenerator(engine, javaContextBuilder).generate(model));
             generatedFiles.putAll(new JavaConfigGenerator(engine, javaContextBuilder).generate(model));
+            generatedFiles.putAll(new JavaHttpClientGenerator(engine, javaContextBuilder).generate(model));
 
             // Apply formatting to all Java files
             for (Map.Entry<String, String> entry : generatedFiles.entrySet()) {

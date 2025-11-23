@@ -28,8 +28,8 @@ class H2SdrMigrationTest {
         var fromSdr = createTestSdr(fromHash, "schema1", "ddl1");
         var toSdr = createTestSdr(toHash, "schema2", "ddl2");
 
-        repository.save(fromSdr, "test-model", "1.0").get();
-        repository.save(toSdr, "test-model", "2.0").get();
+        repository.save(fromSdr, "test-model", "1.0.0").get();
+        repository.save(toSdr, "test-model", "2.0.0").get();
     }
 
     @AfterEach
@@ -121,7 +121,7 @@ class H2SdrMigrationTest {
 
         // Create another SDR to reference
         var anotherSdr = createTestSdr("another123", "schema3", "ddl3");
-        repository.save(anotherSdr, "test-model", "3.0").get();
+        repository.save(anotherSdr, "test-model", "3.0.0").get();
 
         repository.saveMigration(migration1).get();
         repository.saveMigration(migration2).get();
@@ -151,7 +151,7 @@ class H2SdrMigrationTest {
 
         // Create another SDR to reference
         var anotherSdr = createTestSdr("another123", "schema0", "ddl0");
-        repository.save(anotherSdr, "test-model", "0.9").get();
+        repository.save(anotherSdr, "test-model", "0.9.0").get();
 
         repository.saveMigration(migration1).get();
         repository.saveMigration(migration2).get();

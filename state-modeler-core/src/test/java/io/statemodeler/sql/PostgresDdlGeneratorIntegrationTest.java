@@ -126,7 +126,7 @@ class PostgresDdlGeneratorIntegrationTest {
                 Map.of(),
                 Map.of());
 
-        var model = new SddModel("0.1", "test-custom-schema", database, Map.of("document", entity));
+        var model = new SddModel("0.1.0", "test-custom-schema", database, Map.of("document", entity));
 
         // When
         var generator = DdlGenerators.forDialect("postgres");
@@ -160,7 +160,7 @@ class PostgresDdlGeneratorIntegrationTest {
         var entity =
                 new EntityDef("task", "tasks", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
 
-        var model = new SddModel("0.1", "test-null-schema", database, Map.of("task", entity));
+        var model = new SddModel("0.1.0", "test-null-schema", database, Map.of("task", entity));
 
         // When
         var generator = DdlGenerators.forDialect("postgres");
@@ -195,7 +195,7 @@ class PostgresDdlGeneratorIntegrationTest {
         var entity = new EntityDef(
                 "project", "projects", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
 
-        var model = new SddModel("0.1", "test-public-state-schema", database, Map.of("project", entity));
+        var model = new SddModel("0.1.0", "test-public-state-schema", database, Map.of("project", entity));
 
         // When
         var generator = DdlGenerators.forDialect("postgres");
@@ -229,7 +229,7 @@ class PostgresDdlGeneratorIntegrationTest {
         var entity = new EntityDef(
                 "resource", "resources", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());
 
-        var model = new SddModel("0.1", "test-empty-string-schema", database, Map.of("resource", entity));
+        var model = new SddModel("0.1.0", "test-empty-string-schema", database, Map.of("resource", entity));
 
         // When
         var generator = DdlGenerators.forDialect("postgres");
@@ -273,7 +273,7 @@ class PostgresDdlGeneratorIntegrationTest {
                 Map.of(),
                 Map.of());
 
-        var model = new SddModel("0.1", "test-indexes", database, Map.of("order", entity));
+        var model = new SddModel("0.1.0", "test-indexes", database, Map.of("order", entity));
 
         // When
         var generator = DdlGenerators.forDialect("postgres");
@@ -377,6 +377,6 @@ class PostgresDdlGeneratorIntegrationTest {
                 Map.of(), // no extensions
                 Map.of()); // no projections
 
-        return new SddModel("0.1", "simple-order-model", database, Map.of("order", entity));
+        return new SddModel("0.1.0", "simple-order-model", database, Map.of("order", entity));
     }
 }

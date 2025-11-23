@@ -26,6 +26,7 @@ pebble = "3.2.3"
 commons-text = "1.12.0"
 assertj = "3.25.3"
 sql-formatter = "2.0.5"
+java-semver = "0.10.2"
 
 [libraries]
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
@@ -62,6 +63,7 @@ commons-text = { module = "org.apache.commons:commons-text", version.ref = "comm
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 palantir-java-format = { module = "com.palantir.javaformat:palantir-java-format", version.ref = "palantir-java-format" }
 sql-formatter = { module = "com.github.vertical-blank:sql-formatter", version.ref = "sql-formatter" }
+java-semver = { module = "com.github.zafarkhaja:java-semver", version.ref = "java-semver" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

@@ -41,7 +41,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("order", entity));
@@ -96,7 +96,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("order", entity));
@@ -134,7 +134,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("entity1", entity1, "entity2", entity2));
@@ -163,7 +163,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("entity1", entity));
@@ -200,7 +200,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("order", entity));
@@ -236,7 +236,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("order", entity));
@@ -286,7 +286,7 @@ class MermaidDiagramGeneratorTest {
                 Map.of());
 
         var model = new SddModel(
-                "0.1",
+                "0.1.0",
                 "test-model",
                 new DatabaseConfig("postgres", null, null, java.util.Map.of()),
                 Map.of("order", entity));

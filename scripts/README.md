@@ -44,7 +44,9 @@ Generated files are saved to `build/test-output/`:
 
 ---
 
+
 ### `test-ddl-functional.sh`
+
 Tests generated DDL with real PostgreSQL database and data operations. Automatically uses Docker if PostgreSQL is not available locally.
 
 **What it tests:**
@@ -323,10 +325,10 @@ Step 2: Generate DDL for orders v2
 ✓ DDL generated successfully: migration-v2.sql
 
 Step 3: Register v1 in SDR repository
-✓ Registered: orders:1.0
+✓ Registered: orders:1.0.0
 
 Step 4: Register v2 in SDR repository
-✓ Registered: orders:2.0
+✓ Registered: orders:2.0.0
 
 Step 5: Generate migration using Ollama
 ⏱ Generating migration with LLM (this may take a few seconds)...

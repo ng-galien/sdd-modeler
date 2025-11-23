@@ -181,7 +181,7 @@ Created At: 2024-11-16 14:30:15 CET
 
 === Schema (JSON) ===
 {
-  "version": "0.1",
+  "version": "0.1.0",
   "name": "orders-sdd-example",
   "database": {
     "dialect": "postgres",

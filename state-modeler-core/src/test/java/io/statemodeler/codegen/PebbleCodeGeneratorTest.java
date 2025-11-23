@@ -27,7 +27,7 @@ class PebbleCodeGeneratorTest {
         var entity = new EntityDef(
                 "order_item", "orders", idAttr, Map.of("created_at", createdAtAttr), states, Map.of(), Map.of());
         var database = new DatabaseConfig("postgres", "public", null, Map.of("packageName", "com.example"));
-        var model = new SddModel("1.0", "test", database, Map.of(entity.name(), entity));
+        var model = new SddModel("1.0.0", "test", database, Map.of(entity.name(), entity));
 
         CodeGenerator generator = CodeGenerators.forLanguage("java");
         var generated = generator.generate(model);

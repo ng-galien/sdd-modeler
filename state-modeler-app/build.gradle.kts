@@ -55,6 +55,9 @@ dependencies {
     // Diff algorithm for DDL comparison
     implementation(libs.java.diff.utils)
     
+    // SemVer for version comparison
+    implementation(libs.java.semver)
+    
     // LangChain4j for LLM-based migration script generation (Ollama and OpenAI)
     implementation(libs.langchain4j)
     implementation(libs.langchain4j.ollama)

@@ -32,7 +32,7 @@ The core library for State-Driven Design (SDD) modeling, validation, and SQL gen
 ### YAML Definition
 
 ```yaml
-version: "0.1"
+version: "0.1.0"
 name: "orders-sdd-example"
 database:
   dialect: postgres

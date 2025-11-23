@@ -28,7 +28,7 @@ class ShowCommandTest {
         sdrFactory = new DefaultSdrFactory();
 
         // Register a test SDR
-        testHash = registerTestSdr("test-model", "1.0");
+        testHash = registerTestSdr("test-model", "1.0.0");
     }
 
     @AfterEach
@@ -105,7 +105,7 @@ class ShowCommandTest {
                     assertTrue(
                             output3.contains("=== SDR Metadata ==="), "Should show metadata. Output was:\n" + output3);
                 },
-                "test-model:1.0",
+                "test-model:1.0.0",
                 "--format",
                 "all");
     }
@@ -232,8 +232,8 @@ class ShowCommandTest {
     @Test
     void shouldFindLatestVersionByName() {
         // Given - register multiple versions
-        registerTestSdr("multi-version", "1.0");
-        registerTestSdr("multi-version", "2.0");
+        registerTestSdr("multi-version", "1.0.0");
+        registerTestSdr("multi-version", "2.0.0");
 
         var command = new ShowCommand();
         command.identifier = "multi-version"; // No version specified
@@ -255,7 +255,7 @@ class ShowCommandTest {
 
     private String registerTestSdr(String modelName, String modelVersion) {
         String modelSource = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "%s"
                 database:
                   dialect: postgres

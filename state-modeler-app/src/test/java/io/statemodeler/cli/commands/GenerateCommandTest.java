@@ -17,7 +17,7 @@ class GenerateCommandTest {
     @Test
     void shouldGenerateJavaFilesToStdout() throws Exception {
         var yaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres

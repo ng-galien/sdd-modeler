@@ -36,9 +36,9 @@ import picocli.CommandLine.Spec;
  * <p>
  * Examples:
  * <ul>
- * <li>sdd-modeler migrate orders:1.0 orders:2.0
+ * <li>sdd-modeler migrate orders:1.0.0 orders:2.0.0
  * <li>sdd-modeler migrate abc123 def456 --dialect postgres
- * <li>sdd-modeler migrate orders:1.0 orders:2.0 -o migration.sql
+ * <li>sdd-modeler migrate orders:1.0.0 orders:2.0.0 -o migration.sql
  * <li>sdd-modeler migrate abc123 def456 --llm ollama --model llama3.2
  * </ul>
  */

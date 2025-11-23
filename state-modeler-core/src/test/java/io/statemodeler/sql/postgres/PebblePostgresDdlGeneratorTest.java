@@ -92,6 +92,6 @@ class PebblePostgresDdlGeneratorTest {
                 Map.of(), // no extensions
                 Map.of()); // no projections
 
-        return new SddModel("0.1", "simple-order-model", database, Map.of("order", entity));
+        return new SddModel("0.1.0", "simple-order-model", database, Map.of("order", entity));
     }
 }

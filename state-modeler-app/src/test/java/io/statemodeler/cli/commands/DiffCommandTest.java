@@ -18,7 +18,7 @@ class DiffCommandTest {
     void shouldShowDiffBetweenTwoModels() throws Exception {
         // Given
         var currentYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -45,7 +45,7 @@ class DiffCommandTest {
                 """;
 
         var futureYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -96,7 +96,7 @@ class DiffCommandTest {
     void shouldShowNoDiffForIdenticalModels() throws Exception {
         // Given
         var modelYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -161,7 +161,7 @@ class DiffCommandTest {
     void shouldFailWhenFutureModelFileDoesNotExist() throws Exception {
         // Given
         var currentYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -196,7 +196,7 @@ class DiffCommandTest {
     void shouldFailWhenCurrentModelIsInvalid() throws Exception {
         // Given
         var invalidYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -210,7 +210,7 @@ class DiffCommandTest {
                 """;
 
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -246,7 +246,7 @@ class DiffCommandTest {
     void shouldFailWhenFutureModelIsInvalid() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -264,7 +264,7 @@ class DiffCommandTest {
                 """;
 
         var invalidYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -296,7 +296,7 @@ class DiffCommandTest {
     void shouldFailWhenUnsupportedDialect() throws Exception {
         // Given
         var modelYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -337,13 +337,13 @@ class DiffCommandTest {
     void shouldFailWhenCurrentModelIsMalformedYaml() throws Exception {
         // Given
         var malformedYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: test-model
                   invalid: [unclosed bracket
                 """;
 
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -382,7 +382,7 @@ class DiffCommandTest {
     void shouldFailWhenFutureModelIsMalformedYaml() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -400,7 +400,7 @@ class DiffCommandTest {
                 """;
 
         var malformedYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: test-model
                   invalid: [unclosed bracket
                 """;

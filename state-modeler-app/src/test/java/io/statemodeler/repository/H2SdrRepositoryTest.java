@@ -34,7 +34,7 @@ class H2SdrRepositoryTest {
         var sdr = createTestSdr("hash1", "schema1", "ddl1");
 
         // When
-        var saveResult = repository.save(sdr, "test-model", "1.0");
+        var saveResult = repository.save(sdr, "test-model", "1.0.0");
         var findResult = repository.findByHash("hash1");
 
         // Then
@@ -64,10 +64,10 @@ class H2SdrRepositoryTest {
         var sdr1 = createTestSdr("hash1", "schema1", "ddl1");
         var sdr2 = createTestSdr("hash1", "schema2", "ddl2");
 
-        repository.save(sdr1, "model1", "1.0");
+        repository.save(sdr1, "model1", "1.0.0");
 
         // When
-        var result = repository.save(sdr2, "model2", "2.0");
+        var result = repository.save(sdr2, "model2", "2.0.0");
 
         // Then
         assertTrue(result.isFailure());
@@ -82,9 +82,9 @@ class H2SdrRepositoryTest {
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
         var sdr3 = createTestSdr("hash3", "schema3", "ddl3");
 
-        repository.save(sdr1, "orders", "1.0");
-        repository.save(sdr2, "orders", "1.1");
-        repository.save(sdr3, "users", "1.0");
+        repository.save(sdr1, "orders", "1.0.0");
+        repository.save(sdr2, "orders", "1.1.0");
+        repository.save(sdr3, "users", "1.0.0");
 
         // When
         var result = repository.findByName("orders");
@@ -114,11 +114,11 @@ class H2SdrRepositoryTest {
         var sdr1 = createTestSdr("hash1", "schema1", "ddl1");
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
 
-        repository.save(sdr1, "orders", "1.0");
-        repository.save(sdr2, "orders", "1.1");
+        repository.save(sdr1, "orders", "1.0.0");
+        repository.save(sdr2, "orders", "1.1.0");
 
         // When
-        var result = repository.findByNameAndVersion("orders", "1.1");
+        var result = repository.findByNameAndVersion("orders", "1.1.0");
 
         // Then
         assertTrue(result.isSuccess());
@@ -131,15 +131,15 @@ class H2SdrRepositoryTest {
     void shouldReturnMostRecentForDuplicateNameAndVersion() throws InterruptedException {
         // Given - same model/version saved twice with different hashes
         var sdr1 = createTestSdr("hash1", "schema1", "ddl1");
-        repository.save(sdr1, "orders", "1.0");
+        repository.save(sdr1, "orders", "1.0.0");
 
         Thread.sleep(10); // Ensure different timestamps
 
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
-        repository.save(sdr2, "orders", "1.0");
+        repository.save(sdr2, "orders", "1.0.0");
 
         // When
-        var result = repository.findByNameAndVersion("orders", "1.0");
+        var result = repository.findByNameAndVersion("orders", "1.0.0");
 
         // Then - should return most recent (hash2)
         assertTrue(result.isSuccess());
@@ -155,9 +155,9 @@ class H2SdrRepositoryTest {
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
         var sdr3 = createTestSdr("hash3", "schema3", "ddl3");
 
-        repository.save(sdr1, "orders", "1.0");
-        repository.save(sdr2, "users", "1.0");
-        repository.save(sdr3, "products", "1.0");
+        repository.save(sdr1, "orders", "1.0.0");
+        repository.save(sdr2, "users", "1.0.0");
+        repository.save(sdr3, "products", "1.0.0");
 
         // When
         var result = repository.listAll();
@@ -179,9 +179,12 @@ class H2SdrRepositoryTest {
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
         var sdr3 = createTestSdr("hash3", "schema3", "ddl3");
 
-        repository.save(sdr1, "model1", "1.0");
-        repository.save(sdr2, "model2", "1.0");
-        repository.save(sdr3, "model3", "1.0");
+        repository.save(sdr1, "model1", "1.0.0");
+        repository.save(sdr2, "model2", "1.0.0");
+        repository.save(sdr3, "model3", "1.0.0");
+        repository.save(sdr1, "model1", "1.0.0");
+        repository.save(sdr2, "model2", "1.0.0");
+        repository.save(sdr3, "model3", "1.0.0");
 
         // When
         var result = repository.findRecent(2);
@@ -199,7 +202,7 @@ class H2SdrRepositoryTest {
     void shouldReturnEmptyListForZeroOrNegativeLimit() {
         // Given
         var sdr = createTestSdr("hash1", "schema1", "ddl1");
-        repository.save(sdr, "model1", "1.0");
+        repository.save(sdr, "model1", "1.0.0");
 
         // When
         var resultZero = repository.findRecent(0);
@@ -216,7 +219,7 @@ class H2SdrRepositoryTest {
     void shouldDeleteByHash() {
         // Given
         var sdr = createTestSdr("hash1", "schema1", "ddl1");
-        repository.save(sdr, "test-model", "1.0");
+        repository.save(sdr, "test-model", "1.0.0");
 
         // When
         var deleteResult = repository.delete("hash1");
@@ -244,8 +247,8 @@ class H2SdrRepositoryTest {
         var sdr1 = createTestSdr("hash1", "schema1", "ddl1");
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
 
-        repository.save(sdr1, "model1", "1.0");
-        repository.save(sdr2, "model2", "1.0");
+        repository.save(sdr1, "model1", "1.0.0");
+        repository.save(sdr2, "model2", "1.0.0");
 
         // When
         var result = repository.count();
@@ -269,7 +272,7 @@ class H2SdrRepositoryTest {
     void shouldCheckExistence() {
         // Given
         var sdr = createTestSdr("hash1", "schema1", "ddl1");
-        repository.save(sdr, "test-model", "1.0");
+        repository.save(sdr, "test-model", "1.0.0");
 
         // When
         var existsResult = repository.exists("hash1");
@@ -285,9 +288,9 @@ class H2SdrRepositoryTest {
     @Test
     void shouldHandleNullAndBlankParameters() {
         // When - save with null/blank
-        var saveNullSdr = repository.save(null, "model", "1.0");
-        var saveNullName = repository.save(createTestSdr("h1", "s1", "d1"), null, "1.0");
-        var saveBlankName = repository.save(createTestSdr("h2", "s2", "d2"), "", "1.0");
+        var saveNullSdr = repository.save(null, "model", "1.0.0");
+        var saveNullName = repository.save(createTestSdr("h1", "s1", "d1"), null, "1.0.0");
+        var saveBlankName = repository.save(createTestSdr("h2", "s2", "d2"), "", "1.0.0");
         var saveNullVersion = repository.save(createTestSdr("h3", "s3", "d3"), "model", null);
 
         // When - find with null/blank
@@ -325,7 +328,7 @@ class H2SdrRepositoryTest {
                 "test-schema-json", "application/json", "test-ddl-sql", "test-hash-123", "ddl-hash-456", "1.0.0");
 
         // When
-        repository.save(sdr, "orders", "2.0");
+        repository.save(sdr, "orders", "2.0.0");
         var metadata = repository.findByName("orders").get();
 
         // Then
@@ -333,7 +336,7 @@ class H2SdrRepositoryTest {
         var meta = metadata.get(0);
         assertEquals("test-hash-123", meta.schemaHash());
         assertEquals("orders", meta.modelName());
-        assertEquals("2.0", meta.modelVersion());
+        assertEquals("2.0.0", meta.modelVersion());
         assertEquals("1.0.0", meta.sdrVersion());
         assertEquals(sdr.buildFingerprint(), meta.buildFingerprint());
         assertNotNull(meta.createdAt());
@@ -343,15 +346,15 @@ class H2SdrRepositoryTest {
     void shouldSortListAllByCreatedAtDescending() throws InterruptedException {
         // Given - save in order: sdr1, sdr2, sdr3
         var sdr1 = createTestSdr("hash1", "schema1", "ddl1");
-        repository.save(sdr1, "model1", "1.0");
+        repository.save(sdr1, "model1", "1.0.0");
 
         Thread.sleep(10);
         var sdr2 = createTestSdr("hash2", "schema2", "ddl2");
-        repository.save(sdr2, "model2", "1.0");
+        repository.save(sdr2, "model2", "1.0.0");
 
         Thread.sleep(10);
         var sdr3 = createTestSdr("hash3", "schema3", "ddl3");
-        repository.save(sdr3, "model3", "1.0");
+        repository.save(sdr3, "model3", "1.0.0");
 
         // When
         var result = repository.listAll();

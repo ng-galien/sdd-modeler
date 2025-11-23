@@ -21,7 +21,7 @@ class DiagramCommandTest {
     void shouldGenerateDiagramToStdout() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -74,7 +74,7 @@ class DiagramCommandTest {
     void shouldGenerateDiagramToFile() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -124,7 +124,7 @@ class DiagramCommandTest {
     void shouldGenerateDiagramForSpecificEntity() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -190,7 +190,7 @@ class DiagramCommandTest {
     void shouldRejectInvalidFormat() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -228,7 +228,7 @@ class DiagramCommandTest {
     void shouldRejectNonExistentEntity() throws Exception {
         // Given
         var validYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "test-model"
                 database:
                   dialect: postgres
@@ -265,7 +265,7 @@ class DiagramCommandTest {
     void shouldRejectInvalidModel() throws Exception {
         // Given - model with no initial state
         var invalidYaml = """
-                version: "0.1"
+                version: "0.1.0"
                 name: "invalid-model"
                 database:
                   dialect: postgres

@@ -23,16 +23,42 @@ public class JavaServiceGenerator {
 
     public Map<String, String> generate(SddModel model) {
         Map<String, String> generatedFiles = new HashMap<>();
+        java.util.List<String> autoConfigurationClasses = new java.util.ArrayList<>();
+
         for (EntityDef entity : model.entities().values()) {
-            String content = generateService(entity, model);
-            String filename = resolveServiceFilename(entity, model);
-            generatedFiles.put(filename, content);
+            // Interface
+            String interfaceContent = generateFile(entity, model, "templates/java/service_interface.java.pebble");
+            String interfaceName = contextBuilder.toPascal(entity.name()) + "Service";
+            generatedFiles.put(resolveFilename(model, interfaceName), interfaceContent);
+
+            // Default Implementation
+            String implContent = generateFile(entity, model, "templates/java/service_default_impl.java.pebble");
+            String implName = "Default" + contextBuilder.toPascal(entity.name()) + "Service";
+            generatedFiles.put(resolveFilename(model, implName), implContent);
+
+            // AutoConfiguration
+            String configContent = generateFile(entity, model, "templates/java/service_autoconfiguration.java.pebble");
+            String configName = contextBuilder.toPascal(entity.name()) + "ServiceAutoConfiguration";
+            generatedFiles.put(resolveFilename(model, configName), configContent);
+
+            // Collect AutoConfiguration class name
+            var options = model.database().generatorOptions();
+            var pkg = options != null ? options.getOrDefault("packageName", "com.example") : "com.example";
+            autoConfigurationClasses.add(pkg + "." + configName);
         }
+
+        // Generate AutoConfiguration.imports
+        if (!autoConfigurationClasses.isEmpty()) {
+            String importsContent = String.join("\n", autoConfigurationClasses);
+            generatedFiles.put("META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+                    importsContent);
+        }
+
         return generatedFiles;
     }
 
-    private String generateService(EntityDef entity, SddModel model) {
-        PebbleTemplate template = engine.getTemplate("templates/java/service.java.pebble");
+    private String generateFile(EntityDef entity, SddModel model, String templatePath) {
+        PebbleTemplate template = engine.getTemplate(templatePath);
         Map<String, Object> context = new HashMap<>();
         Map<String, Object> entityCtx = contextBuilder.buildEntityContext(entity);
         context.put("entity", entityCtx);
@@ -42,11 +68,15 @@ public class JavaServiceGenerator {
         Set<String> imports = new HashSet<>();
         Object modelImps = modelCtx.get("imports");
         if (modelImps instanceof Set<?> mis) {
-            for (Object o : mis) if (o instanceof String str) imports.add(str);
+            for (Object o : mis)
+                if (o instanceof String str)
+                    imports.add(str);
         }
         Object entityImps = entityCtx.get("imports");
         if (entityImps instanceof Set<?> eis) {
-            for (Object o : eis) if (o instanceof String str) imports.add(str);
+            for (Object o : eis)
+                if (o instanceof String str)
+                    imports.add(str);
         }
         context.put("imports", imports);
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
@@ -56,13 +86,13 @@ public class JavaServiceGenerator {
             template.evaluate(writer, context);
             return writer.toString();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate Service for " + entity.name(), e);
+            throw new RuntimeException("Failed to generate file for " + entity.name() + " using " + templatePath, e);
         }
     }
 
-    private String resolveServiceFilename(EntityDef entity, SddModel model) {
+    private String resolveFilename(SddModel model, String className) {
         var options = model.database().generatorOptions();
         var pkg = options != null ? options.getOrDefault("packageName", "com.example") : "com.example";
-        return pkg.replace('.', '/') + "/" + contextBuilder.toPascal(entity.name()) + "Service.java";
+        return pkg.replace('.', '/') + "/" + className + ".java";
     }
 }

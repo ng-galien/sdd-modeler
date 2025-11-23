@@ -7,8 +7,7 @@ import org.springframework.http.HttpStatus;
 {% endif %}
 
 @RestController
-@RequestMapping("/api/{{ entity.name | lower }}s")
-public class {{ entity.className }}Controller {
+public class {{ entity.className }}Controller implements {{ entity.className }}Api {
 
 {% if entity.hasStates %}
     // State-based entity - inject service and all state repositories
@@ -30,14 +29,14 @@ public class {{ entity.className }}Controller {
     }
 
     // GET endpoints per state
-    @GetMapping
+    @Override
     public java.util.List<{{ entity.className }}State> findAll() {
         return service.findAll();
     }
 
     {% for stateRepo in stateRepositories %}
-    @GetMapping("/{{ stateRepo.stateName | lower }}/{id}")
-    public ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}(@PathVariable {{ entity.id.className }} id) {
+    @Override
+    public ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}({{ entity.id.className }} id) {
         return {{ stateRepo.propertyName }}Repository.findById(id)
             .map(entity -> ResponseEntity.ok(new {{ entity.className }}Dto(entity.id()
                 {%- for attr in entity.attributes -%}
@@ -50,10 +49,10 @@ public class {{ entity.className }}Controller {
     {% endfor %}
     // POST endpoints for transitions
     {% for transition in transitions %}
-    @PostMapping("/{id}/transitions/to{{ transition.targetState.className }}")
+    @Override
     public ResponseEntity<{{ entity.className }}Dto> {{ transition.methodName }}(
-        @PathVariable {{ entity.id.className }} id,
-        @RequestBody {{ entity.className }}Service.{{ transition.commandClassName }} command
+        {{ entity.id.className }} id,
+        {{ entity.className }}Service.{{ transition.commandClassName }} command
     ) {
         {{ entity.className }}Dto dto = service.{{ transition.methodName }}(id, command);
         return ResponseEntity.ok(dto);
@@ -67,8 +66,8 @@ public class {{ entity.className }}Controller {
         this.repository = repository;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<{{ entity.className }}Dto> get(@PathVariable {{ entity.id.className }} id) {
+    @Override
+    public ResponseEntity<{{ entity.className }}Dto> get({{ entity.id.className }} id) {
         return repository.findById(id)
             .map(entity -> new {{ entity.className }}Dto(
                 entity.{{ entity.id.propertyName }}(){% if entity.attributes is not empty %},{% endif %}

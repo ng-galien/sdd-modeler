@@ -1,0 +1,32 @@
+package {{ options.packageName }};
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.service.annotation.HttpExchange;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.PostExchange;
+
+@HttpExchange("/api/{{ entity.name | lower }}s")
+public interface {{ entity.className }}Api {
+
+{% if entity.hasStates %}
+    @GetExchange
+    java.util.List<{{ entity.className }}State> findAll();
+
+    {% for stateRepo in stateRepositories %}
+    @GetExchange("/{{ stateRepo.stateName | lower }}/{id}")
+    ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}(@PathVariable {{ entity.id.className }} id);
+
+    {% endfor %}
+    {% for transition in transitions %}
+    @PostExchange("/{id}/transitions/to{{ transition.targetState.className }}")
+    ResponseEntity<{{ entity.className }}Dto> {{ transition.methodName }}(
+        @PathVariable {{ entity.id.className }} id,
+        @RequestBody {{ entity.className }}Service.{{ transition.commandClassName }} command
+    );
+    {% endfor %}
+{% else %}
+    @GetExchange("/{id}")
+    ResponseEntity<{{ entity.className }}Dto> get(@PathVariable {{ entity.id.className }} id);
+{% endif %}
+}

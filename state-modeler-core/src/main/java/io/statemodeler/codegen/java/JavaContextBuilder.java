@@ -39,6 +39,7 @@ public class JavaContextBuilder {
         ctx.put("name", entity.name());
         String className = toPascal(entity.name());
         ctx.put("className", className);
+        ctx.put("propertyName", toCamel(entity.name()));
         ctx.put("table", entity.table() != null ? entity.table() : entity.name());
         Map<String, Object> idCtx = new HashMap<>();
         idCtx.put("name", entity.id().name());
@@ -69,7 +70,8 @@ public class JavaContextBuilder {
             attrCtx.put("propertyName", toCamel(attr.name()));
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
-            if (mapped.importName() != null) imports.add(mapped.importName());
+            if (mapped.importName() != null)
+                imports.add(mapped.importName());
             attrs.add(attrCtx);
         }
         ctx.put("attributes", attrs);
@@ -92,7 +94,8 @@ public class JavaContextBuilder {
             attrCtx.put("nullable", attr.nullable());
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
-            if (mapped.importName() != null) imports.add(mapped.importName());
+            if (mapped.importName() != null)
+                imports.add(mapped.importName());
             attrs.add(attrCtx);
         }
         ctx.put("attributes", attrs);
@@ -111,10 +114,12 @@ public class JavaContextBuilder {
         return ctx;
     }
 
-    public record TypeMapping(String javaType, String importName) {}
+    public record TypeMapping(String javaType, String importName) {
+    }
 
     public TypeMapping mapSqlTypeToJavaType(String sqlType) {
-        if (sqlType == null) return new TypeMapping("Object", null);
+        if (sqlType == null)
+            return new TypeMapping("Object", null);
         var s = sqlType.trim().toUpperCase();
         boolean isArray = false;
         if (s.endsWith("[]")) {
@@ -165,12 +170,14 @@ public class JavaContextBuilder {
     }
 
     public String toPascal(String s) {
-        if (s == null || s.isEmpty()) return s;
+        if (s == null || s.isEmpty())
+            return s;
         return CaseUtils.toCamelCase(normalizeCaseInput(s), true, '_', '-', ' ', '.');
     }
 
     public String toCamel(String s) {
-        if (s == null || s.isEmpty()) return s;
+        if (s == null || s.isEmpty())
+            return s;
         return CaseUtils.toCamelCase(normalizeCaseInput(s), false, '_', '-', ' ', '.');
     }
 

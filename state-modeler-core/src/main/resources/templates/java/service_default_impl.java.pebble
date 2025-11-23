@@ -1,14 +1,12 @@
 package {{ options.packageName }};
 
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 {% for import in imports %}
 import {{ import }};
 {% endfor %}
 
-@Service
-public class {{ entity.className }}Service {
+public class Default{{ entity.className }}Service implements {{ entity.className }}Service {
 
     {% for state in entity.states %}
     private final {{ state.className }}Repository {{ state.propertyName }}Repository;
@@ -16,7 +14,7 @@ public class {{ entity.className }}Service {
     private final {{ entity.className }}DomainStateRepository domainStateRepository;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    public {{ entity.className }}Service(
+    public Default{{ entity.className }}Service(
         {% for state in entity.states %}
         {{ state.className }}Repository {{ state.propertyName }}Repository,
         {% endfor %}
@@ -30,6 +28,7 @@ public class {{ entity.className }}Service {
         this.objectMapper = objectMapper;
     }
 
+    @Override
     public java.util.List<{{ entity.className }}State> findAll() {
         var domainStates = domainStateRepository.findAll();
         var states = new java.util.ArrayList<{{ entity.className }}State>();
@@ -51,20 +50,7 @@ public class {{ entity.className }}Service {
 
     {% for state in entity.states %}
     {% if not state.from.isEmpty() %}
-    public record TransitionTo{{ state.className }}Command(
-        {% for attr in state.attributes %}
-        {{ attr.javaType }} {{ attr.propertyName }}{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ) {
-        public TransitionTo{{ state.className }}Command {
-            {% for attr in state.attributes %}
-            {% if not attr.nullable %}
-            java.util.Objects.requireNonNull({{ attr.propertyName }}, "{{ attr.propertyName }} cannot be null");
-            {% endif %}
-            {% endfor %}
-        }
-    }
-
+    @Override
     @Transactional
     public {{ entity.className }}Dto transitionTo{{ state.className }}({{ entity.id.className }} id, TransitionTo{{ state.className }}Command command) {
         // Find current state

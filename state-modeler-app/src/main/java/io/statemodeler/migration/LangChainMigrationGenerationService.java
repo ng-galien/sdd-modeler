@@ -65,7 +65,7 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
             logger.info("Calling LLM to generate migration script with structured output...");
 
             try {
-                MigrationResult result = assistant.generateMigration(messages, dialect);
+                MigrationResult result = assistant.generateMigration(messages);
                 logger.info(
                         "Migration generated successfully - confidence: {}, script length: {} chars",
                         result.confidence(),
@@ -84,6 +84,6 @@ public class LangChainMigrationGenerationService implements MigrationGenerationS
      * LangChain4j automatically handles the structured output mapping.
      */
     interface MigrationAssistant {
-        MigrationResult generateMigration(List<ChatMessage> messages, @V("dialect") String dialect);
+        MigrationResult generateMigration(List<ChatMessage> messages);
     }
 }

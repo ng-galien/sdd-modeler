@@ -1,0 +1,29 @@
+### Variables
+@baseUrl = http://localhost:8080
+@orderItemId = 1
+
+###
+# OrderItem API Endpoints
+###
+
+### Get all order_items (all states)
+GET {{baseUrl}}/api/order_items
+Accept: application/json
+
+### Get order_item in PendingPayment state
+GET {{baseUrl}}/api/order_items/pending_payment/{{orderItemId}} 
+Accept: application/json
+
+### Get order_item in Created state
+GET {{baseUrl}}/api/order_items/created/{{orderItemId}} 
+Accept: application/json
+
+### Transition to PendingPayment 
+POST {{baseUrl}}/api/order_items/{{orderItemId}}/transitions/toPendingPayment 
+Content-Type: application/json
+
+{
+  "payment_method": "example-payment_method",
+  "paid_amount": null}
+
+

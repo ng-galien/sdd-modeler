@@ -52,6 +52,7 @@ docker-compose down -v
 ### 1. Générer le code Java
 
 Le code generator SDD Modeler produit automatiquement:
+
 - Code Java (DTOs, Repositories, Services, Controllers)
 - Tests HTTP dans `build/generated/sdd/http/`
 
@@ -65,19 +66,18 @@ Le code generator SDD Modeler produit automatiquement:
 Le schéma PostgreSQL est généré via la commande CLI `sql`:
 
 ```shell
-# Depuis le répertoire racine du projet
-# Option 1 - chemin absolu (expansion du shell) :
-./gradlew :state-modeler-app:run --args=sql\ $(pwd)/sample/src/main/resources/sdd.yaml\ -o\ $(pwd)/sample/build/schema.sql
-
-# Option 2 - chemin relatif depuis le module `state-modeler-app` (module working dir):
-./gradlew :state-modeler-app:run --args="sql ../sample/src/main/resources/sdd.yaml -o ../sample/build/schema.sql"
-
-# Note:
-# - Le processus Java de la commande `run` est démarré depuis le répertoire du module `state-modeler-app`,
-#   donc si vous utilisez des chemins relatifs, préférez `../sample/...` ou utilisez des chemins absolus.
-# - Si le répertoire de sortie (`sample/build`) n'existe pas, la CLI créera automatiquement
-#   les dossiers parents nécessaires avant d'écrire `schema.sql`.
+./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"
 ```
+
+### Note
+
+- Le CLI résout maintenant automatiquement les chemins relatifs basés sur le
+  répertoire où vous avez exécuté la commande Gradle (shell PWD) et prend en
+  charge des chemins relatifs de la forme `sample/...` lorsque vous lancez la
+  commande depuis la racine du dépôt. Si vous préférez, vous pouvez aussi
+  utiliser des chemins absolus via `$(pwd)/...`.
+- Si le répertoire de sortie (`sample/build`) n'existe pas, la CLI créera
+  automatiquement les dossiers parents nécessaires avant d'écrire `schema.sql`.
 
 Le fichier `sample/build/schema.sql` contient le DDL complet.
 
@@ -86,11 +86,8 @@ Le fichier `sample/build/schema.sql` contient le DDL complet.
 Appliquez le DDL généré à PostgreSQL:
 
 ```shell
-# Se placer dans le répertoire sample
-cd sample
-
 # Exécuter le schéma généré
-docker-compose exec -T postgres psql -U lead_user -d lead_crm < build/schema.sql
+docker-compose exec -T postgres psql -U lead_user -d lead_crm < sample/build/schema.sql
 ```
 
 ### 4. Charger les données d'exemple
@@ -220,42 +217,68 @@ L'entité Lead démontre une conception orientée états avec:
 - Repositories et endpoints spécifiques par état
 - Table `domain_state` pour le tracking
 
-## 🔄 Workflow Complet de Développement
-
-```shell
-# 1. Démarrer PostgreSQL
-cd sample
-docker-compose up -d
-
-# 2. Générer le code Java
-cd ..
-./gradlew :sample:clean :sample:generateSdd
-
-# 3. Générer le DDL SQL
-./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"
-
-# 4. Initialiser le schéma
-cd sample
 docker-compose exec -T postgres psql -U lead_user -d lead_crm < build/schema.sql
+docker-compose down -v
 
-# 5. Charger les données sample
-docker-compose exec -T postgres psql -U lead_user -d lead_crm < src/main/resources/db/sample-data.sql
+## 🔄 Quickstart (rapide)
 
-# 6. Démarrer l'application
+1. Démarrer Postgres (le service `sample/docker-compose.yml` montera automatiquement
+   `src/main/resources/db` dans le container) :
+
+```bash
+cd sample
+docker compose up -d
+```
+
+2. Générer le code et le DDL (depuis la racine du projet) :
+
+```bash
+./gradlew :sample:clean :sample:generateSdd
+./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"
+```
+
+3. Appliquer le schéma (exécuter depuis `sample` ou avec `-f`) :
+
+```bash
+cd sample
+docker compose exec -T postgres psql -U lead_user -d lead_crm < build/schema.sql
+```
+
+4. Charger les données samples :
+
+```bash
+docker compose exec -T postgres psql -U lead_user -d lead_crm < src/main/resources/db/sample-data.sql
+```
+
+5. Lancer l'application :
+
+```bash
 cd ..
 ./gradlew :sample:bootRun
-
-# 7. Tester (dans un autre terminal)
-curl http://localhost:8080/api/leads
-
-# 8. Nettoyer
-cd sample
-docker-compose down -v
 ```
+
+6. Tester :
+
+```bash
+curl http://localhost:8080/api/leads
+```
+
+7. Arrêter et nettoyer :
+
+```bash
+cd sample
+docker compose down -v
+```
+
+Notes :
+
+- Vous pouvez aussi utiliser `docker-compose -f sample/docker-compose.yml` depuis la racine si vous préférez ne pas changer de répertoire.
+- Les chemins relatifs `sample/...` fonctionnent lorsque vous lancez Gradle depuis la racine du dépôt.
 
 ## 📝 Données d'Exemple
 
 Le fichier `src/main/resources/db/sample-data.sql` contient:
+
 - **5 leads** en état "New"
 - **3 leads** en état "Contacted"
 - **2 leads** en état "Qualified"

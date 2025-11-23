@@ -22,7 +22,9 @@ public final class PathUtils {
     public static Path resolveFromProcess(Path p) {
         if (p == null) return null;
         if (p.isAbsolute()) return p.normalize();
-        Path cwd = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+        // Prefer the shell's PWD if available (Gradle forwards it). Fallback to user.dir.
+        String envPwd = System.getenv("PWD");
+        Path cwd = envPwd != null && !envPwd.isBlank() ? Paths.get(envPwd).toAbsolutePath() : Paths.get(System.getProperty("user.dir")).toAbsolutePath();
         return cwd.resolve(p).normalize();
     }
 

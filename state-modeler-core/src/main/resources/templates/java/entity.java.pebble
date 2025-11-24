@@ -24,6 +24,13 @@ public sealed interface {{ entity.className }}State {
         {% for attribute in state.attributes %}
         @Column("{{ attribute.columnName }}") @JsonProperty("{{ attribute.columnName }}") {{ attribute.javaType }} {{ attribute.propertyName }}{% if not loop.last %}, {% endif %}
         {% endfor %}
-    ) implements {{ entity.className }}State {}
+    ) implements {{ entity.className }}State {
+        public {{ state.className }} {
+            java.util.Objects.requireNonNull({{ state.entityIdPropertyName }}, "{{ state.entityIdPropertyName }} must not be null");
+            {% for attribute in state.attributes %}
+            java.util.Objects.requireNonNull({{ attribute.propertyName }}, "{{ attribute.propertyName }} must not be null");
+            {% endfor %}
+        }
+    }
     {% endfor %}
 }

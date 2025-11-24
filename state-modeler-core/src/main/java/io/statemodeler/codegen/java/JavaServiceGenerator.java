@@ -17,7 +17,9 @@ public class JavaServiceGenerator extends JavaGeneratorBase {
         Map<String, String> generatedFiles = new HashMap<>();
         java.util.List<String> autoConfigurationClasses = new java.util.ArrayList<>();
 
-        for (EntityDef entity : model.entities().values()) {
+        java.util.List<EntityDef> sortedEntities = new java.util.ArrayList<>(model.entities().values());
+        sortedEntities.sort(java.util.Comparator.comparing(EntityDef::name));
+        for (EntityDef entity : sortedEntities) {
             // Interface
             String interfaceContent = generateFile(entity, model, "templates/java/service_interface.java.pebble");
             String interfaceName = contextBuilder.toPascal(entity.name()) + "Service";

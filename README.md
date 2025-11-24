@@ -6,9 +6,21 @@
 [![Java Version](https://img.shields.io/badge/Java-21%2B-blue.svg)](https://openjdk.java.net/)
 [![Gradle](https://img.shields.io/badge/Gradle-8.14.3-blue.svg)](https://gradle.org/)
 
-A Java library and CLI tool for implementing **State-Driven Design (SDD)** with automatic SQL schema generation.
+A Java library and CLI tool for implementing **State-Driven Design (SDD)**.
 
-**SDD-Modeler** enables you to define your domain model as a declarative YAML/JSON schema describing entities, states, transitions, extensions, and projections. From this single source of truth, it generates production-ready PostgreSQL DDL with optimized state tracking patterns.
+**SDD-Modeler** acts as the single source of truth for your domain model. It enables you to define your entities, states, transitions, and extensions in a declarative YAML/JSON schema. From this definition, it automatically generates:
+
+1.  **Optimized PostgreSQL DDL**: Tables, views, and indexes designed for performance and data integrity.
+2.  **Java Application Skeleton**: Records, repositories, and controllers that enforce your state machine logic.
+
+```mermaid
+flowchart LR
+    Schema(Schema Definition<br/>YAML/JSON) -->|1. Validate & Parse| Engine(SDD Engine)
+    Engine -->|2. Generate| SQL(PostgreSQL DDL<br/>Tables, Views, Indexes)
+    Engine -->|3. Generate| Code(Java Code<br/>Records, Repositories)
+    SQL --> DB[(PostgreSQL)]
+    Code --> App(Application Skeleton)
+```
 
 See related [blog post](https://ng-galien.github.io/tags/sdd/) for more context.
 

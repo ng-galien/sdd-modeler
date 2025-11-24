@@ -1,4 +1,4 @@
-# Lead CRM — SDD Modeler Sample (English working copy)
+# Lead CRM — SDD Modeler Sample
 
 This folder contains a small Spring Boot sample application that demonstrates SDD Modeler features and generated code. The sample includes a state model, generated Java sources, a CLI for generating PostgreSQL DDL, and helper scripts to run Postgres locally and populate it with sample data.
 
@@ -144,4 +144,4 @@ The sample uses `uuid_generate_v4()` from the `uuid-ossp` extension in a PL/pgSQ
 
 ---
 
-This file is a working English copy of `sample/README.md`. Use it as a base for edits or translation updates.
+This file is the documentation for the `sample` module.

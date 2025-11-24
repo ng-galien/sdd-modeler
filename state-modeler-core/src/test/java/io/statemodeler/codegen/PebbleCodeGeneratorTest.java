@@ -26,15 +26,20 @@ class PebbleCodeGeneratorTest {
 
                 var created = new StateDef("created", "order_created", true, java.util.List.of(), java.util.List.of(),
                                 Map.of());
+                var pendingAttrs = new java.util.LinkedHashMap<String, AttributeDef>();
+                pendingAttrs.put("payment_method", paymentMethodAttr);
+                pendingAttrs.put("paid_amount", paidAmountAttr);
                 var pending = new StateDef(
                                 "pending_payment",
                                 "order_pending",
                                 false,
                                 java.util.List.of("created"),
                                 java.util.List.of(),
-                                Map.of("paid_amount", paidAmountAttr, "payment_method", paymentMethodAttr));
+                                pendingAttrs);
 
-                var states = Map.of("pending_payment", pending, "created", created);
+                var states = new java.util.LinkedHashMap<String, StateDef>();
+                states.put("pending_payment", pending);
+                states.put("created", created);
                 var entity = new EntityDef(
                                 "order_item", "orders", idAttr, Map.of("created_at", createdAtAttr), states, Map.of(),
                                 Map.of());

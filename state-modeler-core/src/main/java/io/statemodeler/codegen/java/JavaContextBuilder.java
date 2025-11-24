@@ -55,7 +55,10 @@ public class JavaContextBuilder {
 
         Set<String> imports = new HashSet<>();
         List<Map<String, Object>> states = new ArrayList<>();
-        for (StateDef s : entity.states().values()) {
+        var stateEntries = new java.util.ArrayList<>(entity.states().entrySet());
+        stateEntries.sort(java.util.Map.Entry.comparingByKey());
+        for (var entry : stateEntries) {
+            var s = entry.getValue();
             Map<String, Object> stateCtx = buildStateContext(s, ctx);
             states.add(stateCtx);
             Object impsObj = stateCtx.get("imports");
@@ -70,7 +73,10 @@ public class JavaContextBuilder {
         ctx.put("states", states);
 
         List<Map<String, Object>> attrs = new ArrayList<>();
-        for (var attr : entity.attributes().values()) {
+        var attrEntries = new java.util.ArrayList<>(entity.attributes().entrySet());
+        attrEntries.sort(java.util.Map.Entry.comparingByKey());
+        for (var attrEntry : attrEntries) {
+            var attr = attrEntry.getValue();
             Map<String, Object> attrCtx = new HashMap<>();
             attrCtx.put("name", attr.name());
             attrCtx.put("propertyName", toCamel(attr.name()));
@@ -101,7 +107,10 @@ public class JavaContextBuilder {
         ctx.put("entityIdPropertyName", entityCtx.get("propertyName") + "Id");
         List<Map<String, Object>> attrs = new ArrayList<>();
         Set<String> imports = new HashSet<>();
-        for (var attr : state.attributes().values()) {
+        var stateAttrEntries = new java.util.ArrayList<>(state.attributes().entrySet());
+        stateAttrEntries.sort(java.util.Map.Entry.comparingByKey());
+        for (var attrEntry : stateAttrEntries) {
+            var attr = attrEntry.getValue();
             Map<String, Object> attrCtx = new HashMap<>();
             attrCtx.put("name", attr.name());
             attrCtx.put("propertyName", toCamel(attr.name()));

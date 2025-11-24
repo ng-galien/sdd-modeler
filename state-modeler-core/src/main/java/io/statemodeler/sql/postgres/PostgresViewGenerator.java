@@ -46,7 +46,10 @@ final class PostgresViewGenerator {
     private ViewDefinition generateIntervalsView(
             EntityDef entity, ProjectionDef projection, String entitySchema, String stateSchema) {
         var sql = new StringBuilder();
-        var entityIdColumn = toSnake(entity.name()) + "_id";
+        // entityIdColumn should point to the PK column name on the entity table (e.g., 'id')
+        var entityIdColumn = toSnake(entity.id().name());
+        // stateEntityColumn is the FK column name used in state tables to reference the entity (e.g., 'order_id')
+        var stateEntityColumn = toSnake(entity.name()) + "_id";
         var unionParts = new ArrayList<String>();
 
         // Generate a UNION ALL part for each state
@@ -58,12 +61,12 @@ final class PostgresViewGenerator {
 
             var part = new StringBuilder();
             part.append("SELECT\n");
-                part.append("    ")
-                    .append("e.")
-                    .append(entityIdColumn)
-                    .append(" AS ")
-                    .append(entityIdColumn)
-                    .append(",\n");
+                    part.append("    ")
+                        .append("e.")
+                        .append(entityIdColumn)
+                        .append(" AS ")
+                        .append(stateEntityColumn)
+                        .append(",\n");
             part.append("    '").append(stateName.toUpperCase()).append("' AS state_type,\n");
             part.append("    ").append(stateAlias).append(".created_at AS start_at,\n");
 
@@ -113,18 +116,18 @@ final class PostgresViewGenerator {
                     .append(".")
                     .append(entity.table())
                     .append(" e\n");
-                part.append("JOIN ")
-                    .append(stateSchema)
-                    .append(".")
-                    .append(stateTable)
-                    .append(" ")
-                    .append(stateAlias)
-                    .append(" ON ")
-                    .append(stateAlias)
-                    .append(".")
-                    .append(entityIdColumn)
-                    .append(" = e.")
-                    .append(entityIdColumn);
+                    part.append("JOIN ")
+                        .append(stateSchema)
+                        .append(".")
+                        .append(stateTable)
+                        .append(" ")
+                        .append(stateAlias)
+                        .append(" ON ")
+                        .append(stateAlias)
+                        .append(".")
+                        .append(stateEntityColumn)
+                        .append(" = e.")
+                        .append(entityIdColumn);
 
             unionParts.add(part.toString());
         }

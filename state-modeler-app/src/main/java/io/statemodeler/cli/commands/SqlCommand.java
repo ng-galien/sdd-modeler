@@ -1,5 +1,6 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
 import io.statemodeler.validation.ModelValidators;
@@ -57,15 +58,19 @@ public class SqlCommand implements Callable<Integer> {
                     .println("Supported dialects: " + String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
+        // Resolve paths with helper relative to current process
+        var resolvedModelFile = PathUtils.resolveFromProcess(modelFile);
+        var resolvedOutputFile = outputFile == null ? null : PathUtils.resolveFromProcess(outputFile);
+
         // Check if model file exists
-        if (!Files.exists(modelFile)) {
+        if (!Files.exists(resolvedModelFile)) {
             spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
             return 1;
         }
 
         return io.vavr.control.Try.of(() -> modelFile)
                 .map(f -> ModelLoader.forFile(f))
-                .flatMap(loader -> loader.loadFromFile(modelFile))
+                .flatMap(loader -> loader.loadFromFile(resolvedModelFile))
                 .fold(
                         throwable -> {
                             spec.commandLine().getErr().println("✗ Failed to parse model file:");
@@ -89,16 +94,33 @@ public class SqlCommand implements Callable<Integer> {
                                     formatDdl ? generator.generateFormattedDdl(model) : generator.generateDdl(model);
 
                             // Write to file or stdout
-                            if (outputFile != null) {
+                            if (resolvedOutputFile != null) {
+                                try {
+                                    PathUtils.ensureParentDirectoryExists(resolvedOutputFile);
+                                } catch (Exception e) {
+                                    logger.error(
+                                            "Failed to create directory {}: {}",
+                                            resolvedOutputFile.getParent(),
+                                            e.getMessage());
+                                    spec.commandLine()
+                                            .getErr()
+                                            .println("Error: Could not create output directory: "
+                                                    + resolvedOutputFile.getParent());
+                                    return 1;
+                                }
+
                                 var writeResult =
-                                        io.vavr.control.Try.of(() -> Files.writeString(outputFile, ddlContent));
+                                        io.vavr.control.Try.of(() -> Files.writeString(resolvedOutputFile, ddlContent));
                                 if (writeResult.isFailure()) {
                                     logger.error(
                                             "Error writing DDL output: {}",
                                             writeResult.getCause().getMessage());
+                                    spec.commandLine()
+                                            .getErr()
+                                            .println("Error: Could not write DDL to file: " + outputFile);
                                     return 1;
                                 }
-                                logger.info("✓ DDL written to: {}", outputFile);
+                                logger.info("✓ DDL written to: {}", resolvedOutputFile);
                             } else {
                                 spec.commandLine().getOut().println();
                                 spec.commandLine().getOut().println("-- Generated DDL for " + model.name());

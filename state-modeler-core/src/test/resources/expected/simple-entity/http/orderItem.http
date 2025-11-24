@@ -1,0 +1,17 @@
+### Variables
+@baseUrl = http://localhost:8080
+@orderItemId = 1
+
+###
+# OrderItem API Endpoints
+###
+
+### Get all order_items (all states)
+GET {{baseUrl}}/api/order_items
+Accept: application/json
+
+### Get order_item in Created state
+GET {{baseUrl}}/api/order_items/created/{{orderItemId}} 
+Accept: application/json
+
+

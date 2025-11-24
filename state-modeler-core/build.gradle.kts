@@ -25,9 +25,27 @@ tasks.withType<Test> {
     useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
+        showStandardStreams = true
     }
     finalizedBy(tasks.withType<JacocoReport>())
     systemProperty("java.awt.headless", "true")
+    
+    // Pass through system properties for test configuration
+    System.getProperties().forEach { key, value ->
+        if (key.toString().startsWith("update")) {
+            systemProperty(key.toString(), value)
+        }
+    }
+    
+    // Add JVM arguments for Palantir formatter (needs access to internal JDK classes)
+    jvmArgs(
+        "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+    )
 }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {

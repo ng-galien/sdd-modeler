@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: lead-crm
+  
+  datasource:
+    # Ensure JDBC client resolves unqualified table names against the `public_states` schema
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=public,public_states
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  
+  # Database initialization is handled by external script in `sample/scripts/`.
+  sql:
+    init:
+      mode: never
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example.leadcrm: DEBUG
+    org.springframework.jdbc: DEBUG

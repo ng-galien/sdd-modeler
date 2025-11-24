@@ -1,5 +1,6 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
@@ -40,9 +41,11 @@ public class DiffCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        var resolvedCurrent = PathUtils.resolveFromProcess(currentModelFile);
+        var resolvedFuture = PathUtils.resolveFromProcess(futureModelFile);
         logger.info("Comparing DDL between:");
-        logger.info("  Current: {}", currentModelFile);
-        logger.info("  Future:  {}", futureModelFile);
+        logger.info("  Current: {}", resolvedCurrent);
+        logger.info("  Future:  {}", resolvedFuture);
         logger.info("  Dialect: {}", dialect);
 
         // Validate dialect and file existence to keep error messages stable
@@ -53,18 +56,18 @@ public class DiffCommand implements Callable<Integer> {
                     .println("Supported dialects: " + String.join(", ", DdlGenerators.getSupportedDialects()));
             return 1;
         }
-        if (!Files.exists(currentModelFile)) {
-            spec.commandLine().getErr().println("Error: Current model file does not exist: " + currentModelFile);
+        if (!Files.exists(resolvedCurrent)) {
+            spec.commandLine().getErr().println("Error: Current model file does not exist: " + resolvedCurrent);
             return 1;
         }
-        if (!Files.exists(futureModelFile)) {
-            spec.commandLine().getErr().println("Error: Future model file does not exist: " + futureModelFile);
+        if (!Files.exists(resolvedFuture)) {
+            spec.commandLine().getErr().println("Error: Future model file does not exist: " + resolvedFuture);
             return 1;
         }
 
         return io.vavr.control.Try.of(() -> {
-                    var currentLoader = ModelLoader.forFile(currentModelFile);
-                    var currentLoadResult = currentLoader.loadFromFile(currentModelFile);
+                    var currentLoader = ModelLoader.forFile(resolvedCurrent);
+                    var currentLoadResult = currentLoader.loadFromFile(resolvedCurrent);
                     if (currentLoadResult.isFailure()) {
                         spec.commandLine().getErr().println("✗ Failed to parse current model file:");
                         spec.commandLine()
@@ -80,8 +83,8 @@ public class DiffCommand implements Callable<Integer> {
                         throw new IllegalArgumentException("Current model validation failed");
                     }
 
-                    var futureLoader = ModelLoader.forFile(futureModelFile);
-                    var futureLoadResult = futureLoader.loadFromFile(futureModelFile);
+                    var futureLoader = ModelLoader.forFile(resolvedFuture);
+                    var futureLoadResult = futureLoader.loadFromFile(resolvedFuture);
                     if (futureLoadResult.isFailure()) {
                         spec.commandLine().getErr().println("✗ Failed to parse future model file:");
                         spec.commandLine()

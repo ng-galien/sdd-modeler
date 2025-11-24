@@ -41,15 +41,24 @@ public class JavaContextBuilder {
         ctx.put("className", className);
         ctx.put("propertyName", toCamel(entity.name()));
         ctx.put("table", entity.table() != null ? entity.table() : entity.name());
+        // Add a snake_case lower-case version of the entity name for templates
+        ctx.put("snakeName", normalizeCaseInput(entity.name()).toLowerCase());
         Map<String, Object> idCtx = new HashMap<>();
         idCtx.put("name", entity.id().name());
         idCtx.put("propertyName", toCamel(entity.id().name()));
         idCtx.put("className", className + "Id");
+        // Add column name (snake_case lower) for SQL and @Column mapping
+        idCtx.put("columnName", normalizeCaseInput(entity.id().name()).toLowerCase());
         ctx.put("id", idCtx);
+        // Column used in domain state table to reference the entity (e.g., lead_id)
+        ctx.put("idColumnName", normalizeCaseInput(entity.name()).toLowerCase() + "_id");
 
         Set<String> imports = new HashSet<>();
         List<Map<String, Object>> states = new ArrayList<>();
-        for (StateDef s : entity.states().values()) {
+        var stateEntries = new java.util.ArrayList<>(entity.states().entrySet());
+        stateEntries.sort(java.util.Map.Entry.comparingByKey());
+        for (var entry : stateEntries) {
+            var s = entry.getValue();
             Map<String, Object> stateCtx = buildStateContext(s, ctx);
             states.add(stateCtx);
             Object impsObj = stateCtx.get("imports");
@@ -64,14 +73,17 @@ public class JavaContextBuilder {
         ctx.put("states", states);
 
         List<Map<String, Object>> attrs = new ArrayList<>();
-        for (var attr : entity.attributes().values()) {
+        var attrEntries = new java.util.ArrayList<>(entity.attributes().entrySet());
+        attrEntries.sort(java.util.Map.Entry.comparingByKey());
+        for (var attrEntry : attrEntries) {
+            var attr = attrEntry.getValue();
             Map<String, Object> attrCtx = new HashMap<>();
             attrCtx.put("name", attr.name());
             attrCtx.put("propertyName", toCamel(attr.name()));
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
-            if (mapped.importName() != null)
-                imports.add(mapped.importName());
+            attrCtx.put("columnName", normalizeCaseInput(attr.name()).toLowerCase());
+            if (mapped.importName() != null) imports.add(mapped.importName());
             attrs.add(attrCtx);
         }
         ctx.put("attributes", attrs);
@@ -83,19 +95,30 @@ public class JavaContextBuilder {
     public Map<String, Object> buildStateContext(StateDef state, Map<String, Object> entityCtx) {
         Map<String, Object> ctx = new HashMap<>();
         ctx.put("name", state.name());
+        ctx.put("table", state.table());
+        ctx.put("snakeTable", normalizeCaseInput(state.table()).toLowerCase());
         ctx.put("className", toPascal(state.name()));
         ctx.put("propertyName", toCamel(state.name()));
+        // Java type used for the state table primary key 'id' (serial)
+        ctx.put("idJavaType", "Integer");
+        ctx.put("idColumnName", "id");
+        ctx.put("idPropertyName", "id");
+        // Name for the entity id property in the state record (e.g., leadId)
+        ctx.put("entityIdPropertyName", entityCtx.get("propertyName") + "Id");
         List<Map<String, Object>> attrs = new ArrayList<>();
         Set<String> imports = new HashSet<>();
-        for (var attr : state.attributes().values()) {
+        var stateAttrEntries = new java.util.ArrayList<>(state.attributes().entrySet());
+        stateAttrEntries.sort(java.util.Map.Entry.comparingByKey());
+        for (var attrEntry : stateAttrEntries) {
+            var attr = attrEntry.getValue();
             Map<String, Object> attrCtx = new HashMap<>();
             attrCtx.put("name", attr.name());
             attrCtx.put("propertyName", toCamel(attr.name()));
             attrCtx.put("nullable", attr.nullable());
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
-            if (mapped.importName() != null)
-                imports.add(mapped.importName());
+            attrCtx.put("columnName", normalizeCaseInput(attr.name()).toLowerCase());
+            if (mapped.importName() != null) imports.add(mapped.importName());
             attrs.add(attrCtx);
         }
         ctx.put("attributes", attrs);
@@ -114,12 +137,10 @@ public class JavaContextBuilder {
         return ctx;
     }
 
-    public record TypeMapping(String javaType, String importName) {
-    }
+    public record TypeMapping(String javaType, String importName) {}
 
     public TypeMapping mapSqlTypeToJavaType(String sqlType) {
-        if (sqlType == null)
-            return new TypeMapping("Object", null);
+        if (sqlType == null) return new TypeMapping("Object", null);
         var s = sqlType.trim().toUpperCase();
         boolean isArray = false;
         if (s.endsWith("[]")) {
@@ -144,9 +165,13 @@ public class JavaContextBuilder {
         } else if (s.equals("UUID")) {
             javaType = "UUID";
             importName = "java.util.UUID";
-        } else if (s.startsWith("TIMESTAMP") || s.startsWith("TIMESTAMPTZ")) {
+        } else if (s.startsWith("TIMESTAMPTZ") || s.contains("TIMESTAMPTZ")) {
             javaType = "Instant";
             importName = "java.time.Instant";
+        } else if (s.startsWith("TIMESTAMP")) {
+            // TIMESTAMP (no time zone) -> LocalDateTime
+            javaType = "LocalDateTime";
+            importName = "java.time.LocalDateTime";
         } else if (s.equals("DATE")) {
             javaType = "java.time.LocalDate";
             importName = "java.time.LocalDate";
@@ -170,14 +195,12 @@ public class JavaContextBuilder {
     }
 
     public String toPascal(String s) {
-        if (s == null || s.isEmpty())
-            return s;
+        if (s == null || s.isEmpty()) return s;
         return CaseUtils.toCamelCase(normalizeCaseInput(s), true, '_', '-', ' ', '.');
     }
 
     public String toCamel(String s) {
-        if (s == null || s.isEmpty())
-            return s;
+        if (s == null || s.isEmpty()) return s;
         return CaseUtils.toCamelCase(normalizeCaseInput(s), false, '_', '-', ' ', '.');
     }
 

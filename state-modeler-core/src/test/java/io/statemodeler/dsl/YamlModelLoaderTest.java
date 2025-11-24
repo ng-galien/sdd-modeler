@@ -40,13 +40,13 @@ class YamlModelLoaderTest {
     @Test
     void shouldLoadSimpleModel() {
         var yamlLoader = new YamlModelLoader();
-        var simpleYaml = """
-            version: "0.1.0"
-                name: "test-model"
-                database:
-                  dialect: "postgres"
-                entities: {}
-                """;
+                var simpleYaml = """
+version: "0.1.0"
+name: "test-model"
+database:
+    dialect: "postgres"
+entities: {}
+""";
 
         var result = yamlLoader.loadFromString(simpleYaml);
 

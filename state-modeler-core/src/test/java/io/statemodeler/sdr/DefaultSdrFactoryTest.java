@@ -9,28 +9,28 @@ class DefaultSdrFactoryTest {
 
     private DefaultSdrFactory factory;
 
-        private static final String YAML_MODEL = """
-          version: "0.1.0"
-            name: "test-model"
-            database:
-              dialect: postgres
-              schema: public
-            entities:
-              order:
-                table: orders
-                id:
-                  name: id
-                  type: serial
-                  primary_key: true
-                states:
-                  pending:
-                    initial: true
-                    table: order_pending
-                    attributes:
-                      reason:
-                        type: text
-                        nullable: false
-            """;
+    private static final String YAML_MODEL = """
+version: "0.1.0"
+name: "test-model"
+database:
+  dialect: postgres
+  schema: public
+entities:
+  order:
+    table: orders
+    id:
+      name: id
+      type: serial
+      primary_key: true
+    states:
+      pending:
+        initial: true
+        table: order_pending
+        attributes:
+          reason:
+            type: text
+            nullable: false
+""";
 
     private static final String JSON_MODEL = """
             {
@@ -242,20 +242,20 @@ class DefaultSdrFactoryTest {
     void shouldHandleDifferentFieldOrdering() {
         // Given - YAML with different field order
         String yaml1 = """
-          version: "0.1.0"
-                name: "test"
-                database:
-                  dialect: postgres
-                entities: {}
-                """;
+version: "0.1.0"
+name: "test"
+database:
+  dialect: postgres
+entities: {}
+""";
 
         String yaml2 = """
-                name: "test"
-                database:
-                  dialect: postgres
-                version: "0.1.0"
-                entities: {}
-                """;
+name: "test"
+database:
+  dialect: postgres
+version: "0.1.0"
+entities: {}
+""";
 
         // When
         var sdr1 = factory.create(yaml1, "application/yaml", "postgres");

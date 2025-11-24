@@ -30,7 +30,7 @@ public class {{ entity.className }}Controller implements {{ entity.className }}A
 
     // GET endpoints per state
     @Override
-    public java.util.List<{{ entity.className }}State> findAll() {
+    public java.util.List<{{ entity.className }}Service.{{ entity.className }}StateInfo> findAll() {
         return service.findAll();
     }
 
@@ -38,7 +38,7 @@ public class {{ entity.className }}Controller implements {{ entity.className }}A
     @Override
     public ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}({{ entity.id.className }} id) {
         return {{ stateRepo.propertyName }}Repository.findById(id)
-            .map(entity -> ResponseEntity.ok(new {{ entity.className }}Dto(entity.id()
+            .map(entity -> ResponseEntity.ok(new {{ entity.className }}Dto(entity.{{ stateRepo.entityIdPropertyName }}()
                 {%- for attr in entity.attributes -%}
                 , entity.{{ attr.propertyName }}()
                 {%- endfor -%}

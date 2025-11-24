@@ -11,6 +11,11 @@ import java.util.Optional;
  */
 final class PostgresViewGenerator {
 
+    private static String toSnake(String s) {
+        if (s == null) return null;
+        return s.replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase();
+    }
+
     /**
      * Generate projection view based on projection kind.
      *
@@ -41,7 +46,10 @@ final class PostgresViewGenerator {
     private ViewDefinition generateIntervalsView(
             EntityDef entity, ProjectionDef projection, String entitySchema, String stateSchema) {
         var sql = new StringBuilder();
-        var entityIdColumn = entity.name() + "_id";
+        // entityIdColumn should point to the PK column name on the entity table (e.g., 'id')
+        var entityIdColumn = toSnake(entity.id().name());
+        // stateEntityColumn is the FK column name used in state tables to reference the entity (e.g., 'order_id')
+        var stateEntityColumn = toSnake(entity.name()) + "_id";
         var unionParts = new ArrayList<String>();
 
         // Generate a UNION ALL part for each state
@@ -53,12 +61,12 @@ final class PostgresViewGenerator {
 
             var part = new StringBuilder();
             part.append("SELECT\n");
-            part.append("    ")
-                    .append("e.")
-                    .append(entity.id().name())
-                    .append(" AS ")
-                    .append(entityIdColumn)
-                    .append(",\n");
+                    part.append("    ")
+                        .append("e.")
+                        .append(entityIdColumn)
+                        .append(" AS ")
+                        .append(stateEntityColumn)
+                        .append(",\n");
             part.append("    '").append(stateName.toUpperCase()).append("' AS state_type,\n");
             part.append("    ").append(stateAlias).append(".created_at AS start_at,\n");
 
@@ -68,9 +76,12 @@ final class PostgresViewGenerator {
             // Find all states that can follow this state (simple transitions)
             for (var nextState : entity.states().values()) {
                 if (nextState.from().contains(stateName)) {
-                    var minClause = String.format(
+                        var minClause = String.format(
                             "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
-                            stateSchema, nextState.table(), stateName, stateAlias);
+                            stateSchema, nextState.table(), nextState.hasOrTransitions()? toSnake(stateName) : toSnake(stateName), stateAlias);
+                        minClause = String.format(
+                            "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
+                            stateSchema, nextState.table(), toSnake(stateName), stateAlias);
                     endAtClauses.add(minClause);
                 }
             }
@@ -78,8 +89,8 @@ final class PostgresViewGenerator {
             // Find states that can follow via OR transitions
             for (var nextState : entity.states().values()) {
                 if (nextState.hasOrTransitions() && nextState.fromAnyOf().contains(stateName)) {
-                    var sourceTable = nextState.name() + "_source";
-                    var sourceColumn = stateName + "_state_id";
+                        var sourceTable = nextState.name() + "_source";
+                        var sourceColumn = toSnake(stateName) + "_state_id";
                     var minClause = String.format(
                             "(SELECT MIN(ns.created_at) FROM %s.%s ns JOIN %s.%s src ON src.id = ns.previous_source_id WHERE src.%s = %s.id)",
                             stateSchema, nextState.table(), stateSchema, sourceTable, sourceColumn, stateAlias);
@@ -105,18 +116,18 @@ final class PostgresViewGenerator {
                     .append(".")
                     .append(entity.table())
                     .append(" e\n");
-            part.append("JOIN ")
-                    .append(stateSchema)
-                    .append(".")
-                    .append(stateTable)
-                    .append(" ")
-                    .append(stateAlias)
-                    .append(" ON ")
-                    .append(stateAlias)
-                    .append(".")
-                    .append(entityIdColumn)
-                    .append(" = e.")
-                    .append(entity.id().name());
+                    part.append("JOIN ")
+                        .append(stateSchema)
+                        .append(".")
+                        .append(stateTable)
+                        .append(" ")
+                        .append(stateAlias)
+                        .append(" ON ")
+                        .append(stateAlias)
+                        .append(".")
+                        .append(stateEntityColumn)
+                        .append(" = e.")
+                        .append(entityIdColumn);
 
             unionParts.add(part.toString());
         }

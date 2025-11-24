@@ -5,6 +5,8 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import io.statemodeler.cli.RepositoryMixin;
 import io.statemodeler.cli.dto.MigrationDto;
+import io.statemodeler.cli.util.PathUtils;
+// Locale not needed when using Jackson for JSON serialization
 import io.statemodeler.comparison.DdlComparisonService;
 import io.statemodeler.migration.ChatModelProvider;
 import io.statemodeler.migration.LangChainMigrationGenerationService;
@@ -14,9 +16,9 @@ import io.statemodeler.sdr.SdrRecord;
 import io.vavr.control.Try;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-// Locale not needed when using Jackson for JSON serialization
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
@@ -101,6 +103,12 @@ public class MigrateCommand implements Callable<Integer> {
             spec.commandLine().getErr().println("  Supported dialects: postgres");
             return 1;
         }
+
+        // Resolve and normalize output paths relative to the current process
+        Path resolvedOutput = outputFile == null ? null : PathUtils.resolveFromProcess(outputFile.toPath());
+        Path resolvedOutputJson = outputJson == null ? null : PathUtils.resolveFromProcess(outputJson.toPath());
+        if (resolvedOutput != null) outputFile = resolvedOutput.toFile();
+        if (resolvedOutputJson != null) outputJson = resolvedOutputJson.toFile();
 
         return io.vavr.control.Try.withResources(() -> repositoryMixin.createRepository())
                 .of(repository -> findSdr(repository, fromIdentifier)
@@ -190,6 +198,8 @@ public class MigrateCommand implements Callable<Integer> {
     private void outputJson(double confidence, String comments, String script) {
         if (outputJson != null) {
             try {
+                // Ensure parent dirs exist
+                PathUtils.ensureParentDirectoryExists(outputJson.toPath());
                 ObjectMapper objectMapper = new ObjectMapper();
                 var dto = new MigrationDto(confidence, comments, script);
                 objectMapper.writeValue(outputJson, dto);
@@ -278,6 +288,11 @@ public class MigrateCommand implements Callable<Integer> {
      */
     private void outputMigration(String script) {
         if (outputFile != null) {
+            try {
+                PathUtils.ensureParentDirectoryExists(outputFile.toPath());
+            } catch (Exception e) {
+                logger.warn("WARN: Failed to create output directory: {}", e.getMessage());
+            }
             var writeResult = io.vavr.control.Try.of(() -> Files.writeString(outputFile.toPath(), script));
             writeResult.onFailure(e -> logger.warn("WARN: Failed to write output: {}", e.getMessage()));
             if (writeResult.isFailure()) {

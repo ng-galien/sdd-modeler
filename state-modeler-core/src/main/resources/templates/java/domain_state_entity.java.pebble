@@ -5,10 +5,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.data.relational.core.mapping.Column;
 
-@Table("{{ entity.name }}_state")
+@Table("{{ entity.snakeName }}_state")
 public record {{ entity.className }}DomainState(
     @Id
-    @Column("{{ entity.name }}_id")
+    @Column("{{ entity.idColumnName }}")
     {{ entity.id.className }} entityId,
     
     @Column("state_type")

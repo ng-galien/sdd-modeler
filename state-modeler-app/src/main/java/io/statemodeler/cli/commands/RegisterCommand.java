@@ -2,6 +2,7 @@ package io.statemodeler.cli.commands;
 
 import com.github.zafarkhaja.semver.Version;
 import io.statemodeler.cli.RepositoryMixin;
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.dsl.YamlModelLoader;
 import io.statemodeler.sdr.DefaultSdrFactory;
 import io.statemodeler.sdr.SdrFactory;
@@ -66,6 +67,8 @@ public class RegisterCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        // Resolve relative to process to ensure consistent behavior across working dirs
+        modelFile = PathUtils.resolveFromProcess(modelFile);
         // Attempt to resolve provided path; CLI runs may be launched from different
         // working directories (e.g., Gradle project dir). When a relative path is
         // provided and not found, try to locate it relative to the repository root

@@ -28,10 +28,10 @@ public class Default{{ entity.className }}Service implements {{ entity.className
         this.objectMapper = objectMapper;
     }
 
-    @Override
-    public java.util.List<{{ entity.className }}State> findAll() {
+        @Override
+        public java.util.List<{{ entity.className }}StateInfo> findAll() {
         var domainStates = domainStateRepository.findAll();
-        var states = new java.util.ArrayList<{{ entity.className }}State>();
+                var states = new java.util.ArrayList<{{ entity.className }}StateInfo>();
         for (var ds : domainStates) {
             try {
                 Class<? extends {{ entity.className }}State> stateClass = switch(ds.stateType()) {
@@ -40,7 +40,8 @@ public class Default{{ entity.className }}Service implements {{ entity.className
                     {% endfor %}
                     default -> throw new IllegalStateException("Unknown state type: " + ds.stateType());
                 };
-                states.add(objectMapper.readValue(ds.stateJson(), stateClass));
+                var state = objectMapper.readValue(ds.stateJson(), stateClass);
+                states.add(new {{ entity.className }}StateInfo(ds.stateType(), state));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to deserialize state", e);
             }
@@ -66,7 +67,7 @@ public class Default{{ entity.className }}Service implements {{ entity.className
 
         // Create new state
         var newState = new {{ entity.className }}State.{{ state.className }}(
-            id
+            null, id
             {% for attr in state.attributes %}
             , command.{{ attr.propertyName }}()
             {% endfor %}
@@ -76,9 +77,10 @@ public class Default{{ entity.className }}Service implements {{ entity.className
         // Return DTO (Note: Stable attributes are not available in State record, passing nulls/defaults)
         return new {{ entity.className }}Dto(
             id
-            {% for attr in entity.attributes %}
+            {%- for attr in entity.attributes %}
             , null // TODO: Fetch stable attribute {{ attr.name }}
-            {% endfor %}
+            {%- endfor %}
+
         );
     }
     {% endif %}

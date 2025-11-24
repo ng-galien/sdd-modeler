@@ -14,47 +14,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class JavaControllerGenerator {
-
-    private final PebbleEngine engine;
-    private final JavaContextBuilder contextBuilder;
+public class JavaControllerGenerator extends JavaGeneratorBase {
 
     public JavaControllerGenerator(PebbleEngine engine, JavaContextBuilder contextBuilder) {
-        this.engine = engine;
-        this.contextBuilder = contextBuilder;
+        super(engine, contextBuilder);
     }
 
+    @Override
     public Map<String, String> generate(SddModel model) {
         Map<String, String> generatedFiles = new HashMap<>();
         for (EntityDef entity : model.entities().values()) {
             // Generate interface
             String interfaceContent = generateControllerInterface(entity, model);
-            String interfaceFilename = resolveControllerInterfaceFilename(entity, model);
+            String interfaceFilename = resolveFilename(model, contextBuilder.toPascal(entity.name()) + "Api");
             generatedFiles.put(interfaceFilename, interfaceContent);
 
             // Generate implementation
             String implContent = generateControllerImplementation(entity, model);
-            String implFilename = resolveControllerFilename(entity, model);
+            String implFilename = resolveFilename(model, contextBuilder.toPascal(entity.name()) + "Controller");
             generatedFiles.put(implFilename, implContent);
         }
         return generatedFiles;
     }
 
     private String generateControllerInterface(EntityDef entity, SddModel model) {
-        PebbleTemplate template = engine.getTemplate("templates/java/controller_interface.java.pebble");
-        Map<String, Object> context = buildContext(entity, model);
-
-        Writer writer = new StringWriter();
-        try {
-            template.evaluate(writer, context);
-            return writer.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate Controller Interface for " + entity.name(), e);
-        }
+        return generateFileWithContext(entity, model, "templates/java/controller_interface.java.pebble");
     }
 
     private String generateControllerImplementation(EntityDef entity, SddModel model) {
-        PebbleTemplate template = engine.getTemplate("templates/java/controller.java.pebble");
+        return generateFileWithContext(entity, model, "templates/java/controller.java.pebble");
+    }
+
+    private String generateFileWithContext(EntityDef entity, SddModel model, String templatePath) {
+        PebbleTemplate template = engine.getTemplate(templatePath);
         Map<String, Object> context = buildContext(entity, model);
 
         Writer writer = new StringWriter();
@@ -62,7 +54,7 @@ public class JavaControllerGenerator {
             template.evaluate(writer, context);
             return writer.toString();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate Controller Implementation for " + entity.name(), e);
+            throw new RuntimeException("Failed to generate Controller for " + entity.name(), e);
         }
     }
 
@@ -86,6 +78,12 @@ public class JavaControllerGenerator {
                 stateRepo.put("className", contextBuilder.toPascal(state.name()));
                 stateRepo.put("repositoryName", contextBuilder.toPascal(state.name()) + "Repository");
                 stateRepo.put("propertyName", contextBuilder.toCamel(state.name()));
+                // include the property name for the entity id (e.g., leadId) used in state
+                // records
+                Map<String, Object> stateCtx = contextBuilder.buildStateContext(state, entityCtx);
+                Object entIdProp = stateCtx.get("entityIdPropertyName");
+                if (entIdProp instanceof String)
+                    stateRepo.put("entityIdPropertyName", (String) entIdProp);
                 stateRepositories.add(stateRepo);
             }
             context.put("stateRepositories", stateRepositories);
@@ -108,17 +106,5 @@ public class JavaControllerGenerator {
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
 
         return context;
-    }
-
-    private String resolveControllerInterfaceFilename(EntityDef entity, SddModel model) {
-        var options = model.database().generatorOptions();
-        var pkg = options != null ? options.getOrDefault("packageName", "com.example") : "com.example";
-        return pkg.replace('.', '/') + "/" + contextBuilder.toPascal(entity.name()) + "Api.java";
-    }
-
-    private String resolveControllerFilename(EntityDef entity, SddModel model) {
-        var options = model.database().generatorOptions();
-        var pkg = options != null ? options.getOrDefault("packageName", "com.example") : "com.example";
-        return pkg.replace('.', '/') + "/" + contextBuilder.toPascal(entity.name()) + "Controller.java";
     }
 }

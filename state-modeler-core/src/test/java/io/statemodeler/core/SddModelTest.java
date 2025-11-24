@@ -42,8 +42,8 @@ class SddModelTest {
         var ex4 = assertThrows(IllegalArgumentException.class, () -> new SddModel("0.1.0", "test", database, null));
         assertTrue(ex4.getMessage().contains("entities cannot be null"));
 
-        var ex5 = assertThrows(IllegalArgumentException.class,
-                () -> new SddModel("invalid-version", "test", database, entities));
+        var ex5 = assertThrows(
+                IllegalArgumentException.class, () -> new SddModel("invalid-version", "test", database, entities));
         assertTrue(ex5.getMessage().contains("version must be a valid SemVer string"));
     }
 

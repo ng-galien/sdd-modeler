@@ -1,5 +1,6 @@
 package io.statemodeler.cli.commands;
 
+import io.statemodeler.cli.util.PathUtils;
 import io.statemodeler.diagram.DiagramGenerators;
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.validation.ModelValidators;
@@ -47,11 +48,14 @@ public class DiagramCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        logger.info("Generating diagram from model file: {}", modelFile);
+        // Resolve model path from process and localize output path
+        var resolvedModelFile = PathUtils.resolveFromProcess(modelFile);
+        var resolvedOutputFile = outputFile == null ? null : PathUtils.resolveFromProcess(outputFile);
+        logger.info("Generating diagram from model file: {}", resolvedModelFile);
 
         // Validate file existence and format to keep stable error messages
-        if (!Files.exists(modelFile)) {
-            spec.commandLine().getErr().println("Error: Model file does not exist: " + modelFile);
+        if (!Files.exists(resolvedModelFile)) {
+            spec.commandLine().getErr().println("Error: Model file does not exist: " + resolvedModelFile);
             return 1;
         }
         if (!DiagramGenerators.isSupported(format)) {
@@ -100,9 +104,20 @@ public class DiagramCommand implements Callable<Integer> {
                                     : generator.generateDiagram(model);
 
                             return io.vavr.control.Try.of(() -> {
-                                        if (outputFile != null) {
-                                            Files.writeString(outputFile, diagram);
-                                            spec.commandLine().getOut().println("✓ Diagram written to: " + outputFile);
+                                        if (resolvedOutputFile != null) {
+                                            try {
+                                                PathUtils.ensureParentDirectoryExists(resolvedOutputFile);
+                                            } catch (Exception e) {
+                                                spec.commandLine()
+                                                        .getErr()
+                                                        .println("Error: Could not create output directory: "
+                                                                + e.getMessage());
+                                                return 1;
+                                            }
+                                            Files.writeString(resolvedOutputFile, diagram);
+                                            spec.commandLine()
+                                                    .getOut()
+                                                    .println("✓ Diagram written to: " + resolvedOutputFile);
                                         } else {
                                             spec.commandLine().getOut().println("\n" + diagram);
                                         }

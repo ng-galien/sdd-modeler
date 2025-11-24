@@ -10,6 +10,11 @@ import java.util.List;
  */
 final class PostgresFunctionGenerator {
 
+    private static String toSnake(String s) {
+        if (s == null) return null;
+        return s.replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase();
+    }
+
     /**
      * Generate the generic domain state sync function that updates the domain_state
      * table.
@@ -24,8 +29,10 @@ final class PostgresFunctionGenerator {
      * @return function definition for sync_domain_state
      */
     FunctionDefinition generateSyncDomainStateFunction(EntityDef entity, String stateSchema) {
-        var entityIdColumn = entity.name() + "_id";
-        var stateTableName = entity.name() + "_state";
+        var entityIdColumn = toSnake(entity.name()) + "_id";
+        var snakeName =
+                entity.name().replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase();
+        var stateTableName = snakeName + "_state";
 
         String body = String.format("""
                         DECLARE
@@ -52,7 +59,7 @@ final class PostgresFunctionGenerator {
                         """, stateSchema, stateTableName, entityIdColumn, entityIdColumn, entityIdColumn);
 
         return new FunctionDefinition(
-                "sync_" + entity.name() + "_state", stateSchema, List.of(), "TRIGGER", "plpgsql", body);
+                "sync_" + snakeName + "_state", stateSchema, List.of(), "TRIGGER", "plpgsql", body);
     }
 
     // Rendering of the function DDL is handled by the canonical Pebble-based

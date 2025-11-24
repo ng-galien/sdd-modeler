@@ -47,7 +47,12 @@ public class PebbleCodeGenerator implements CodeGenerator {
             // Apply formatting to all Java files
             for (Map.Entry<String, String> entry : generatedFiles.entrySet()) {
                 if (entry.getKey().endsWith(".java")) {
-                    entry.setValue(javaFormatter.format(entry.getValue()));
+                    try {
+                        entry.setValue(javaFormatter.format(entry.getValue()));
+                    } catch (Exception e) {
+                        System.err.println("Failed to format file: " + entry.getKey());
+                        throw e;
+                    }
                 }
             }
         } else {

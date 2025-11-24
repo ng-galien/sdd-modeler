@@ -23,7 +23,7 @@ public class JavaContextBuilder {
             Map<String, Object> entityCtx = buildEntityContext(e);
             entities.add(entityCtx);
             Object impsObj = entityCtx.get("imports");
-            if (impsObj instanceof Set<?> imps) {
+            if (impsObj instanceof java.util.Collection<?> imps) {
                 for (Object o : imps) {
                     if (o instanceof String str) {
                         imports.add(str);
@@ -66,7 +66,7 @@ public class JavaContextBuilder {
             Map<String, Object> stateCtx = buildStateContext(s, ctx);
             states.add(stateCtx);
             Object impsObj = stateCtx.get("imports");
-            if (impsObj instanceof Set<?> imps) {
+            if (impsObj instanceof java.util.Collection<?> imps) {
                 for (Object o : imps) {
                     if (o instanceof String str) {
                         imports.add(str);

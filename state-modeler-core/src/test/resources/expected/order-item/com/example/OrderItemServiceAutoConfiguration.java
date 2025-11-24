@@ -12,11 +12,11 @@ public class OrderItemServiceAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(OrderItemService.class)
   public OrderItemService orderItemService(
-      PendingPaymentRepository pendingPaymentRepository,
       CreatedRepository createdRepository,
+      PendingPaymentRepository pendingPaymentRepository,
       OrderItemDomainStateRepository domainStateRepository,
       com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
     return new DefaultOrderItemService(
-        pendingPaymentRepository, createdRepository, domainStateRepository, objectMapper);
+        createdRepository, pendingPaymentRepository, domainStateRepository, objectMapper);
   }
 }

@@ -17,11 +17,13 @@ public class JavaContextBuilder {
         Map<String, Object> modelCtx = new HashMap<>();
         List<Map<String, Object>> entities = new ArrayList<>();
         Set<String> imports = new HashSet<>();
-        for (EntityDef e : model.entities().values()) {
+        List<EntityDef> sortedEntities = new ArrayList<>(model.entities().values());
+        sortedEntities.sort(java.util.Comparator.comparing(EntityDef::name));
+        for (EntityDef e : sortedEntities) {
             Map<String, Object> entityCtx = buildEntityContext(e);
             entities.add(entityCtx);
             Object impsObj = entityCtx.get("imports");
-            if (impsObj instanceof Set<?> imps) {
+            if (impsObj instanceof java.util.Collection<?> imps) {
                 for (Object o : imps) {
                     if (o instanceof String str) {
                         imports.add(str);
@@ -30,7 +32,9 @@ public class JavaContextBuilder {
             }
         }
         modelCtx.put("entities", entities);
-        modelCtx.put("imports", imports);
+        List<String> sortedImports = new ArrayList<>(imports);
+        java.util.Collections.sort(sortedImports);
+        modelCtx.put("imports", sortedImports);
         return modelCtx;
     }
 
@@ -62,7 +66,7 @@ public class JavaContextBuilder {
             Map<String, Object> stateCtx = buildStateContext(s, ctx);
             states.add(stateCtx);
             Object impsObj = stateCtx.get("imports");
-            if (impsObj instanceof Set<?> imps) {
+            if (impsObj instanceof java.util.Collection<?> imps) {
                 for (Object o : imps) {
                     if (o instanceof String str) {
                         imports.add(str);
@@ -83,11 +87,14 @@ public class JavaContextBuilder {
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
             attrCtx.put("columnName", normalizeCaseInput(attr.name()).toLowerCase());
-            if (mapped.importName() != null) imports.add(mapped.importName());
+            if (mapped.importName() != null)
+                imports.add(mapped.importName());
             attrs.add(attrCtx);
         }
         ctx.put("attributes", attrs);
-        ctx.put("imports", imports);
+        List<String> sortedImports = new ArrayList<>(imports);
+        java.util.Collections.sort(sortedImports);
+        ctx.put("imports", sortedImports);
         ctx.put("hasStates", !entity.states().isEmpty());
         return ctx;
     }
@@ -118,14 +125,19 @@ public class JavaContextBuilder {
             var mapped = mapSqlTypeToJavaType(attr.type());
             attrCtx.put("javaType", mapped.javaType());
             attrCtx.put("columnName", normalizeCaseInput(attr.name()).toLowerCase());
-            if (mapped.importName() != null) imports.add(mapped.importName());
+            if (mapped.importName() != null)
+                imports.add(mapped.importName());
             attrs.add(attrCtx);
         }
         ctx.put("attributes", attrs);
-        ctx.put("imports", imports);
+        List<String> sortedImports = new ArrayList<>(imports);
+        java.util.Collections.sort(sortedImports);
+        ctx.put("imports", sortedImports);
 
         List<Map<String, String>> fromStates = new ArrayList<>();
-        for (String from : state.from()) {
+        List<String> sortedFrom = new ArrayList<>(state.from());
+        java.util.Collections.sort(sortedFrom);
+        for (String from : sortedFrom) {
             Map<String, String> fromCtx = new HashMap<>();
             fromCtx.put("name", from);
             fromCtx.put("className", toPascal(from));
@@ -137,10 +149,12 @@ public class JavaContextBuilder {
         return ctx;
     }
 
-    public record TypeMapping(String javaType, String importName) {}
+    public record TypeMapping(String javaType, String importName) {
+    }
 
     public TypeMapping mapSqlTypeToJavaType(String sqlType) {
-        if (sqlType == null) return new TypeMapping("Object", null);
+        if (sqlType == null)
+            return new TypeMapping("Object", null);
         var s = sqlType.trim().toUpperCase();
         boolean isArray = false;
         if (s.endsWith("[]")) {
@@ -195,12 +209,14 @@ public class JavaContextBuilder {
     }
 
     public String toPascal(String s) {
-        if (s == null || s.isEmpty()) return s;
+        if (s == null || s.isEmpty())
+            return s;
         return CaseUtils.toCamelCase(normalizeCaseInput(s), true, '_', '-', ' ', '.');
     }
 
     public String toCamel(String s) {
-        if (s == null || s.isEmpty()) return s;
+        if (s == null || s.isEmpty())
+            return s;
         return CaseUtils.toCamelCase(normalizeCaseInput(s), false, '_', '-', ' ', '.');
     }
 
@@ -223,7 +239,9 @@ public class JavaContextBuilder {
         List<Map<String, Object>> transitions = new ArrayList<>();
 
         // For each state (except initial states), create a transition context
-        for (StateDef targetState : entity.states().values()) {
+        List<StateDef> sortedStates = new ArrayList<>(entity.states().values());
+        sortedStates.sort(java.util.Comparator.comparing(StateDef::name));
+        for (StateDef targetState : sortedStates) {
             // Skip initial states (they have no 'from' transitions)
             if (targetState.from().isEmpty() && targetState.fromAnyOf().isEmpty()) {
                 continue;
@@ -263,7 +281,9 @@ public class JavaContextBuilder {
 
             // Command fields (from target state attributes)
             List<Map<String, Object>> commandFields = new ArrayList<>();
-            for (var attr : targetState.attributes().values()) {
+            List<io.statemodeler.core.AttributeDef> sortedAttrs = new ArrayList<>(targetState.attributes().values());
+            sortedAttrs.sort(java.util.Comparator.comparing(io.statemodeler.core.AttributeDef::name));
+            for (var attr : sortedAttrs) {
                 Map<String, Object> fieldCtx = new HashMap<>();
                 fieldCtx.put("name", attr.name());
                 fieldCtx.put("propertyName", toCamel(attr.name()));

@@ -2,13 +2,15 @@ package io.statemodeler.dsl.yaml;
 
 import io.statemodeler.core.*;
 import io.statemodeler.dsl.yaml.YamlModelDto.*;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Converts YamlModelDto to SddModel.
- * Handles the mapping from YAML structure with dynamic keys to immutable records.
+ * Handles the mapping from YAML structure with dynamic keys to immutable
+ * records.
  */
 public final class YamlModelConverter {
 
@@ -44,7 +46,11 @@ public final class YamlModelConverter {
         }
 
         return entities.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> convertEntity(entry.getKey(), entry.getValue())));
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> convertEntity(entry.getKey(), entry.getValue()),
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new));
     }
 
     private static EntityDef convertEntity(String entityName, YamlEntityDto dto) {
@@ -74,13 +80,18 @@ public final class YamlModelConverter {
             return Map.of();
         }
 
-        return attributes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-            var dto = entry.getValue();
-            var name = entry.getKey(); // Use the map key as the attribute name
-            var nullable = dto.nullable() != null ? dto.nullable() : true;
-            var primaryKey = dto.primaryKey() != null ? dto.primaryKey() : false;
-            return new AttributeDef(name, dto.type(), nullable, primaryKey, dto.defaultValue(), dto.description());
-        }));
+        return attributes.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> {
+                    var dto = entry.getValue();
+                    var name = entry.getKey(); // Use the map key as the attribute name
+                    var nullable = dto.nullable() != null ? dto.nullable() : true;
+                    var primaryKey = dto.primaryKey() != null ? dto.primaryKey() : false;
+                    return new AttributeDef(name, dto.type(), nullable, primaryKey, dto.defaultValue(),
+                            dto.description());
+                },
+                (v1, v2) -> v1,
+                LinkedHashMap::new));
     }
 
     private static Map<String, StateDef> convertStates(Map<String, YamlStateDto> states) {
@@ -89,7 +100,11 @@ public final class YamlModelConverter {
         }
 
         return states.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> convertState(entry.getKey(), entry.getValue())));
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> convertState(entry.getKey(), entry.getValue()),
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new));
     }
 
     private static StateDef convertState(String stateName, YamlStateDto dto) {
@@ -108,7 +123,10 @@ public final class YamlModelConverter {
 
         return extensions.entrySet().stream()
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey, entry -> convertExtension(entry.getKey(), entry.getValue())));
+                        Map.Entry::getKey,
+                        entry -> convertExtension(entry.getKey(), entry.getValue()),
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new));
     }
 
     private static ExtensionDef convertExtension(String extensionName, YamlExtensionDto dto) {
@@ -123,7 +141,10 @@ public final class YamlModelConverter {
 
         return projections.entrySet().stream()
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey, entry -> convertProjection(entry.getKey(), entry.getValue())));
+                        Map.Entry::getKey,
+                        entry -> convertProjection(entry.getKey(), entry.getValue()),
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new));
     }
 
     private static ProjectionDef convertProjection(String projectionName, YamlProjectionDto dto) {

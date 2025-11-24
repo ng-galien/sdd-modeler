@@ -15,10 +15,10 @@ public interface OrderItemService {
   OrderItemDto transitionToPendingPayment(
       OrderItemId id, TransitionToPendingPaymentCommand command);
 
-  record TransitionToPendingPaymentCommand(String paymentMethod, BigDecimal paidAmount) {
+  record TransitionToPendingPaymentCommand(BigDecimal paidAmount, String paymentMethod) {
     public TransitionToPendingPaymentCommand {
-      java.util.Objects.requireNonNull(paymentMethod, "paymentMethod cannot be null");
       java.util.Objects.requireNonNull(paidAmount, "paidAmount cannot be null");
+      java.util.Objects.requireNonNull(paymentMethod, "paymentMethod cannot be null");
     }
   }
 }

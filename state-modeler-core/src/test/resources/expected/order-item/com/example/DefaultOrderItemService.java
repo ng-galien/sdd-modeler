@@ -7,18 +7,18 @@ import java.time.Instant;
 
 public class DefaultOrderItemService implements OrderItemService {
 
-  private final PendingPaymentRepository pendingPaymentRepository;
   private final CreatedRepository createdRepository;
+  private final PendingPaymentRepository pendingPaymentRepository;
   private final OrderItemDomainStateRepository domainStateRepository;
   private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
   public DefaultOrderItemService(
-      PendingPaymentRepository pendingPaymentRepository,
       CreatedRepository createdRepository,
+      PendingPaymentRepository pendingPaymentRepository,
       OrderItemDomainStateRepository domainStateRepository,
       com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
-    this.pendingPaymentRepository = pendingPaymentRepository;
     this.createdRepository = createdRepository;
+    this.pendingPaymentRepository = pendingPaymentRepository;
     this.domainStateRepository = domainStateRepository;
     this.objectMapper = objectMapper;
   }
@@ -31,8 +31,8 @@ public class DefaultOrderItemService implements OrderItemService {
       try {
         Class<? extends OrderItemState> stateClass =
             switch (ds.stateType()) {
-              case "PENDING_PAYMENT" -> OrderItemState.PendingPayment.class;
               case "CREATED" -> OrderItemState.Created.class;
+              case "PENDING_PAYMENT" -> OrderItemState.PendingPayment.class;
               default -> throw new IllegalStateException("Unknown state type: " + ds.stateType());
             };
         var state = objectMapper.readValue(ds.stateJson(), stateClass);
@@ -59,7 +59,7 @@ public class DefaultOrderItemService implements OrderItemService {
 
     // Create new state
     var newState =
-        new OrderItemState.PendingPayment(null, id, command.paymentMethod(), command.paidAmount());
+        new OrderItemState.PendingPayment(null, id, command.paidAmount(), command.paymentMethod());
     pendingPaymentRepository.save(newState);
 
     // Return DTO (Note: Stable attributes are not available in State record, passing

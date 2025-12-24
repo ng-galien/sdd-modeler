@@ -40,15 +40,11 @@ public abstract class JavaGeneratorBase {
         Set<String> imports = new HashSet<>();
         Object modelImps = modelCtx.get("imports");
         if (modelImps instanceof java.util.Collection<?> mis) {
-            for (Object o : mis)
-                if (o instanceof String str)
-                    imports.add(str);
+            for (Object o : mis) if (o instanceof String str) imports.add(str);
         }
         Object entityImps = entityCtx.get("imports");
         if (entityImps instanceof java.util.Collection<?> eis) {
-            for (Object o : eis)
-                if (o instanceof String str)
-                    imports.add(str);
+            for (Object o : eis) if (o instanceof String str) imports.add(str);
         }
         context.put("imports", imports);
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());

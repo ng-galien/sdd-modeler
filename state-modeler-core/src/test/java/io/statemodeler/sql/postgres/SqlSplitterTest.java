@@ -17,4 +17,20 @@ class SqlSplitterTest {
         assertTrue(statements.get(0).trim().startsWith("CREATE FUNCTION"));
         assertTrue(statements.get(1).trim().startsWith("CREATE TABLE"));
     }
+
+    @Test
+    void shouldHandleNestedDollars() {
+        String ddl = "CREATE FUNCTION outer() AS $outer$ BEGIN RAISE NOTICE $inner$inner$inner$; END; $outer$;";
+        var statements = io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl);
+        assertEquals(1, statements.size());
+    }
+
+    @Test
+    void shouldHandleDollarsWithSemicolons() {
+        String ddl = "CREATE FUNCTION f() AS $$ BEGIN; END; $$; SELECT 1;";
+        var statements = io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl);
+        assertEquals(2, statements.size());
+        assertEquals("CREATE FUNCTION f() AS $$ BEGIN; END; $$", statements.get(0));
+        assertEquals("SELECT 1", statements.get(1));
+    }
 }

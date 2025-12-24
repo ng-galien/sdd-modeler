@@ -33,9 +33,7 @@ public class JavaCodeFormatter {
             // Save to file for debugging
             try {
                 java.nio.file.Files.writeString(
-                        java.nio.file.Path.of("failed-format.java"),
-                        source,
-                        java.nio.charset.StandardCharsets.UTF_8);
+                        java.nio.file.Path.of("failed-format.java"), source, java.nio.charset.StandardCharsets.UTF_8);
                 System.err.println("Saved unformatted source to: failed-format.java");
             } catch (java.io.IOException ioEx) {
                 // Ignore

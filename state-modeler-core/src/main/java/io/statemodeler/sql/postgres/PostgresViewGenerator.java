@@ -61,12 +61,12 @@ final class PostgresViewGenerator {
 
             var part = new StringBuilder();
             part.append("SELECT\n");
-                    part.append("    ")
-                        .append("e.")
-                        .append(entityIdColumn)
-                        .append(" AS ")
-                        .append(stateEntityColumn)
-                        .append(",\n");
+            part.append("    ")
+                    .append("e.")
+                    .append(entityIdColumn)
+                    .append(" AS ")
+                    .append(stateEntityColumn)
+                    .append(",\n");
             part.append("    '").append(stateName.toUpperCase()).append("' AS state_type,\n");
             part.append("    ").append(stateAlias).append(".created_at AS start_at,\n");
 
@@ -76,10 +76,13 @@ final class PostgresViewGenerator {
             // Find all states that can follow this state (simple transitions)
             for (var nextState : entity.states().values()) {
                 if (nextState.from().contains(stateName)) {
-                        var minClause = String.format(
+                    var minClause = String.format(
                             "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
-                            stateSchema, nextState.table(), nextState.hasOrTransitions()? toSnake(stateName) : toSnake(stateName), stateAlias);
-                        minClause = String.format(
+                            stateSchema,
+                            nextState.table(),
+                            nextState.hasOrTransitions() ? toSnake(stateName) : toSnake(stateName),
+                            stateAlias);
+                    minClause = String.format(
                             "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
                             stateSchema, nextState.table(), toSnake(stateName), stateAlias);
                     endAtClauses.add(minClause);
@@ -89,8 +92,8 @@ final class PostgresViewGenerator {
             // Find states that can follow via OR transitions
             for (var nextState : entity.states().values()) {
                 if (nextState.hasOrTransitions() && nextState.fromAnyOf().contains(stateName)) {
-                        var sourceTable = nextState.name() + "_source";
-                        var sourceColumn = toSnake(stateName) + "_state_id";
+                    var sourceTable = nextState.name() + "_source";
+                    var sourceColumn = toSnake(stateName) + "_state_id";
                     var minClause = String.format(
                             "(SELECT MIN(ns.created_at) FROM %s.%s ns JOIN %s.%s src ON src.id = ns.previous_source_id WHERE src.%s = %s.id)",
                             stateSchema, nextState.table(), stateSchema, sourceTable, sourceColumn, stateAlias);
@@ -116,18 +119,18 @@ final class PostgresViewGenerator {
                     .append(".")
                     .append(entity.table())
                     .append(" e\n");
-                    part.append("JOIN ")
-                        .append(stateSchema)
-                        .append(".")
-                        .append(stateTable)
-                        .append(" ")
-                        .append(stateAlias)
-                        .append(" ON ")
-                        .append(stateAlias)
-                        .append(".")
-                        .append(stateEntityColumn)
-                        .append(" = e.")
-                        .append(entityIdColumn);
+            part.append("JOIN ")
+                    .append(stateSchema)
+                    .append(".")
+                    .append(stateTable)
+                    .append(" ")
+                    .append(stateAlias)
+                    .append(" ON ")
+                    .append(stateAlias)
+                    .append(".")
+                    .append(stateEntityColumn)
+                    .append(" = e.")
+                    .append(entityIdColumn);
 
             unionParts.add(part.toString());
         }

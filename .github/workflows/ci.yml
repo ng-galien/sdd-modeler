@@ -16,6 +16,21 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sdd_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     strategy:
       matrix:
         java-version: [ 21 ]
@@ -44,6 +59,12 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build, check and test with Gradle
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_DB: sdd_test
+        POSTGRES_USER: test
+        POSTGRES_PASSWORD: test
       run: ./gradlew spotlessCheck build jacocoAggregatedReport
       
     - name: Generate test report

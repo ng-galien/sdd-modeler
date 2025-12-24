@@ -16,8 +16,7 @@ import java.util.List;
 final class PostgresTableGenerator {
 
     private static String toSnake(String s) {
-        if (s == null)
-            return null;
+        if (s == null) return null;
         return s.replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase();
     }
 
@@ -44,7 +43,12 @@ final class PostgresTableGenerator {
         // Add entity attributes
         for (var attr : entity.attributes().values()) {
             columns.add(new ColumnDefinition(
-                    toSnake(attr.name()), attr.type(), attr.nullable(), attr.primaryKey(), attr.defaultValue(), null,
+                    toSnake(attr.name()),
+                    attr.type(),
+                    attr.nullable(),
+                    attr.primaryKey(),
+                    attr.defaultValue(),
+                    null,
                     null));
         }
 
@@ -68,8 +72,8 @@ final class PostgresTableGenerator {
         columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
 
         // Entity reference (FK added later as constraint)
-        columns.add(new ColumnDefinition(toSnake(entity.name()) + "_id", entity.id().type(), false, false, null, null,
-                null));
+        columns.add(new ColumnDefinition(
+                toSnake(entity.name()) + "_id", entity.id().type(), false, false, null, null, null));
 
         // Timestamp
         columns.add(new ColumnDefinition("created_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
@@ -142,8 +146,8 @@ final class PostgresTableGenerator {
         columns.add(new ColumnDefinition("id", "SERIAL", false, true, null, null, null));
 
         // Entity reference (required for composite FK) - snake_case
-        columns.add(new ColumnDefinition(toSnake(entity.name()) + "_id", entity.id().type(), false, false, null, null,
-                null));
+        columns.add(new ColumnDefinition(
+                toSnake(entity.name()) + "_id", entity.id().type(), false, false, null, null, null));
 
         // References to possible source states (FK added separately to avoid circular
         // dependency)
@@ -202,7 +206,8 @@ final class PostgresTableGenerator {
         // Updated timestamp
         columns.add(new ColumnDefinition("updated_at", "TIMESTAMPTZ", false, false, "NOW()", null, null));
 
-        var domainTableName = entity.name().replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase() + "_state";
+        var domainTableName =
+                entity.name().replaceAll("(?<=[A-Za-z0-9])(?=[A-Z])", "_").toLowerCase() + "_state";
         return new TableDefinition(domainTableName, stateSchema, columns, List.of(entityIdColumn));
     }
 }

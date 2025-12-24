@@ -1,0 +1,87 @@
+package {{ options.packageName }};
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.modelcontextprotocol.spec.McpSchema.GetPromptResult;
+import io.modelcontextprotocol.spec.McpSchema.PromptMessage;
+import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
+import io.modelcontextprotocol.spec.McpSchema.Role;
+import io.modelcontextprotocol.spec.McpSchema.TextContent;
+import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
+import java.util.List;
+import java.util.UUID;
+import org.springaicommunity.mcp.annotation.McpPrompt;
+import org.springaicommunity.mcp.annotation.McpResource;
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.annotation.McpToolParam;
+import org.springframework.stereotype.Component;
+
+{% for import in imports %}
+import {{ import }};
+{% endfor %}
+
+@Component
+public class {{ entity.className }}McpServer {
+
+    private final {{ entity.className }}Service {{ entity.propertyName }}Service;
+    private final ObjectMapper objectMapper;
+
+    public {{ entity.className }}McpServer(
+            {{ entity.className }}Service {{ entity.propertyName }}Service, ObjectMapper objectMapper) {
+        this.{{ entity.propertyName }}Service = {{ entity.propertyName }}Service;
+        this.objectMapper = objectMapper;
+    }
+
+    {% for transition in transitions %}
+    @McpTool(
+            name = "{{ entity.propertyName }}-transition-to-{{ transition.targetState.name }}",
+            description = "Transition {{ entity.className }} to {{ transition.targetState.name }}")
+    public {{ entity.className }}Dto {{ transition.methodName }}(
+            @McpToolParam(description = "{{ entity.className }} id", required = true) UUID id
+            {% for field in transition.commandFields %}
+            , @McpToolParam(
+                description = "{{ field.name }}",
+                required = {% if field.nullable %}false{% else %}true{% endif %})
+            {{ field.javaType }} {{ field.propertyName }}
+            {% endfor %}
+            ) {
+        {% if transition.commandFields is empty %}
+        var command = new {{ entity.className }}Service.{{ transition.commandClassName }}();
+        {% else %}
+        var command = new {{ entity.className }}Service.{{ transition.commandClassName }}(
+                {% for field in transition.commandFields %}
+                {{ field.propertyName }}{% if not loop.last %},{% endif %}
+                {% endfor %}
+                );
+        {% endif %}
+        return {{ entity.propertyName }}Service.{{ transition.methodName }}(new {{ entity.className }}Id(id), command);
+    }
+
+    {% endfor %}
+    @McpResource(
+            uri = "sdd://{{ entity.propertyName }}/states",
+            name = "{{ entity.className }} States",
+            description = "Current {{ entity.className }} states",
+            mimeType = "application/json")
+    public ReadResourceResult get{{ entity.className }}StatesResource() {
+        var states = {{ entity.propertyName }}Service.findAll();
+        try {
+            var payload = objectMapper.writeValueAsString(states);
+            return new ReadResourceResult(List.of(
+                    new TextResourceContents(
+                            "sdd://{{ entity.propertyName }}/states", "application/json", payload)));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize {{ entity.className }} states", e);
+        }
+    }
+
+    @McpPrompt(
+            name = "{{ entity.propertyName }}-summary",
+            description = "Summarize {{ entity.className }} states")
+    public GetPromptResult {{ entity.propertyName }}SummaryPrompt() {
+        var states = {{ entity.propertyName }}Service.findAll();
+        var message = "{{ entity.className }} states: " + states.size();
+        return new GetPromptResult(
+                "{{ entity.className }} Summary",
+                List.of(new PromptMessage(Role.ASSISTANT, new TextContent(message))));
+    }
+}

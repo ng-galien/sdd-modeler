@@ -8,15 +8,18 @@ dependencies {
     implementation(libs.state.modeler.core)
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation(libs.spring.ai.starter.mcp.server.webmvc)
     
     implementation("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 val modelFileProp = project.findProperty("sddModelFile") as String?
 val outDirProp = project.findProperty("sddOutDir") as String?
 val languageProp = project.findProperty("sddLanguage") as String?
-val addToSourceSetProp = (project.findProperty("sddAddToSourceSet") as String?)?.toBoolean() ?: false
+val addToSourceSetProp = (project.findProperty("sddAddToSourceSet") as String?)?.toBoolean() ?: true
 
 val resolvedOutputDir = layout.buildDirectory.dir(outDirProp ?: "generated/sdd")
 

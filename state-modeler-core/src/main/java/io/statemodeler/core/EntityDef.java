@@ -1,5 +1,7 @@
 package io.statemodeler.core;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
@@ -36,10 +38,10 @@ public record EntityDef(
         this.name = name;
         this.table = table;
         this.id = id;
-        this.attributes = Map.copyOf(attributes);
-        this.states = Map.copyOf(states);
-        this.extensions = Map.copyOf(extensions);
-        this.projections = Map.copyOf(projections);
+        this.attributes = Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
+        this.states = Collections.unmodifiableMap(new LinkedHashMap<>(states));
+        this.extensions = Collections.unmodifiableMap(new LinkedHashMap<>(extensions));
+        this.projections = Collections.unmodifiableMap(new LinkedHashMap<>(projections));
     }
 
     /**

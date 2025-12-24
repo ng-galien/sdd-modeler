@@ -70,7 +70,8 @@ public final class YamlModelConverter {
 
         var name = dto.name() != null ? dto.name() : "id";
         var nullable = dto.nullable() != null ? dto.nullable() : false;
-        var primaryKey = dto.primaryKey() != null ? dto.primaryKey() : false;
+        // Entity ID is always a primary key
+        var primaryKey = dto.primaryKey() != null ? dto.primaryKey() : true;
 
         return new AttributeDef(name, dto.type(), nullable, primaryKey, dto.defaultValue(), dto.description());
     }
@@ -80,18 +81,19 @@ public final class YamlModelConverter {
             return Map.of();
         }
 
-        return attributes.entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> {
-                    var dto = entry.getValue();
-                    var name = entry.getKey(); // Use the map key as the attribute name
-                    var nullable = dto.nullable() != null ? dto.nullable() : true;
-                    var primaryKey = dto.primaryKey() != null ? dto.primaryKey() : false;
-                    return new AttributeDef(name, dto.type(), nullable, primaryKey, dto.defaultValue(),
-                            dto.description());
-                },
-                (v1, v2) -> v1,
-                LinkedHashMap::new));
+        return attributes.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            var dto = entry.getValue();
+                            var name = entry.getKey(); // Use the map key as the attribute name
+                            var nullable = dto.nullable() != null ? dto.nullable() : true;
+                            var primaryKey = dto.primaryKey() != null ? dto.primaryKey() : false;
+                            return new AttributeDef(
+                                    name, dto.type(), nullable, primaryKey, dto.defaultValue(), dto.description());
+                        },
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new));
     }
 
     private static Map<String, StateDef> convertStates(Map<String, YamlStateDto> states) {

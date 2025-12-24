@@ -1,0 +1,9 @@
+# Generated MCP server configuration for {{ model.name }}
+spring.ai.mcp.server.type={{ codegen.mcpServerType }}
+{% if codegen.mcpStdio %}
+spring.ai.mcp.server.stdio=true
+{% else %}
+spring.ai.mcp.server.protocol={{ codegen.mcpProtocol }}
+{% endif %}
+spring.ai.mcp.server.name={{ model.name }}
+spring.ai.mcp.server.version={{ model.version }}

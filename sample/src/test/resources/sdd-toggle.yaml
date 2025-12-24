@@ -1,0 +1,23 @@
+version: "1.0.0"
+name: "toggle-sample"
+database:
+  dialect: "postgres"
+  generator_options:
+    packageName: "com.example.toggle"
+    generateController: "false"
+    generateMcp: "false"
+entities:
+  Widget:
+    table: "widgets"
+    id:
+      name: "id"
+      type: "uuid"
+    states:
+      new:
+        table: "widgets_new"
+        initial: true
+        from: []
+        from_any_of: []
+        attributes:
+          label:
+            type: "TEXT"

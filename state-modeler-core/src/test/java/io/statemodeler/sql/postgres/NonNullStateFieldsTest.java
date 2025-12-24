@@ -22,22 +22,11 @@ class NonNullStateFieldsTest {
         // "optional_field" is explicitly nullable=true
         var optionalAttr = new AttributeDef("optional_field", "text", true, false, null, null);
 
-        var state = new StateDef(
-                "draft",
-                "doc_draft",
-                true,
-                List.of(),
-                List.of(),
-                Map.of("optional_field", optionalAttr));
+        var state =
+                new StateDef("draft", "doc_draft", true, List.of(), List.of(), Map.of("optional_field", optionalAttr));
 
-        var entity = new EntityDef(
-                "document",
-                "documents",
-                idAttr,
-                Map.of(),
-                Map.of("draft", state),
-                Map.of(),
-                Map.of());
+        var entity =
+                new EntityDef("document", "documents", idAttr, Map.of(), Map.of("draft", state), Map.of(), Map.of());
 
         var model = new SddModel("1.0.0", "test", database, Map.of("document", entity));
         var generator = new PebblePostgresDdlGenerator();
@@ -48,7 +37,8 @@ class NonNullStateFieldsTest {
         // Then
         // The optional_field should be NOT NULL despite being defined as nullable in
         // the model
-        assertTrue(ddl.contains("optional_field text NOT NULL"),
+        assertTrue(
+                ddl.contains("optional_field text NOT NULL"),
                 "State field should be NOT NULL even if defined as nullable. Actual DDL:\n" + ddl);
     }
 }

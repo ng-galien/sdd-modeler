@@ -10,32 +10,61 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for PostgreSQL DDL generation.
  *
- * <p>Uses Testcontainers to spin up a real PostgreSQL instance and verify that generated DDL can
- * be executed without errors.
+ * <p>Connects to a PostgreSQL instance to verify that generated DDL can be executed without errors.
+ *
+ * <p><strong>Configuration:</strong> Uses environment variables for connection:
+ * <ul>
+ *   <li>POSTGRES_HOST (default: localhost)</li>
+ *   <li>POSTGRES_PORT (default: 5432)</li>
+ *   <li>POSTGRES_DB (default: sdd_test)</li>
+ *   <li>POSTGRES_USER (default: test)</li>
+ *   <li>POSTGRES_PASSWORD (default: test)</li>
+ * </ul>
+ *
+ * <p><strong>Note:</strong> These tests will be skipped if PostgreSQL is not available.
  */
-@Testcontainers
 class PostgresDdlIntegrationTest {
 
-    @Container
-    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("sdd_test")
-            .withUsername("test")
-            .withPassword("test");
+    private static final String POSTGRES_HOST = System.getenv().getOrDefault("POSTGRES_HOST", "localhost");
+    private static final String POSTGRES_PORT = System.getenv().getOrDefault("POSTGRES_PORT", "5432");
+    private static final String POSTGRES_DB = System.getenv().getOrDefault("POSTGRES_DB", "sdd_test");
+    private static final String POSTGRES_USER = System.getenv().getOrDefault("POSTGRES_USER", "test");
+    private static final String POSTGRES_PASSWORD = System.getenv().getOrDefault("POSTGRES_PASSWORD", "test");
+
+    private static String jdbcUrl;
+    private static boolean postgresAvailable = false;
+
+    @BeforeAll
+    static void checkPostgresAvailability() {
+        jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB);
+
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD)) {
+            postgresAvailable = true;
+            System.out.println("[INFO] PostgreSQL available at: " + jdbcUrl);
+        } catch (Exception e) {
+            System.err.println("[WARN] PostgreSQL not available: " + e.getMessage());
+            System.err.println("[WARN] Integration tests will be skipped.");
+            System.err.println("[INFO] To run integration tests, ensure PostgreSQL is running:");
+            System.err.println(
+                    "       docker run -d -p 5432:5432 -e POSTGRES_DB=sdd_test -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test postgres:16-alpine");
+        }
+
+        // Skip all tests if PostgreSQL is not available
+        Assumptions.assumeTrue(postgresAvailable, "PostgreSQL is not available - skipping integration tests");
+    }
 
     @BeforeEach
     void cleanDatabase() throws Exception {
         // Clean up database before each test to ensure isolation
-        try (Connection conn = DriverManager.getConnection(
-                        postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD);
                 Statement stmt = conn.createStatement()) {
             stmt.execute("DROP SCHEMA IF EXISTS public_states CASCADE");
             stmt.execute("DROP SCHEMA IF EXISTS public CASCADE");
@@ -64,8 +93,7 @@ class PostgresDdlIntegrationTest {
         assertFalse(ddl.isBlank(), "DDL should not be blank");
 
         // Then - Execute DDL in PostgreSQL container
-        try (Connection conn =
-                DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD)) {
 
             try (Statement stmt = conn.createStatement()) {
                 // Split DDL by statements (each ending with semicolon + newline)
@@ -146,8 +174,7 @@ class PostgresDdlIntegrationTest {
         String ddl = generator.generateDdl(model);
 
         // When - Execute DDL
-        try (Connection conn =
-                DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD)) {
 
             try (Statement stmt = conn.createStatement()) {
                 for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl)) {
@@ -203,8 +230,7 @@ class PostgresDdlIntegrationTest {
         var generator = DdlGenerators.forDialect("postgres");
         String ddl = generator.generateDdl(model);
 
-        try (Connection conn =
-                DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD)) {
 
             try (Statement stmt = conn.createStatement()) {
                 for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(ddl)) {

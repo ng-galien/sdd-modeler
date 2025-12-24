@@ -29,8 +29,8 @@ public class JavaRepositoryGenerator extends JavaGeneratorBase {
             }
 
             String domainContent = generateFile(entity, model, "templates/java/domain_state_repository.java.pebble");
-            String domainFilename = resolveFilename(model,
-                    contextBuilder.toPascal(entity.name()) + "DomainStateRepository");
+            String domainFilename =
+                    resolveFilename(model, contextBuilder.toPascal(entity.name()) + "DomainStateRepository");
             generatedFiles.put(domainFilename, domainContent);
         }
         return generatedFiles;
@@ -48,9 +48,7 @@ public class JavaRepositoryGenerator extends JavaGeneratorBase {
         Object modelImps = modelCtx.get("imports");
         Set<String> imports = new HashSet<>();
         if (modelImps instanceof Set<?> mis) {
-            for (Object o : mis)
-                if (o instanceof String str)
-                    imports.add(str);
+            for (Object o : mis) if (o instanceof String str) imports.add(str);
         }
         context.put("imports", imports);
         context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());

@@ -5,6 +5,10 @@ database:
   schema: "public"
   generator_options:
     packageName: "com.example.leadcrm.domain"
+    generateController: "true"
+    generateMcp: "true"
+    mcpProtocol: "SSE"
+    mcpServerType: "SYNC"
 entities:
   Lead:
     table: "leads"

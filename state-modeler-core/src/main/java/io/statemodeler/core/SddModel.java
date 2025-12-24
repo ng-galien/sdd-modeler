@@ -1,6 +1,8 @@
 package io.statemodeler.core;
 
 import com.github.zafarkhaja.semver.Version;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,7 +28,7 @@ public record SddModel(String version, String name, DatabaseConfig database, Map
         this.version = version;
         this.name = name;
         this.database = database;
-        this.entities = Map.copyOf(entities);
+        this.entities = Collections.unmodifiableMap(new LinkedHashMap<>(entities));
     }
 
     private static Version parseSemver(String version) {

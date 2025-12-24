@@ -14,7 +14,8 @@ class GenerateServiceDebugTest {
         var paidAmountAttr = new AttributeDef("paid_amount", "numeric(10,2)", false, false, null, null);
         var paymentMethodAttr = new AttributeDef("payment_method", "text", false, false, null, null);
         var createdAtAttr = new AttributeDef("created_at", "timestamptz", false, false, null, null);
-        var created = new StateDef("created", "order_created", true, java.util.List.of(), java.util.List.of(), Map.of());
+        var created =
+                new StateDef("created", "order_created", true, java.util.List.of(), java.util.List.of(), Map.of());
         var pending = new StateDef(
                 "pending_payment",
                 "order_pending",
@@ -32,7 +33,9 @@ class GenerateServiceDebugTest {
         var generated = generator.generate(model);
         var impl = generated.get("com/example/DefaultOrderItemService.java");
         System.out.println("DefaultOrderItemService.java content:\n" + impl);
-        assertTrue(impl.contains("TransitionToPendingPaymentCommand"), "Expected generated service to contain transition command record");
+        assertTrue(
+                impl.contains("TransitionToPendingPaymentCommand"),
+                "Expected generated service to contain transition command record");
         assertNotNull(impl);
     }
 }

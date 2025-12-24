@@ -1,5 +1,6 @@
 package io.statemodeler.core;
 
+import io.statemodeler.codegen.CodegenConfig;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
@@ -32,5 +33,9 @@ public record DatabaseConfig(
             return stateSchema;
         }
         return (schema != null && !schema.isEmpty()) ? schema + "_states" : "states";
+    }
+
+    public CodegenConfig codegenConfig() {
+        return CodegenConfig.fromOptions(generatorOptions);
     }
 }

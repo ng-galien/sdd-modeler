@@ -30,6 +30,13 @@ tasks.withType<Test> {
     finalizedBy(tasks.withType<JacocoReport>())
     systemProperty("java.awt.headless", "true")
     
+    // Pass through PostgreSQL connection environment variables for integration tests
+    listOf("POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD").forEach { envVar ->
+        System.getenv(envVar)?.let {
+            environment(envVar, it)
+        }
+    }
+    
     // Pass through system properties for test configuration
     System.getProperties().forEach { key, value ->
         if (key.toString().startsWith("update")) {
@@ -121,10 +128,7 @@ dependencies {
     testImplementation(libs.assertj)
     // Test/runtime logback deps are provided globally by the root `subprojects` configuration
     
-    // PostgreSQL integration tests with Testcontainers
-    testImplementation(libs.testcontainers)
-    testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.testcontainers.junit.jupiter)
+    // PostgreSQL JDBC driver for integration tests
     testImplementation(libs.postgresql)
 }
 

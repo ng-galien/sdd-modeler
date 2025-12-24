@@ -126,3 +126,45 @@ CREATE VIEW public_states.current_order_states AS
 - **Language**: Java 21 (records, pattern matching, sealed types)
 - **Parsing**: Jackson (YAML/JSON)
 - **Validation**: Vavr (functional error accumulation)
+
+## 🧪 Testing
+
+### Running Integration Tests
+
+PostgreSQL integration tests verify that generated DDL executes correctly. These tests require a running PostgreSQL instance.
+
+**Quick start with Docker:**
+
+```bash
+# Start PostgreSQL in Docker
+docker run -d --name sdd-postgres \
+  -p 5432:5432 \
+  -e POSTGRES_DB=sdd_test \
+  -e POSTGRES_USER=test \
+  -e POSTGRES_PASSWORD=test \
+  postgres:16-alpine
+
+# Run integration tests
+./gradlew :state-modeler-core:test
+
+# Stop and remove container when done
+docker stop sdd-postgres && docker rm sdd-postgres
+```
+
+**Custom PostgreSQL configuration:**
+
+Use environment variables to connect to a different PostgreSQL instance:
+
+```bash
+export POSTGRES_HOST=your-host
+export POSTGRES_PORT=5432
+export POSTGRES_DB=your_db
+export POSTGRES_USER=your_user
+export POSTGRES_PASSWORD=your_password
+
+./gradlew :state-modeler-core:test
+```
+
+**CI/CD:** GitHub Actions automatically provides a PostgreSQL service container for integration tests.
+
+**Note:** If PostgreSQL is not available, integration tests will be automatically skipped with a clear message.

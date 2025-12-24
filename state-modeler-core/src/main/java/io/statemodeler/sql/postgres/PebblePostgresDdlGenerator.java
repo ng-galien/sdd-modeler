@@ -1,12 +1,10 @@
 package io.statemodeler.sql.postgres;
 
 import io.pebbletemplates.pebble.PebbleEngine;
-import io.pebbletemplates.pebble.template.PebbleTemplate;
 import io.statemodeler.core.SddModel;
 import io.statemodeler.sql.*;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -189,21 +187,5 @@ public final class PebblePostgresDdlGenerator implements DdlGenerator {
         }
 
         return new SqlPlan(tables, views, constraints, indexes, functions, triggers);
-    }
-
-    private String renderDdl(SqlPlan plan, String entitySchema, String stateSchema) {
-        PebbleTemplate template = engine.getTemplate("templates/sql/postgres/main.sql.pebble");
-        Map<String, Object> context = new HashMap<>();
-        context.put("plan", plan);
-        context.put("entitySchema", entitySchema);
-        context.put("stateSchema", stateSchema);
-
-        Writer writer = new StringWriter();
-        try {
-            template.evaluate(writer, context);
-            return writer.toString().trim();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to render DDL template", e);
-        }
     }
 }

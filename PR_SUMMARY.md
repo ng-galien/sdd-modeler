@@ -1,3 +1,100 @@
+# PR Summary: Remove Testcontainers from Integration Tests
+
+## Changes
+
+### Removed Testcontainers
+- **Reason**: Testcontainers had Docker detection issues on macOS and added unnecessary complexity
+- **Solution**: Replaced with direct JDBC connections to PostgreSQL using environment variables
+
+### Updated Files
+
+#### Integration Tests
+- **File**: `state-modeler-core/src/test/java/io/statemodeler/sql/postgres/PostgresDdlIntegrationTest.java`
+  - Removed all testcontainers imports and annotations
+  - Replaced container-based connection with direct JDBC using environment variables
+  - Added `@BeforeAll` method to check PostgreSQL availability and skip tests gracefully
+  - Tests now read connection parameters from environment variables:
+    - `POSTGRES_HOST` (default: localhost)
+    - `POSTGRES_PORT` (default: 5432)
+    - `POSTGRES_DB` (default: sdd_test)
+    - `POSTGRES_USER` (default: test)
+    - `POSTGRES_PASSWORD` (default: test)
+
+#### Build Configuration
+- **File**: `state-modeler-core/build.gradle.kts`
+  - Removed testcontainers dependencies:
+    - `testcontainers`
+    - `testcontainers-postgresql`
+    - `testcontainers-junit-jupiter`
+  - Removed Docker API version configuration code
+  - Added environment variable pass-through for PostgreSQL configuration
+
+- **File**: `gradle/libs.versions.toml`
+  - Removed testcontainers version definition
+  - Removed testcontainers library references
+
+#### CI Configuration
+- **File**: `.github/workflows/ci.yml`
+  - Already configured with PostgreSQL service container
+  - Passes required environment variables to Gradle
+
+#### Documentation
+- **File**: `state-modeler-core/README.md`
+  - Added comprehensive "Running Integration Tests" section
+  - Documented environment variables
+  - Provided Docker command for local PostgreSQL setup
+
+### Test Behavior
+
+**Without PostgreSQL**:
+```
+PostgresDdlIntegrationTest STANDARD_ERROR
+    [WARN] PostgreSQL not available: Connection to localhost:5432 refused.
+    [WARN] Integration tests will be skipped.
+    [INFO] To run integration tests, ensure PostgreSQL is running:
+           docker run -d -p 5432:5432 -e POSTGRES_DB=sdd_test -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test postgres:16-alpine
+```
+
+**With PostgreSQL**:
+- All integration tests execute and validate DDL functionality
+
+### Local Development
+
+To run integration tests locally:
+```bash
+docker run -d -p 5432:5432 \
+  -e POSTGRES_DB=sdd_test \
+  -e POSTGRES_USER=test \
+  -e POSTGRES_PASSWORD=test \
+  postgres:16-alpine
+
+./gradlew :state-modeler-core:test --tests PostgresDdlIntegrationTest
+```
+
+### CI/CD
+
+GitHub Actions CI already configured with PostgreSQL service:
+- Image: `postgres:16-alpine`
+- Health checks ensure database ready before tests
+- Environment variables automatically configured
+
+## Benefits
+
+1. **Simpler**: Direct JDBC connections are easier to understand and debug
+2. **More Reliable**: No dependency on Docker detection or testcontainers version compatibility
+3. **Consistent**: Same approach works locally and in CI
+4. **Graceful Degradation**: Tests skip with helpful messages when PostgreSQL unavailable
+5. **Faster**: No container startup overhead when running non-integration tests
+
+## Testing
+
+✅ Build successful: `./gradlew clean build`
+✅ Integration tests skip correctly without PostgreSQL
+✅ CI configuration validated
+✅ All documentation updated
+
+---
+
 # Pull Request: SDR Repository with H2 Database & CLI Commands
 
 ## 🎯 Overview

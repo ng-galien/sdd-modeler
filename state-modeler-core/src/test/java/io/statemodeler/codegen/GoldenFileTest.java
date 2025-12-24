@@ -1,14 +1,14 @@
 package io.statemodeler.codegen;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Utility for golden file (snapshot) testing of code generation.
@@ -37,7 +37,8 @@ public class GoldenFileTest {
         }
 
         Path expectedDir = getExpectedDir(scenario);
-        assertTrue(Files.isDirectory(expectedDir),
+        assertTrue(
+                Files.isDirectory(expectedDir),
                 "Expected directory not found: " + expectedDir + ". Run with -DupdateExpected=true to create it.");
 
         for (Map.Entry<String, String> entry : generated.entrySet()) {
@@ -45,16 +46,18 @@ public class GoldenFileTest {
             String actualContent = entry.getValue();
             Path expectedFile = expectedDir.resolve(filename);
 
-            assertTrue(Files.exists(expectedFile),
+            assertTrue(
+                    Files.exists(expectedFile),
                     "Expected file not found: " + expectedFile + ". Run with -DupdateExpected=true to create it.");
 
             try {
                 String expectedContent = Files.readString(expectedFile, StandardCharsets.UTF_8);
 
-                assertEquals(expectedContent, actualContent,
-                        "Generated file doesn't match expected: " + filename + "\n" +
-                                "Expected file: " + expectedFile + "\n" +
-                                "To update expected files, run with -DupdateExpected=true");
+                assertEquals(
+                        expectedContent,
+                        actualContent,
+                        "Generated file doesn't match expected: " + filename + "\n" + "Expected file: " + expectedFile
+                                + "\n" + "To update expected files, run with -DupdateExpected=true");
             } catch (IOException e) {
                 throw new RuntimeException("Failed to read expected file: " + expectedFile, e);
             }

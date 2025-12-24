@@ -2,9 +2,9 @@ package io.statemodeler.sql.postgres;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.statemodeler.core.SddModel;
 import io.statemodeler.dsl.YamlModelLoader;
 import io.statemodeler.sql.DdlGenerators;
-import io.statemodeler.core.SddModel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;

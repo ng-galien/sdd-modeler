@@ -1,5 +1,5 @@
 group = "io.statemodeler"
-version = "0.1.0-SNAPSHOT"
+version = libs.versions.sdd.version.get()
 
 plugins {
     `java-gradle-plugin`
@@ -8,13 +8,12 @@ plugins {
 
 repositories {
     mavenCentral()
-    mavenLocal()
 }
 
 dependencies {
     implementation(gradleApi())
     //Depends on core module
-    implementation("io.statemodeler:state-modeler-core:0.1.0-SNAPSHOT")
+    implementation(libs.state.modeler.core)
 }
 
 gradlePlugin {

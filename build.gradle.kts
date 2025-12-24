@@ -17,11 +17,6 @@ scmVersion {
 allprojects {
     group = "io.statemodeler"
     version = rootProject.scmVersion.version
-
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
 }
 
 // Extract versions from catalog to avoid scope issues in subprojects
@@ -44,6 +39,8 @@ subprojects {
         testLogging {
             events("passed", "skipped", "failed")
         }
+        finalizedBy(tasks.withType<JacocoReport>())
+        systemProperty("java.awt.headless", "true")
     }
 
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
@@ -66,12 +63,6 @@ subprojects {
     // JaCoCo configuration for code coverage
     jacoco {
         toolVersion = jacocoVersion
-    }
-
-    tasks.withType<Test> {
-        useJUnitPlatform()
-        finalizedBy(tasks.withType<JacocoReport>())
-        systemProperty("java.awt.headless", "true")
     }
 
     tasks.withType<JacocoReport> {

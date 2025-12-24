@@ -27,6 +27,9 @@ commons-text = "1.12.0"
 assertj = "3.25.3"
 sql-formatter = "2.0.5"
 java-semver = "0.10.2"
+sdd-version = "0.1.0-SNAPSHOT"
+spring-boot = "3.3.7"
+spring-dependency-management = "1.1.6"
 
 [libraries]
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
@@ -64,8 +67,12 @@ assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 palantir-java-format = { module = "com.palantir.javaformat:palantir-java-format", version.ref = "palantir-java-format" }
 sql-formatter = { module = "com.github.vertical-blank:sql-formatter", version.ref = "sql-formatter" }
 java-semver = { module = "com.github.zafarkhaja:java-semver", version.ref = "java-semver" }
+state-modeler-core = { module = "io.statemodeler:state-modeler-core", version.ref = "sdd-version" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 graalvm-buildtools-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-buildtools" }
 axion-release = { id = "pl.allegro.tech.build.axion-release", version = "1.18.16" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+sdd-codegen = { id = "io.statemodeler.sdd-codegen", version.ref = "sdd-version" }

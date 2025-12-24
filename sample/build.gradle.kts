@@ -1,20 +1,16 @@
 plugins {
-    id("org.springframework.boot") version "3.2.3"
-    id("io.spring.dependency-management") version "1.1.4"
-    id("io.statemodeler.sdd-codegen")
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.sdd.codegen)
 }
 
 dependencies {
-    implementation("io.statemodeler:state-modeler-core")
+    implementation(libs.state.modeler.core)
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-web")
     
     implementation("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
 
 val modelFileProp = project.findProperty("sddModelFile") as String?
@@ -23,10 +19,6 @@ val languageProp = project.findProperty("sddLanguage") as String?
 val addToSourceSetProp = (project.findProperty("sddAddToSourceSet") as String?)?.toBoolean() ?: false
 
 val resolvedOutputDir = layout.buildDirectory.dir(outDirProp ?: "generated/sdd")
-
-val modelFileUsedAbs = project.file(modelFileProp ?: "src/main/resources/sdd.yaml").absolutePath
-val resolvedOutDirFile = if (outDirProp != null) project.file(outDirProp) else project.buildDir.resolve("generated/sdd")
-val sddOutDirAbs = resolvedOutDirFile.absolutePath
 
 sddCodegen {
     modelFile.set(file(modelFileProp ?: "src/main/resources/sdd.yaml"))

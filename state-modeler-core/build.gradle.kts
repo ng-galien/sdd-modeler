@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.statemodeler"
-version = "0.1.0-SNAPSHOT"
+version = libs.versions.sdd.version.get()
 
 repositories {
     mavenCentral()

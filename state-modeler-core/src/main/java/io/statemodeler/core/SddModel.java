@@ -18,7 +18,7 @@ public record SddModel(String version, String name, DatabaseConfig database, Map
 
         // Validate SemVer format
         try {
-            Version.valueOf(version);
+            parseSemver(version);
         } catch (Exception e) {
             throw new IllegalArgumentException("version must be a valid SemVer string (e.g. 1.0.0): " + version, e);
         }
@@ -27,5 +27,20 @@ public record SddModel(String version, String name, DatabaseConfig database, Map
         this.name = name;
         this.database = database;
         this.entities = Map.copyOf(entities);
+    }
+
+    private static Version parseSemver(String version) {
+        try {
+            return Version.parse(version);
+        } catch (NoSuchMethodError e) {
+            // Fallback for older java-semver versions that only expose valueOf(String).
+            try {
+                var method = Version.class.getMethod("valueOf", String.class);
+                return (Version) method.invoke(null, version);
+            } catch (ReflectiveOperationException ex) {
+                ex.addSuppressed(e);
+                throw new IllegalStateException("SemVer parser not available", ex);
+            }
+        }
     }
 }

@@ -229,6 +229,11 @@ sdd-modeler/
 - Use System.out.println/System.out.print only for primary CLI output that represents content produced by the command (DDL, diagram text, JSON/YAML output, migration SQL, or interactive prompts). This keeps program output stable for piping and consumption by other tools.
 - Avoid using System.err directly in application code; prefer logger.error for error conditions. System.err should only be used if you intentionally want to bypass logging and target the error stream directly.
 
+### Gradle Conventions
+
+- Dependency and plugin versions are managed in `gradle/libs.versions.toml`
+- Prefer `libs` aliases in build scripts for dependencies and plugins
+
 ### Testing Strategy
 
 - **Unit tests**: Core classes and parsing logic
@@ -259,7 +264,7 @@ sdd-modeler/
 ### Testing
 - **JUnit 5.11.3**: Testing framework
 - **JaCoCo 0.8.12**: Code coverage
-- **Gradle 8.14.3**: Build system
+- **Gradle 9.0.0**: Build system
  
  ## See Also
  

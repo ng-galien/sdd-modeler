@@ -1,171 +1,122 @@
 {
-  "$schema" : "https://json-schema.org/draft/2020-12/schema",
-  "$defs" : {
-    "AttributeDef" : {
-      "type" : "object",
-      "properties" : {
-        "description" : {
-          "type" : "string"
-        },
-        "name" : {
-          "type" : "string"
-        },
-        "nullable" : {
-          "type" : "boolean"
-        },
-        "type" : {
-          "type" : "string"
-        }
-      }
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.statemodeler.io/v1/sdd-model.json",
+  "title": "SDD Model Schema",
+  "description": "JSON Schema for State-Driven Design (SDD) YAML model files. Enables IDE autocompletion and validation for SDD entities, states, transitions, and database configurations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "name", "database", "entities"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
-    "DatabaseConfig" : {
-      "type" : "object",
-      "properties" : {
-        "dialect" : {
-          "type" : "string"
-        },
-        "generatorOptions" : {
-          "$ref" : "#/$defs/Map(String,String)"
-        },
-        "schema" : {
-          "type" : "string"
-        },
-        "stateSchema" : {
-          "type" : "string"
-        }
-      }
-    },
-    "EntityDef" : {
-      "type" : "object",
-      "properties" : {
-        "attributes" : {
-          "$ref" : "#/$defs/Map(String,AttributeDef)"
-        },
-        "extensions" : {
-          "$ref" : "#/$defs/Map(String,ExtensionDef)"
-        },
-        "id" : {
-          "$ref" : "#/$defs/AttributeDef"
-        },
-        "name" : {
-          "type" : "string"
-        },
-        "projections" : {
-          "$ref" : "#/$defs/Map(String,ProjectionDef)"
-        },
-        "states" : {
-          "$ref" : "#/$defs/Map(String,StateDef)"
-        },
-        "table" : {
-          "type" : "string"
-        }
-      }
-    },
-    "ExtensionDef" : {
-      "type" : "object",
-      "properties" : {
-        "attributes" : {
-          "$ref" : "#/$defs/Map(String,AttributeDef)"
-        },
-        "name" : {
-          "type" : "string"
-        },
-        "table" : {
-          "type" : "string"
-        }
-      }
-    },
-    "Map(String,AttributeDef)" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "$ref" : "#/$defs/AttributeDef"
-      }
-    },
-    "Map(String,EntityDef)" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "$ref" : "#/$defs/EntityDef"
-      }
-    },
-    "Map(String,ExtensionDef)" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "$ref" : "#/$defs/ExtensionDef"
-      }
-    },
-    "Map(String,ProjectionDef)" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "$ref" : "#/$defs/ProjectionDef"
-      }
-    },
-    "Map(String,StateDef)" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "$ref" : "#/$defs/StateDef"
-      }
-    },
-    "Map(String,String)" : {
-      "type" : "object",
-      "additionalProperties" : {
-        "type" : "string"
-      }
-    },
-    "ProjectionDef" : {
-      "type" : "object",
-      "properties" : {
-        "kind" : {
-          "$ref" : "#/$defs/ProjectionKind"
-        },
-        "name" : {
-          "type" : "string"
-        }
-      }
-    },
-    "ProjectionKind" : {
-      "type" : "string",
-      "enum" : [ "INTERVALS", "CURRENT_STATE" ]
-    },
-    "StateDef" : {
-      "type" : "object",
-      "properties" : {
-        "attributes" : {
-          "$ref" : "#/$defs/Map(String,AttributeDef)"
-        },
-        "from" : {
-          "type" : "array",
-          "items" : {
-            "type" : "string"
-          }
-        },
-        "initial" : {
-          "type" : "boolean"
-        },
-        "name" : {
-          "type" : "string"
-        },
-        "table" : {
-          "type" : "string"
-        }
-      }
-    }
+    "name": { "type": "string" },
+    "database": { "$ref": "#/$defs/DatabaseConfig" },
+    "entities": { "$ref": "#/$defs/Map(String,EntityDef)" }
   },
-  "type" : "object",
-  "properties" : {
-    "database" : {
-      "$ref" : "#/$defs/DatabaseConfig"
+  "$defs": {
+    "DatabaseConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dialect"],
+      "properties": {
+        "dialect": { "type": "string", "enum": ["postgres"] },
+        "schema": { "type": "string" },
+        "state_schema": { "type": "string" },
+        "generator_options": { "$ref": "#/$defs/Map(String,String)" }
+      }
     },
-    "entities" : {
-      "$ref" : "#/$defs/Map(String,EntityDef)"
+    "EntityDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "table", "id", "states"],
+      "properties": {
+        "name": { "type": "string" },
+        "table": { "type": "string" },
+        "id": { "$ref": "#/$defs/AttributeDef" },
+        "attributes": { "$ref": "#/$defs/Map(String,AttributeDef)" },
+        "states": { "$ref": "#/$defs/Map(String,StateDef)" },
+        "extensions": { "$ref": "#/$defs/Map(String,ExtensionDef)" },
+        "projections": { "$ref": "#/$defs/Map(String,ProjectionDef)" }
+      }
     },
-    "name" : {
-      "type" : "string"
+    "StateDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table", "attributes"],
+      "properties": {
+        "name": { "type": "string" },
+        "table": { "type": "string" },
+        "initial": { "type": "boolean" },
+        "from": { "type": "string" },
+        "from_any_of": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 2
+        },
+        "attributes": { "$ref": "#/$defs/Map(String,AttributeDef)" }
+      }
     },
-    "version" : {
-      "type" : "string"
+    "ExtensionDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table", "target_state", "attributes"],
+      "properties": {
+        "table": { "type": "string" },
+        "target_state": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/Map(String,AttributeDef)" }
+      }
+    },
+    "ProjectionDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "view_name", "kind"],
+      "properties": {
+        "name": { "type": "string" },
+        "view_name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["INTERVALS", "CURRENT_STATE"] }
+      }
+    },
+    "AttributeDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": {
+          "type": "string",
+          "pattern": "^(?i)((SMALLINT|INTEGER|INT|BIGINT|REAL|DOUBLE PRECISION|SMALLSERIAL|SERIAL|BIGSERIAL|DECIMAL(\\(\\d+(,\\s*\\d+)?\\))?|NUMERIC(\\(\\d+(,\\s*\\d+)?\\))?|CHAR(\\(\\d+\\))?|VARCHAR(\\(\\d+\\))?|TEXT|BYTEA|TIMESTAMP(\\(\\d+\\))?(\\s+(WITH|WITHOUT)\\s+TIME\\s+ZONE)?|TIMESTAMPTZ(\\(\\d+\\))?|TIME(\\(\\d+\\))?(\\s+(WITH|WITHOUT)\\s+TIME\\s+ZONE)?|TIMETZ(\\(\\d+\\))?|DATE|INTERVAL|BOOLEAN|BOOL|JSONB?|UUID))(\\[\\])?$"
+        },
+        "nullable": { "type": "boolean" },
+        "primary_key": { "type": "boolean" },
+        "default": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "Map(String,EntityDef)": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/EntityDef" }
+    },
+    "Map(String,StateDef)": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/StateDef" }
+    },
+    "Map(String,AttributeDef)": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/AttributeDef" }
+    },
+    "Map(String,ExtensionDef)": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/ExtensionDef" }
+    },
+    "Map(String,ProjectionDef)": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/ProjectionDef" }
+    },
+    "Map(String,String)": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
     }
-  },
-  "$id" : "https://schemas.statemodeler.io/v1/sdd-model.json",
-  "title" : "SDD Model Schema",
-  "description" : "JSON Schema for State-Driven Design (SDD) YAML model files. Enables IDE autocompletion and validation for SDD entities, states, transitions, and database configurations."
+  }
 }

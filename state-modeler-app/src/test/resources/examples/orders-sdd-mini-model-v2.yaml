@@ -30,7 +30,7 @@ entities:
             nullable: false
 
       paid:
-        from: [pending]
+        from: "pending"
         table: order_paid
         attributes:
           paid_amount:

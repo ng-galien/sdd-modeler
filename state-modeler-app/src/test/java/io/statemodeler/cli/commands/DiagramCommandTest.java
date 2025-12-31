@@ -41,7 +41,7 @@ class DiagramCommandTest {
                             type: text
                             nullable: false
                       paid:
-                        from: [pending]
+                        from: "pending"
                         table: order_paid
                         attributes:
                           payment_method:

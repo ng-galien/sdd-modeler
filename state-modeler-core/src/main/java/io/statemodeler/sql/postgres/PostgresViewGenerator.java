@@ -75,14 +75,8 @@ final class PostgresViewGenerator {
 
             // Find all states that can follow this state (simple transitions)
             for (var nextState : entity.states().values()) {
-                if (nextState.from().contains(stateName)) {
+                if (nextState.hasSimpleTransitions() && stateName.equals(nextState.from())) {
                     var minClause = String.format(
-                            "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
-                            stateSchema,
-                            nextState.table(),
-                            nextState.hasOrTransitions() ? toSnake(stateName) : toSnake(stateName),
-                            stateAlias);
-                    minClause = String.format(
                             "(SELECT MIN(created_at) FROM %s.%s WHERE previous_%s_id = %s.id)",
                             stateSchema, nextState.table(), toSnake(stateName), stateAlias);
                     endAtClauses.add(minClause);

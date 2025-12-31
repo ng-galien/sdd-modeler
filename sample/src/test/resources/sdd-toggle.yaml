@@ -16,8 +16,6 @@ entities:
       new:
         table: "widgets_new"
         initial: true
-        from: []
-        from_any_of: []
         attributes:
           label:
             type: "TEXT"

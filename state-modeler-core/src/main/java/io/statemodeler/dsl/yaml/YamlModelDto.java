@@ -35,7 +35,7 @@ public record YamlModelDto(String version, String name, YamlDatabaseDto database
     public record YamlStateDto(
             Boolean initial,
             String table,
-            List<String> from,
+            String from,
             @JsonProperty("from_any_of") List<String> fromAnyOf,
             Map<String, YamlAttributeDto> attributes) {}
 

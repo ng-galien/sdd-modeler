@@ -14,13 +14,13 @@ class StateDefTest {
         var attributes = Map.of("pending_reason", new AttributeDef("pending_reason", "text", false, false, null, null));
 
         // When
-        var state = new StateDef("pending", "order_pending", true, List.of(), List.of(), attributes);
+        var state = new StateDef("pending", "order_pending", true, (String) null, List.of(), attributes);
 
         // Then
         assertEquals("pending", state.name());
         assertEquals("order_pending", state.table());
         assertTrue(state.initial());
-        assertTrue(state.from().isEmpty());
+        assertNull(state.from());
         assertTrue(state.fromAnyOf().isEmpty());
         assertEquals(1, state.attributes().size());
         assertFalse(state.hasSimpleTransitions());
@@ -34,12 +34,12 @@ class StateDefTest {
                 Map.of("paid_amount", new AttributeDef("paid_amount", "decimal(10,2)", false, false, null, null));
 
         // When
-        var state = new StateDef("paid", "order_paid", false, List.of("pending"), List.of(), attributes);
+        var state = new StateDef("paid", "order_paid", false, "pending", List.of(), attributes);
 
         // Then
         assertEquals("paid", state.name());
         assertFalse(state.initial());
-        assertEquals(List.of("pending"), state.from());
+        assertEquals("pending", state.from());
         assertTrue(state.fromAnyOf().isEmpty());
         assertTrue(state.hasSimpleTransitions());
         assertFalse(state.hasOrTransitions());
@@ -52,37 +52,31 @@ class StateDefTest {
 
         // When
         var state =
-                new StateDef("cancelled", "order_cancelled", false, List.of(), List.of("pending", "paid"), attributes);
+                new StateDef("cancelled", "order_cancelled", false, (String) null, List.of("pending", "paid"), attributes);
 
         // Then
         assertEquals("cancelled", state.name());
         assertFalse(state.initial());
-        assertTrue(state.from().isEmpty());
+        assertNull(state.from());
         assertEquals(List.of("pending", "paid"), state.fromAnyOf());
         assertFalse(state.hasSimpleTransitions());
         assertTrue(state.hasOrTransitions());
     }
 
     @Test
-    void shouldCreateStateWithMultipleSimpleTransitions() {
-        // Given
+    void shouldRejectMultipleSimpleTransitions() {
         var attributes = Map.<String, AttributeDef>of();
 
-        // When
-        var state =
-                new StateDef("finalized", "order_finalized", false, List.of("paid", "refunded"), List.of(), attributes);
-
-        // Then
-        assertEquals(List.of("paid", "refunded"), state.from());
-        assertTrue(state.hasSimpleTransitions());
-        assertFalse(state.hasOrTransitions());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new StateDef("finalized", "order_finalized", false, List.of("paid", "refunded"), List.of(), attributes));
     }
 
     @Test
     void shouldRejectNullName() {
         var ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new StateDef(null, "table", false, List.of(), List.of(), Map.of()));
+                () -> new StateDef(null, "table", false, (String) null, List.of(), Map.of()));
         assertTrue(ex.getMessage().contains("name cannot be null"));
     }
 
@@ -90,21 +84,22 @@ class StateDefTest {
     void shouldRejectNullTable() {
         var ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new StateDef("state", null, false, List.of(), List.of(), Map.of()));
+                () -> new StateDef("state", null, false, (String) null, List.of(), Map.of()));
         assertTrue(ex.getMessage().contains("table cannot be null"));
     }
 
     @Test
     void shouldRejectNullFrom() {
         var ex = assertThrows(
-                IllegalArgumentException.class, () -> new StateDef("state", "table", false, null, List.of(), Map.of()));
-        assertTrue(ex.getMessage().contains("from cannot be null"));
+                IllegalArgumentException.class,
+                () -> new StateDef("state", "table", false, (String) null, null, Map.of()));
+        assertTrue(ex.getMessage().contains("fromAnyOf cannot be null"));
     }
 
     @Test
     void shouldRejectNullFromAnyOf() {
         var ex = assertThrows(
-                IllegalArgumentException.class, () -> new StateDef("state", "table", false, List.of(), null, Map.of()));
+                IllegalArgumentException.class, () -> new StateDef("state", "table", false, (String) null, null, Map.of()));
         assertTrue(ex.getMessage().contains("fromAnyOf cannot be null"));
     }
 
@@ -112,7 +107,7 @@ class StateDefTest {
     void shouldRejectNullAttributes() {
         var ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new StateDef("state", "table", false, List.of(), List.of(), null));
+                () -> new StateDef("state", "table", false, (String) null, List.of(), null));
         assertTrue(ex.getMessage().contains("attributes cannot be null"));
     }
 
@@ -120,9 +115,9 @@ class StateDefTest {
     void shouldImplementEqualsAndHashCode() {
         // Given
         var attributes = Map.of("attr", new AttributeDef("attr", "text", false, false, null, null));
-        var state1 = new StateDef("pending", "order_pending", true, List.of(), List.of(), attributes);
-        var state2 = new StateDef("pending", "order_pending", true, List.of(), List.of(), attributes);
-        var state3 = new StateDef("paid", "order_pending", true, List.of(), List.of(), attributes);
+        var state1 = new StateDef("pending", "order_pending", true, (String) null, List.of(), attributes);
+        var state2 = new StateDef("pending", "order_pending", true, (String) null, List.of(), attributes);
+        var state3 = new StateDef("paid", "order_pending", true, (String) null, List.of(), attributes);
 
         // Then
         assertEquals(state2, state1);
@@ -133,7 +128,7 @@ class StateDefTest {
     @Test
     void shouldImplementToString() {
         // Given
-        var state = new StateDef("pending", "order_pending", true, List.of(), List.of(), Map.of());
+        var state = new StateDef("pending", "order_pending", true, (String) null, List.of(), Map.of());
 
         // When
         var result = state.toString();
@@ -154,15 +149,15 @@ class StateDefTest {
 
         // When
         var state =
-                new StateDef("cancelled", "order_cancelled", false, mutableFrom, mutableFromAnyOf, mutableAttributes);
+                new StateDef("cancelled", "order_cancelled", false, "pending", mutableFromAnyOf, mutableAttributes);
 
         // Then - collections should be immutable copies
-        assertInstanceOf(List.class, state.from());
+        assertInstanceOf(String.class, state.from());
         assertInstanceOf(List.class, state.fromAnyOf());
         assertInstanceOf(Map.class, state.attributes());
 
         // Verify they contain the expected data
-        assertEquals(List.of("pending"), state.from());
+        assertEquals("pending", state.from());
         assertEquals(List.of("paid"), state.fromAnyOf());
         assertEquals(1, state.attributes().size());
     }
@@ -170,10 +165,10 @@ class StateDefTest {
     @Test
     void shouldHandleEmptyCollections() {
         // Given & When
-        var state = new StateDef("isolated", "isolated_table", true, List.of(), List.of(), Map.of());
+        var state = new StateDef("isolated", "isolated_table", true, (String) null, List.of(), Map.of());
 
         // Then
-        assertTrue(state.from().isEmpty());
+        assertNull(state.from());
         assertTrue(state.fromAnyOf().isEmpty());
         assertTrue(state.attributes().isEmpty());
         assertFalse(state.hasSimpleTransitions());

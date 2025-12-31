@@ -91,14 +91,12 @@ public final class MermaidDiagramGenerator implements DiagramGenerator {
             var state = stateEntry.getValue();
 
             // Simple transitions (from)
-            if (state.from() != null && !state.from().isEmpty()) {
-                for (var sourceState : state.from()) {
-                    diagram.append("    ")
-                            .append(sourceState)
-                            .append(" --> ")
-                            .append(stateName)
-                            .append("\n");
-                }
+            if (state.from() != null && !state.from().isBlank()) {
+                diagram.append("    ")
+                        .append(state.from())
+                        .append(" --> ")
+                        .append(stateName)
+                        .append("\n");
             }
 
             // OR transitions (from_any_of)

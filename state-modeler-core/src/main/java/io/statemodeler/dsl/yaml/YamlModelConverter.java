@@ -111,7 +111,7 @@ public final class YamlModelConverter {
 
     private static StateDef convertState(String stateName, YamlStateDto dto) {
         var initial = dto.initial() != null ? dto.initial() : false;
-        var from = dto.from() != null ? List.copyOf(dto.from()) : List.<String>of();
+        var from = dto.from();
         var fromAnyOf = dto.fromAnyOf() != null ? List.copyOf(dto.fromAnyOf()) : List.<String>of();
         var attributes = convertAttributes(dto.attributes());
 

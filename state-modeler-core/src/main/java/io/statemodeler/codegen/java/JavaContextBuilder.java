@@ -133,9 +133,8 @@ public class JavaContextBuilder {
         ctx.put("imports", sortedImports);
 
         List<Map<String, String>> fromStates = new ArrayList<>();
-        List<String> sortedFrom = new ArrayList<>(state.from());
-        java.util.Collections.sort(sortedFrom);
-        for (String from : sortedFrom) {
+        if (state.hasSimpleTransitions()) {
+            var from = state.from();
             Map<String, String> fromCtx = new HashMap<>();
             fromCtx.put("name", from);
             fromCtx.put("className", toPascal(from));
@@ -237,7 +236,7 @@ public class JavaContextBuilder {
         sortedStates.sort(java.util.Comparator.comparing(StateDef::name));
         for (StateDef targetState : sortedStates) {
             // Skip initial states (they have no 'from' transitions)
-            if (targetState.from().isEmpty() && targetState.fromAnyOf().isEmpty()) {
+            if (!targetState.hasSimpleTransitions() && targetState.fromAnyOf().isEmpty()) {
                 continue;
             }
 
@@ -252,7 +251,8 @@ public class JavaContextBuilder {
 
             // Source states (from regular 'from' or 'fromAnyOf')
             List<Map<String, String>> sources = new ArrayList<>();
-            for (String from : targetState.from()) {
+            if (targetState.hasSimpleTransitions()) {
+                var from = targetState.from();
                 Map<String, String> sourceCtx = new HashMap<>();
                 sourceCtx.put("name", from);
                 sourceCtx.put("className", toPascal(from));

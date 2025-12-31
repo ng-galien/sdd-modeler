@@ -85,9 +85,9 @@ final class PostgresTableGenerator {
                 columns.add(new ColumnDefinition("previous_source_id", "INTEGER", false, false, null, null, null));
             } else {
                 // Simple transitions (FK added later as constraint)
-                for (var fromState : state.from()) {
+                if (state.hasSimpleTransitions()) {
                     columns.add(new ColumnDefinition(
-                            "previous_" + toSnake(fromState) + "_id", "INTEGER", false, false, null, null, null));
+                            "previous_" + toSnake(state.from()) + "_id", "INTEGER", false, false, null, null, null));
                 }
             }
         }

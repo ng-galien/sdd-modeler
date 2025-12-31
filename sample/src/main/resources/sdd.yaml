@@ -19,8 +19,6 @@ entities:
       new:
         table: "leads_new"
         initial: true
-        from: []
-        from_any_of: []
         attributes:
           name:
             type: "TEXT"
@@ -32,8 +30,7 @@ entities:
             type: "TEXT"
       contacted:
         table: "leads_contacted"
-        from: ["new"]
-        from_any_of: []
+        from: "new"
         attributes:
           contactedAt:
             type: "TIMESTAMP"
@@ -43,8 +40,7 @@ entities:
             type: "TEXT"
       qualified:
         table: "leads_qualified"
-        from: ["contacted"]
-        from_any_of: []
+        from: "contacted"
         attributes:
           budget:
             type: "DECIMAL"
@@ -54,8 +50,7 @@ entities:
             type: "TEXT"
       converted:
         table: "leads_converted"
-        from: ["qualified"]
-        from_any_of: []
+        from: "qualified"
         attributes:
           convertedAt:
             type: "TIMESTAMP"

@@ -34,7 +34,7 @@ entities:
             nullable: false
 
       paid:
-        from: [pending]
+        from: "pending"
         table: order_paid
         attributes:
           payment_method:
@@ -53,7 +53,7 @@ entities:
             nullable: false
 
       refunded:
-        from: [paid]
+        from: "paid"
         table: order_refunded
         attributes:
           refund_amount:

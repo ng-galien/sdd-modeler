@@ -119,13 +119,13 @@ final class PostgresConstraintGenerator {
                 // Composite FK to previous state tables: ensures transitions stay within same
                 // aggregate
                 // (previous_x_id, entity_id) -> (id, entity_id)
-                for (var fromState : state.from()) {
+                if (state.hasSimpleTransitions()) {
+                    var fromState = state.from();
                     var fromStateTable = entity.states().get(fromState).table();
                     var prevFkName = state.table() + "_previous_" + toSnake(fromState) + "_id_fk";
                     var prevFkDef = "FOREIGN KEY (previous_" + toSnake(fromState) + "_id, " + toSnake(entity.name())
                             + "_id) REFERENCES "
-                            + stateSchema + "." + fromStateTable + "(id, " + toSnake(entity.name())
-                            + "_id)";
+                            + stateSchema + "." + fromStateTable + "(id, " + toSnake(entity.name()) + "_id)";
                     constraints.add(new ConstraintDefinition(
                             prevFkName, tableName, ConstraintDefinition.ConstraintType.FOREIGN_KEY, prevFkDef));
                 }

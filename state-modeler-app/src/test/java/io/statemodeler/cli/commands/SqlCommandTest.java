@@ -177,7 +177,7 @@ class SqlCommandTest {
                         initial: false
                         table: order_pending
                       paid:
-                        from: [nonexistent]
+                        from: "nonexistent"
                         table: order_paid
                 """;
 

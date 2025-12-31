@@ -53,7 +53,7 @@ class DdlGeneratorsTest {
                 "pending",
                 "order_pending",
                 true, // initial
-                List.of(), // no from states (initial)
+                (String) null, // no from states (initial)
                 List.of(), // no OR transitions
                 Map.of("pending_reason", new AttributeDef("pending_reason", "text", false, false, null, null)));
 

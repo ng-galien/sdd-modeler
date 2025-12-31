@@ -165,7 +165,7 @@ public final class DefaultModelValidator {
         }
 
         // Validate from and from_any_of are not both specified
-        if (!state.from().isEmpty() && !state.fromAnyOf().isEmpty()) {
+        if (state.hasSimpleTransitions() && !state.fromAnyOf().isEmpty()) {
             errors.add(ValidationError.state(
                     "STATE_CONFLICTING_TRANSITIONS",
                     "State cannot have both 'from' and 'from_any_of' transitions",
@@ -174,7 +174,7 @@ public final class DefaultModelValidator {
         }
 
         // Initial state should not have incoming transitions
-        if (state.initial() && (!state.from().isEmpty() || !state.fromAnyOf().isEmpty())) {
+        if (state.initial() && (state.hasSimpleTransitions() || !state.fromAnyOf().isEmpty())) {
             errors.add(ValidationError.state(
                     "STATE_INITIAL_WITH_TRANSITIONS",
                     "Initial state cannot have incoming transitions (from/from_any_of)",
@@ -191,7 +191,8 @@ public final class DefaultModelValidator {
             var state = entry.getValue();
 
             // Validate 'from' transitions reference existing states
-            for (var fromState : state.from()) {
+            if (state.hasSimpleTransitions()) {
+                var fromState = state.from();
                 if (!stateNames.contains(fromState)) {
                     errors.add(ValidationError.state(
                             "STATE_INVALID_FROM_TRANSITION",
@@ -251,7 +252,8 @@ public final class DefaultModelValidator {
         }
 
         // Check direct transitions
-        for (var nextState : state.from()) {
+        if (state.hasSimpleTransitions()) {
+            var nextState = state.from();
             if (nextState.equals(target) || canReach(nextState, target, states, visited)) {
                 return true;
             }

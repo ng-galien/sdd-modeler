@@ -105,6 +105,21 @@ Unit tests:
 ./gradlew :sample:test
 ```
 
+Integration tests (MockMvc, require PostgreSQL running/accessible) live in the default `test` source set:
+
+```bash
+# defaults: POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_DB=sdd_test POSTGRES_USER=test POSTGRES_PASSWORD=test
+./gradlew :sample:test
+```
+
+To point at a different Postgres instance, set Gradle properties or env vars, e.g.:
+
+```bash
+./gradlew :sample:test -PpgHost=lead-crm-db -PpgPort=5432 -PpgDb=sdd_test -PpgUser=test -PpgPass=test
+```
+
+The tests regenerate the DDL from `src/main/resources/sdd.yaml`, apply it to a clean database, start the Spring Boot context, and hit the generated REST endpoints via MockMvc. They fail fast if PostgreSQL is not reachable.
+
 Open `sample/build/generated/sdd/http/lead.http` in your editor to run HTTP sample requests.
 
 ## Project layout (sample)

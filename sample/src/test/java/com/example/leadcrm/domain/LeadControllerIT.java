@@ -12,13 +12,13 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.UUID;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
  *
  * <p>Tests the REST API endpoints and verifies correct interaction with the database.
  *
- * <p><strong>Configuration:</strong> Uses environment variables for PostgreSQL connection:
+ * <p><strong>Configuration:</strong> Uses environment variables or Gradle properties for PostgreSQL connection:
  * <ul>
  *   <li>POSTGRES_HOST (default: localhost)</li>
  *   <li>POSTGRES_PORT (default: 5432)</li>
@@ -37,10 +37,11 @@ import org.springframework.test.web.servlet.MockMvc;
  *   <li>POSTGRES_PASSWORD (default: test)</li>
  * </ul>
  *
- * <p><strong>Note:</strong> These tests will be skipped if PostgreSQL is not available.
+ * <p><strong>Note:</strong> These tests require PostgreSQL to be available; they fail fast otherwise.</p>
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class LeadControllerIT {
 
     private static final String POSTGRES_HOST = System.getenv().getOrDefault("POSTGRES_HOST", "localhost");
@@ -48,8 +49,6 @@ class LeadControllerIT {
     private static final String POSTGRES_DB = System.getenv().getOrDefault("POSTGRES_DB", "sdd_test");
     private static final String POSTGRES_USER = System.getenv().getOrDefault("POSTGRES_USER", "test");
     private static final String POSTGRES_PASSWORD = System.getenv().getOrDefault("POSTGRES_PASSWORD", "test");
-
-    private static boolean postgresAvailable = false;
 
     @Autowired
     private MockMvc mockMvc;
@@ -76,19 +75,11 @@ class LeadControllerIT {
         try {
             Class.forName("org.postgresql.Driver");
             try (Connection conn = java.sql.DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD)) {
-                postgresAvailable = true;
                 System.out.println("[INFO] PostgreSQL available at: " + jdbcUrl);
             }
         } catch (Exception e) {
-            System.err.println("[WARN] PostgreSQL not available: " + e.getMessage());
-            System.err.println("[WARN] Integration tests will be skipped.");
-            System.err.println("[INFO] To run integration tests, ensure PostgreSQL is running:");
-            System.err.println(
-                    "       docker run -d -p 5432:5432 -e POSTGRES_DB=sdd_test -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test postgres:16-alpine");
+            throw new IllegalStateException("PostgreSQL not available for integration tests at " + jdbcUrl, e);
         }
-
-        // Skip all tests if PostgreSQL is not available
-        Assumptions.assumeTrue(postgresAvailable, "PostgreSQL is not available - skipping integration tests");
     }
 
     @BeforeEach
@@ -111,6 +102,7 @@ class LeadControllerIT {
             stmt.execute("DROP SCHEMA IF EXISTS public_states CASCADE");
             stmt.execute("DROP SCHEMA IF EXISTS public CASCADE");
             stmt.execute("CREATE SCHEMA public");
+            stmt.execute("CREATE SCHEMA public_states");
 
             // Execute the generated DDL
             for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(generatedDdl)) {

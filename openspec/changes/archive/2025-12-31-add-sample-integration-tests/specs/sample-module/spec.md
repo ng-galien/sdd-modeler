@@ -1,15 +1,4 @@
-# sample-module Specification
-
-## Purpose
-TBD - created by archiving change add-mcp-server-codegen. Update Purpose after archive.
-## Requirements
-### Requirement: Sample Module Code Generation Coverage
-The sample module SHALL enable all available code generation features when generating sources.
-
-#### Scenario: All feature toggles enabled
-- **WHEN** the sample module runs code generation
-- **THEN** every available code generation feature is enabled and produces artifacts
-
+## MODIFIED Requirements
 ### Requirement: Sample Module Integration Tests for Generated Code
 The sample module SHALL provide an automated integration test suite that regenerates and applies the SDD DDL to PostgreSQL, boots the generated Spring Boot application, and exercises only the generated REST entry points (MVC layer) and state transitions end-to-end using MockMvc, assuming an existing PostgreSQL instance is reachable (developer machine or CI service container).
 
@@ -19,4 +8,3 @@ The sample module SHALL provide an automated integration test suite that regener
 #### Scenario: MVC integration tests run in default test source set
 - **WHEN** `./gradlew :sample:test` runs with PostgreSQL connection properties configured via environment or Gradle properties
 - **THEN** the build regenerates DDL from `src/main/resources/sdd.yaml`, applies it to a clean database, starts the generated application, and all MockMvc-based REST endpoint tests for the generated Lead domain pass
-

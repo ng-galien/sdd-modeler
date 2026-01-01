@@ -7,7 +7,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MODEL_LAYOUT="$REPO_ROOT/sample/src/main/resources/sdd.yaml"
-SCHEMA_OUT="$REPO_ROOT/sample/build/schema.sql"
+SCHEMA_OUT="$REPO_ROOT/sample/build/generated/sdd/ddl/changelog.yaml"
 SAMPLE_DATA="$REPO_ROOT/sample/scripts/sample-data.sql"
 COMPOSE_FILE="$REPO_ROOT/sample/docker-compose.yml"
 
@@ -57,18 +57,14 @@ if grep -q "CREATE TABLE public.leads" "$SCHEMA_OUT"; then
   perl -0777 -pe "s/CREATE TABLE public.leads\s*\(\s*id uuid NOT NULL\s*\);/CREATE TABLE public.leads (\n    id uuid NOT NULL DEFAULT uuid_generate_v4(),\n    PRIMARY KEY (id)\n);/s" -i "$SCHEMA_OUT"
 fi
 
-echo "Copying schema into container and applying it"
-docker cp "$SCHEMA_OUT" "$CONTAINER":/tmp/schema.sql
-docker exec -i "$CONTAINER" psql -U postgres -d postgres -f /tmp/schema.sql
-echo "Creating uuid-ossp extension (if not present)"
-docker exec -i "$CONTAINER" psql -U postgres -d postgres -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
-
-# Patch the generated schema to ensure public.leads has a primary key & default UUID
-# We need the extension created first so uuid_generate_v4() is available
-if grep -q "CREATE TABLE public.leads" "$SCHEMA_OUT"; then
-  echo "Ensuring public.leads has a primary key & default UUID in schema"
-  perl -0777 -pe "s/CREATE TABLE public.leads\s*\(\s*id uuid NOT NULL\s*\);/CREATE TABLE public.leads (\n    id uuid NOT NULL DEFAULT uuid_generate_v4(),\n    PRIMARY KEY (id)\n);/s" -i "$SCHEMA_OUT"
-fi
+echo "Copying Liquibase changelog into container and applying it"
+docker cp "$SCHEMA_OUT" "$CONTAINER":/tmp/changelog.yaml
+docker exec -i "$CONTAINER" liquibase \ 
+  --url="jdbc:postgresql://localhost:5432/postgres" \ 
+  --username=postgres \ 
+  --password=postgres \ 
+  --changeLogFile=/tmp/changelog.yaml \ 
+  update
 
 echo "Copying sample data and applying it"
 docker cp "$SAMPLE_DATA" "$CONTAINER":/tmp/sample-data.sql

@@ -148,7 +148,7 @@ The sample uses `uuid_generate_v4()` from the `uuid-ossp` extension in a PL/pgSQ
 
 1. Edit `sample/src/main/resources/sdd.yaml` to change the model.
 2. Re-generate Java sources: `./gradlew :sample:generateSdd`.
-3. Re-generate the DDL: `./gradlew :state-modeler-app:run --args="sql sample/src/main/resources/sdd.yaml -o sample/build/schema.sql"`.
+3. Re-générer le DDL Liquibase: `./gradlew :sample:generateSddDdl` (changelog YAML sous `sample/build/generated/sdd/ddl/changelog.yaml`).
 4. Re-apply the schema & sample data using `sample/scripts/apply-schema.sh` or the manual steps above.
 
 ## Links

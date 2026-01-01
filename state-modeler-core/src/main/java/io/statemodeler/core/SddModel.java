@@ -31,6 +31,15 @@ public record SddModel(String version, String name, DatabaseConfig database, Map
         this.entities = Collections.unmodifiableMap(new LinkedHashMap<>(entities));
     }
 
+    public SddModel withGeneratorOptions(boolean generateController, boolean generateRepository, boolean generateMcp) {
+        var opts = new LinkedHashMap<>(database().generatorOptions());
+        opts.put("generateController", Boolean.toString(generateController));
+        opts.put("generateRepository", Boolean.toString(generateRepository));
+        opts.put("generateMcp", Boolean.toString(generateMcp));
+        return new SddModel(
+                version, name, new DatabaseConfig(database.dialect(), database.schema(), database.stateSchema(), opts), entities);
+    }
+
     private static Version parseSemver(String version) {
         try {
             return Version.parse(version);

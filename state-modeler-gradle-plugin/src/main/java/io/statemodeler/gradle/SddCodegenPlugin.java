@@ -23,6 +23,18 @@ public class SddCodegenPlugin implements Plugin<Project> {
                     task.getModelFile().convention(extension.getModelFile());
                     task.getOutputDir().convention(extension.getOutputDir());
                     task.getLanguage().convention(extension.getLanguage());
+                    task.getGenerateController().convention(extension.getGenerateController());
+                    task.getGenerateRepository().convention(extension.getGenerateRepository());
+                    task.getGenerateMcp().convention(extension.getGenerateMcp());
+                });
+
+        TaskProvider<GenerateSddDdlTask> generateDdlTask = project.getTasks()
+                .register("generateSddDdl", GenerateSddDdlTask.class, task -> {
+                    task.setGroup("sdd");
+                    task.setDescription("Generate DDL from an SDD model file");
+                    task.getModelFile().convention(extension.getModelFile());
+                    task.getOutputDir().convention(extension.getDdlOutputDir());
+                    task.getLiquibase().convention(extension.getLiquibase());
                 });
 
         project.getPluginManager()

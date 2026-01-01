@@ -9,6 +9,7 @@ import java.util.Map;
 public record CodegenConfig(
         String packageName,
         boolean generateController,
+        boolean generateRepository,
         boolean generateMcp,
         McpProtocol mcpProtocol,
         McpServerType mcpServerType,
@@ -30,11 +31,13 @@ public record CodegenConfig(
         var rawPackage = opts.get("packageName");
         var packageName = (rawPackage == null || rawPackage.isBlank()) ? "com.example" : rawPackage;
         var generateController = parseBoolean(opts.get("generateController"), true);
-        var generateMcp = parseBoolean(opts.get("generateMcp"), false);
+        var generateRepository = parseBoolean(opts.get("generateRepository"), true);
+        var generateMcp = parseBoolean(opts.get("generateMcp"), true);
         var mcpStdio = parseBoolean(opts.get("mcpStdio"), false);
         var protocol = parseProtocol(opts.get("mcpProtocol"));
         var serverType = parseServerType(opts.get("mcpServerType"));
-        return new CodegenConfig(packageName, generateController, generateMcp, protocol, serverType, mcpStdio);
+        return new CodegenConfig(
+                packageName, generateController, generateRepository, generateMcp, protocol, serverType, mcpStdio);
     }
 
     private static boolean parseBoolean(String raw, boolean defaultValue) {

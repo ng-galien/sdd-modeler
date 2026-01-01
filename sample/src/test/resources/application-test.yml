@@ -1,0 +1,11 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  liquibase:
+    enabled: true
+    change-log: classpath:changelog.yaml
+    contexts: test
+    default-schema: public
+
+# Keep SQL init off (handled by Liquibase)
+spring.sql.init.mode: never

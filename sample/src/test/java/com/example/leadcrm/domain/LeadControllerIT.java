@@ -5,23 +5,23 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import io.statemodeler.dsl.YamlModelLoader;
-import io.statemodeler.sql.DdlGenerators;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.Statement;
 import java.util.UUID;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for the generated LeadController using MockMvc.
@@ -42,13 +42,15 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Testcontainers
+@ExtendWith(SpringExtension.class)
 class LeadControllerIT {
 
-    private static final String POSTGRES_HOST = System.getenv().getOrDefault("POSTGRES_HOST", "localhost");
-    private static final String POSTGRES_PORT = System.getenv().getOrDefault("POSTGRES_PORT", "5432");
-    private static final String POSTGRES_DB = System.getenv().getOrDefault("POSTGRES_DB", "sdd_test");
-    private static final String POSTGRES_USER = System.getenv().getOrDefault("POSTGRES_USER", "test");
-    private static final String POSTGRES_PASSWORD = System.getenv().getOrDefault("POSTGRES_PASSWORD", "test");
+    @Container
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+            .withDatabaseName("sdd_test")
+            .withUsername("test")
+            .withPassword("test");
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,62 +58,27 @@ class LeadControllerIT {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        // Include currentSchema parameter so Spring Data can find tables in both public and public_states schemas
-        String jdbcUrl = String.format(
-                "jdbc:postgresql://%s:%s/%s?currentSchema=public,public_states",
-                POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB);
-        registry.add("spring.datasource.url", () -> jdbcUrl);
-        registry.add("spring.datasource.username", () -> POSTGRES_USER);
-        registry.add("spring.datasource.password", () -> POSTGRES_PASSWORD);
+        registry.add("spring.datasource.url", () -> postgres.getJdbcUrl() + "&currentSchema=public,public_states");
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-    }
-
-    @BeforeAll
-    static void checkPostgresAvailability() {
-        String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB);
-
-        try {
-            Class.forName("org.postgresql.Driver");
-            try (Connection conn = java.sql.DriverManager.getConnection(jdbcUrl, POSTGRES_USER, POSTGRES_PASSWORD)) {
-                System.out.println("[INFO] PostgreSQL available at: " + jdbcUrl);
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("PostgreSQL not available for integration tests at " + jdbcUrl, e);
-        }
+        registry.add("spring.liquibase.drop-first", () -> true);
+        registry.add("spring.liquibase.contexts", () -> "test");
+        registry.add("spring.liquibase.default-schema", () -> "public");
     }
 
     @BeforeEach
-    void setupDatabase() throws Exception {
-        // Generate DDL from the SDD model
-        var yamlLoader = new YamlModelLoader();
-        Path modelPath = Path.of("src/main/resources/sdd.yaml");
-        var modelResult = yamlLoader.loadFromFile(modelPath);
-        assertTrue(modelResult.isSuccess(), "Model should load successfully");
-        var model = modelResult.get();
-
-        var generator = DdlGenerators.forDialect("postgres");
-        String generatedDdl = generator.generateDdl(model);
-
-        // Clean and recreate schema for each test
-        try (Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
-
-            // Drop and recreate schemas
-            stmt.execute("DROP SCHEMA IF EXISTS public_states CASCADE");
-            stmt.execute("DROP SCHEMA IF EXISTS public CASCADE");
-            stmt.execute("CREATE SCHEMA public");
-            stmt.execute("CREATE SCHEMA public_states");
-
-            // Execute the generated DDL
-            for (String statement : io.statemodeler.sql.postgres.SqlSplitter.splitSqlStatements(generatedDdl)) {
-                statement = statement.trim();
-                if (!statement.isEmpty()) {
-                    stmt.execute(statement + ";");
-                }
-            }
-        }
+    void cleanupData() {
+        jdbcTemplate.execute("TRUNCATE TABLE public_states.leads_converted CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE public_states.leads_qualified CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE public_states.leads_contacted CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE public_states.leads_new CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE public.leads CASCADE");
     }
 
     @Test
@@ -177,30 +144,25 @@ class LeadControllerIT {
     private UUID createLeadDirectly(String name, String email, String phone, String source) throws Exception {
         UUID leadId = UUID.randomUUID();
 
-        try (Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
-            stmt.execute("INSERT INTO public.leads (id) VALUES ('" + leadId + "')");
-            stmt.execute(String.format(
-                    "INSERT INTO public_states.leads_new (lead_id, name, email, phone, source) "
-                            + "VALUES ('%s', '%s', '%s', '%s', '%s')",
-                    leadId, name, email, phone, source));
-        }
+        jdbcTemplate.update("INSERT INTO public.leads (id) VALUES (?)", leadId);
+        jdbcTemplate.update(
+                "INSERT INTO public_states.leads_new (lead_id, name, email, phone, source) VALUES (?,?,?,?,?)",
+                leadId,
+                name,
+                email,
+                phone,
+                source);
 
         return leadId;
     }
 
     private void transitionToContactedDirectly(UUID leadId) throws Exception {
-        try (Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
-            var rs = stmt.executeQuery("SELECT id FROM public_states.leads_new WHERE lead_id = '" + leadId + "'");
-            if (rs.next()) {
-                Long previousNewId = rs.getLong("id");
-                stmt.execute(String.format(
-                        "INSERT INTO public_states.leads_contacted "
-                                + "(lead_id, previous_new_id, contacted_at, contacted_by, notes) "
-                                + "VALUES ('%s', %d, NOW(), 'Test Agent', 'Test notes')",
-                        leadId, previousNewId));
-            }
-        }
+        Long previousNewId = jdbcTemplate.queryForObject(
+                "SELECT id FROM public_states.leads_new WHERE lead_id = ?", Long.class, leadId);
+        jdbcTemplate.update(
+                "INSERT INTO public_states.leads_contacted (lead_id, previous_new_id, contacted_at, contacted_by, notes) "
+                        + "VALUES (?,?, NOW(), 'Test Agent', 'Test notes')",
+                leadId,
+                previousNewId);
     }
 }

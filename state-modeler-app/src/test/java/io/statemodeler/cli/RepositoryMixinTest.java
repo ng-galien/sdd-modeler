@@ -60,4 +60,17 @@ class RepositoryMixinTest {
         // Then
         assertNull(result);
     }
+
+    @Test
+    void testRepositoryWrapperDoesNotCloseDelegate() throws Exception {
+        var delegate = io.statemodeler.repository.H2SdrRepository.createInMemory("repo-mixin-test");
+        var mixin = new RepositoryMixin();
+        mixin.testRepository = delegate;
+
+        var repo = mixin.createRepository();
+
+        repo.close(); // should be a no-op for the delegate
+        var countResult = repo.count();
+        assertTrue(countResult.isSuccess());
+    }
 }

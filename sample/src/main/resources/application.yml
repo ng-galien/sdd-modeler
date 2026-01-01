@@ -8,8 +8,13 @@ spring:
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    change-log: classpath:changelog.yaml
+    default-schema: public
+    enabled: true
+    contexts: default
   
-  # Database initialization is handled by external script in `sample/scripts/`.
   sql:
     init:
       mode: never

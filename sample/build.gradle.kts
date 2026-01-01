@@ -9,15 +9,20 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation(libs.spring.ai.starter.mcp.server.webmvc)
+    implementation("org.liquibase:liquibase-core")
     
     implementation("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:junit-jupiter")
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
 }
 
 val modelFileProp = project.findProperty("sddModelFile") as String?
 val outDirProp = project.findProperty("sddOutDir") as String?
 val languageProp = project.findProperty("sddLanguage") as String?
 val addToSourceSetProp = (project.findProperty("sddAddToSourceSet") as String?)?.toBoolean() ?: true
+val ddlOutDir = layout.buildDirectory.dir("generated/sdd/ddl")
 
 val resolvedOutputDir = layout.buildDirectory.dir(outDirProp ?: "generated/sdd")
 
@@ -26,12 +31,26 @@ sddCodegen {
     outputDir.set(layout.buildDirectory.dir(outDirProp ?: "generated/sdd"))
     language.set(languageProp ?: "java")
     addToSourceSet.set(addToSourceSetProp)
+    ddlOutputDir.set(ddlOutDir)
+    liquibase.set(true)
 }
 
 // Ensure generated sources are reformatted with Spotless immediately after generation so
 // format checks pass in the lifecycle (e.g., `build`).
 tasks.named("generateSddCode") {
     finalizedBy("spotlessApply")
+}
+
+// Generate Liquibase changelog and put it on the classpath for Boot/Liquibase.
+tasks.named<ProcessResources>("processResources") {
+    dependsOn("generateSddDdl", "generateSddCode")
+    from(ddlOutDir) {
+        include("changelog.yaml")
+    }
+}
+
+tasks.named<JavaCompile>("compileJava") {
+    dependsOn("generateSddDdl")
 }
 
 // Add generated sources to compilation sourceset if flagged

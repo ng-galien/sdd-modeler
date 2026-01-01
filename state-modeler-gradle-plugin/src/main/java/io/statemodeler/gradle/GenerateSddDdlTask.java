@@ -1,7 +1,7 @@
 package io.statemodeler.gradle;
 
-import io.statemodeler.codegen.CodeGenerators;
 import io.statemodeler.dsl.ModelLoader;
+import io.statemodeler.sql.DdlGenerators;
 import io.statemodeler.validation.ModelValidators;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,9 +20,9 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Task that loads an SDD model and generates sources into the configured output directory.
+ * Task that loads an SDD model and generates DDL into the configured output directory.
  */
-public abstract class GenerateSddCodeTask extends DefaultTask {
+public abstract class GenerateSddDdlTask extends DefaultTask {
 
     @InputFile
     @PathSensitive(PathSensitivity.RELATIVE)
@@ -32,30 +32,13 @@ public abstract class GenerateSddCodeTask extends DefaultTask {
     public abstract DirectoryProperty getOutputDir();
 
     @Input
-    public abstract Property<String> getLanguage();
-
-    @Input
-    public abstract Property<Boolean> getGenerateController();
-
-    @Input
-    public abstract Property<Boolean> getGenerateRepository();
-
-    @Input
-    public abstract Property<Boolean> getGenerateMcp();
-
-    private static final String INCOHERENT_MSG =
-            "Invalid configuration: repositories/services must be generated when REST or MCP generation is enabled";
+    public abstract Property<Boolean> getLiquibase();
 
     @TaskAction
     public void generate() {
         var modelPath = getModelFile().get().getAsFile().toPath();
         if (!Files.exists(modelPath)) {
             throw new GradleException("Model file does not exist: " + modelPath);
-        }
-
-        var language = getLanguage().getOrElse("java");
-        if (!CodeGenerators.isSupported(language)) {
-            throw new GradleException("Unsupported generation language '" + language + "'. Supported: java");
         }
 
         var loader = ModelLoader.forFile(modelPath);
@@ -70,29 +53,19 @@ public abstract class GenerateSddCodeTask extends DefaultTask {
             throw new GradleException("Model validation failed:" + System.lineSeparator() + message);
         }
 
-        var generator = CodeGenerators.forLanguage(language);
+        var generator = DdlGenerators.forDialect(model.database().dialect());
+        var ddl = generator.generateFormattedDdl(model);
 
-        // Enforce coherence: REST or MCP requires repositories/services.
-        boolean generateController = getGenerateController().getOrElse(true);
-        boolean generateRepository = getGenerateRepository().getOrElse(true);
-        boolean generateMcp = getGenerateMcp().getOrElse(true);
-        assertCoherent(generateController, generateRepository, generateMcp);
-
-        // Override generator options in model to reflect DSL flags
-        var patchedModel = model.withGeneratorOptions(generateController, generateRepository, generateMcp);
-
-        var generated = generator.generate(patchedModel);
+        boolean liquibase = getLiquibase().getOrElse(false);
         var baseDir = getOutputDir().get().getAsFile().toPath();
-
-        generated.forEach((relativePath, content) -> writeFile(baseDir.resolve(relativePath), content));
-
-        getLogger().lifecycle("Generated {} files to {}", generated.size(), baseDir.toAbsolutePath());
-    }
-
-    private void assertCoherent(boolean generateController, boolean generateRepository, boolean generateMcp) {
-        if ((generateController || generateMcp) && !generateRepository) {
-            throw new GradleException(INCOHERENT_MSG);
+        if (liquibase) {
+            writeFile(baseDir.resolve("changelog.yaml"), LiquibaseYamlRenderer.render(ddl));
+        } else {
+            writeFile(baseDir.resolve("schema.sql"), ddl);
         }
+
+        getLogger()
+                .lifecycle("Generated DDL ({}) to {}", liquibase ? "Liquibase YAML" : "SQL", baseDir.toAbsolutePath());
     }
 
     private void writeFile(Path target, String content) {

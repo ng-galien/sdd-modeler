@@ -14,10 +14,10 @@ plugins {
 
 ## ⚙️ Configuration
 
-Configure the plugin using the `sdd` extension:
+Configure the plugin using the `sddCodegen` extension:
 
 ```kotlin
-sdd {
+sddCodegen {
     // Path to your SDD model file (YAML or JSON)
     // Default: src/main/resources/sdd.yaml
     modelFile.set(file("src/main/resources/my-model.yaml"))
@@ -26,13 +26,23 @@ sdd {
     // Default: build/generated/sdd
     outputDir.set(layout.buildDirectory.dir("generated-sources/sdd"))
 
-    // Target language for generation
-    // Default: java
+    // Target language for generation (default: java)
     language.set("java")
+
+    // Codegen toggles (default: all true)
+    generateController.set(true)
+    generateRepository.set(true)
+    generateMcp.set(true)
 
     // Whether to add the output directory to the main source set
     // Default: true
     addToSourceSet.set(true)
+
+    // DDL generation output directory (default: build/generated/sdd/ddl)
+    ddlOutputDir.set(layout.buildDirectory.dir("generated/sdd/ddl"))
+
+    // Liquibase YAML output (default: false -> generates schema.sql)
+    liquibase.set(false)
 }
 ```
 
@@ -52,6 +62,15 @@ Generates code from the configured SDD model.
 
 This task is automatically wired into the build lifecycle if `addToSourceSet` is true (default).
 
+### `generateSddDdl`
+Generates DDL from the configured SDD model.
+
+- **Outputs**: `schema.sql` by default, or `changelog.yaml` when `liquibase=true`.
+- **Behavior**:
+    - Validates the model before generation.
+    - Uses the dialect specified in the model (PostgreSQL supported).
+    - Fails on validation errors or incoherent codegen toggles (REST/MCP without repository/service).
+
 ## 📝 Example Usage
 
 ```kotlin
@@ -60,9 +79,12 @@ plugins {
     id("io.statemodeler.sdd-codegen")
 }
 
-sdd {
+sddCodegen {
     modelFile.set(file("model/orders.yaml"))
     language.set("java")
+    generateController.set(true)
+    generateRepository.set(true)
+    generateMcp.set(false)
 }
 
 // The generated code will be automatically compiled
@@ -86,4 +108,3 @@ This repository is configured for local development with a Gradle composite buil
 ```
 
 If you run into resolution problems, ensure your root settings include the `includeBuild("state-modeler-gradle-plugin")` and the substitution rule that maps `io.statemodeler:state-modeler-core` to `:state-modeler-core`.
-

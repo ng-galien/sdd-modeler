@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  <name>SDD Modeler Maven Plugin</name>
+  <groupId>io.statemodeler</groupId>
+  <artifactId>sdd-modeler-maven-plugin</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <goalPrefix>sdd</goalPrefix>
+  <mojos>
+    <mojo>
+      <goal>generate</goal>
+      <phase>generate-sources</phase>
+      <executePhase>generate-sources</executePhase>
+      <requiresDependencyResolution>compile+runtime</requiresDependencyResolution>
+      <implementation>io.statemodeler.maven.GenerateMojo</implementation>
+    </mojo>
+    <mojo>
+      <goal>generate-ddl</goal>
+      <phase>generate-resources</phase>
+      <executePhase>generate-resources</executePhase>
+      <implementation>io.statemodeler.maven.GenerateDdlMojo</implementation>
+    </mojo>
+    <mojo>
+      <goal>apply-ddl</goal>
+      <implementation>io.statemodeler.maven.ApplyDdlMojo</implementation>
+    </mojo>
+    <mojo>
+      <goal>verify</goal>
+      <phase>verify</phase>
+      <executePhase>verify</executePhase>
+      <requiresDependencyResolution>test</requiresDependencyResolution>
+      <implementation>io.statemodeler.maven.VerifyMojo</implementation>
+    </mojo>
+  </mojos>
+</plugin>

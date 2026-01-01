@@ -19,7 +19,12 @@ public record StateDef(
         Map<String, AttributeDef> attributes) {
 
     public StateDef(
-            String name, String table, boolean initial, String from, List<String> fromAnyOf, Map<String, AttributeDef> attributes) {
+            String name,
+            String table,
+            boolean initial,
+            String from,
+            List<String> fromAnyOf,
+            Map<String, AttributeDef> attributes) {
 
         if (name == null) throw new IllegalArgumentException("name cannot be null");
         if (table == null) throw new IllegalArgumentException("table cannot be null");
@@ -39,7 +44,12 @@ public record StateDef(
      * Enforces that at most one predecessor is provided.
      */
     public StateDef(
-            String name, String table, boolean initial, List<String> from, List<String> fromAnyOf, Map<String, AttributeDef> attributes) {
+            String name,
+            String table,
+            boolean initial,
+            List<String> from,
+            List<String> fromAnyOf,
+            Map<String, AttributeDef> attributes) {
         this(
                 name,
                 table,

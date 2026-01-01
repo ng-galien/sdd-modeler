@@ -1,77 +1,46 @@
 # SDD Modeler Gradle Plugin
 
-A Gradle plugin to integrate State-Driven Design (SDD) code generation into your build process.
+Plugin Gradle pour intégrer la génération SDD (code + DDL) dans un build Java.
 
-## 📦 Installation
-
-Apply the plugin in your `build.gradle.kts`:
+## Installation
 
 ```kotlin
 plugins {
-    id("io.statemodeler.sdd-codegen") version "0.1.0" // Replace with actual version
+    id("io.statemodeler.sdd-codegen") version "0.1.0-SNAPSHOT" // version du repo
 }
 ```
+Dans ce mono-repo, le plugin est inclus en composite build (`settings.gradle.kts`), donc pas besoin de publier pour l'utiliser en local.
 
-## ⚙️ Configuration
-
-Configure the plugin using the `sddCodegen` extension:
+## Configuration (DSL Kotlin)
 
 ```kotlin
 sddCodegen {
-    // Path to your SDD model file (YAML or JSON)
-    // Default: src/main/resources/sdd.yaml
-    modelFile.set(file("src/main/resources/my-model.yaml"))
-
-    // Directory where generated code will be placed
-    // Default: build/generated/sdd
-    outputDir.set(layout.buildDirectory.dir("generated-sources/sdd"))
-
-    // Target language for generation (default: java)
+    modelFile.set(file("src/main/resources/sdd.yaml"))
+    outputDir.set(layout.buildDirectory.dir("generated/sdd"))
+    ddlOutputDir.set(layout.buildDirectory.dir("generated/sdd/ddl"))
     language.set("java")
-
-    // Codegen toggles (default: all true)
     generateController.set(true)
     generateRepository.set(true)
     generateMcp.set(true)
-
-    // Whether to add the output directory to the main source set
-    // Default: true
-    addToSourceSet.set(true)
-
-    // DDL generation output directory (default: build/generated/sdd/ddl)
-    ddlOutputDir.set(layout.buildDirectory.dir("generated/sdd/ddl"))
-
-    // Liquibase YAML output (default: false -> generates schema.sql)
-    liquibase.set(false)
+    liquibase.set(true) // changelog.yaml au lieu de schema.sql
+    addToSourceSet.set(true) // ajoute le code généré à main
 }
 ```
 
-## 🚀 Tasks
+Variables (valeurs par défaut) :
+- `modelFile` : `src/main/resources/sdd.yaml`
+- `outputDir` : `build/generated/sdd`
+- `ddlOutputDir` : `build/generated/sdd/ddl`
+- `language` : `java`
+- Toggles : `generateController`, `generateRepository`, `generateMcp` (tous `true`)
+- `liquibase` : `false`
+- `addToSourceSet` : `true`
 
-The plugin adds the following tasks:
+## Tâches ajoutées
+- `generateSddCode` : génère le code (filée dans `compileJava` si `addToSourceSet=true`).
+- `generateSddDdl` : génère DDL (`schema.sql` ou `changelog.yaml` si `liquibase=true`).
 
-### `generateSddCode`
-Generates code from the configured SDD model.
-
-- **Inputs**: The model file specified in `modelFile`.
-- **Outputs**: The directory specified in `outputDir`.
-- **Behavior**:
-    - Validates the model before generation.
-    - Generates code using the specified language generator.
-    - Fails the build if validation errors occur.
-
-This task is automatically wired into the build lifecycle if `addToSourceSet` is true (default).
-
-### `generateSddDdl`
-Generates DDL from the configured SDD model.
-
-- **Outputs**: `schema.sql` by default, or `changelog.yaml` when `liquibase=true`.
-- **Behavior**:
-    - Validates the model before generation.
-    - Uses the dialect specified in the model (PostgreSQL supported).
-    - Fails on validation errors or incoherent codegen toggles (REST/MCP without repository/service).
-
-## 📝 Example Usage
+## Exemple minimal
 
 ```kotlin
 plugins {
@@ -79,32 +48,23 @@ plugins {
     id("io.statemodeler.sdd-codegen")
 }
 
-sddCodegen {
-    modelFile.set(file("model/orders.yaml"))
-    language.set("java")
-    generateController.set(true)
-    generateRepository.set(true)
-    generateMcp.set(false)
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 }
 
-// The generated code will be automatically compiled
+sddCodegen {
+    modelFile.set(file("model/orders.yaml"))
+    outputDir.set(layout.buildDirectory.dir("generated/sdd"))
+}
 ```
 
-## 🛠️ Development notes
+## Postgres pour tests (si vous réutilisez common-sample)
+Définissez `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (par défaut : host=localhost, db=sdd_test, user=test, pass=test).
 
-This repository is configured for local development with a Gradle composite build. The root `settings.gradle.kts` includes a dependency substitution so the plugin can be built and tested against the local `:state-modeler-core` project without publishing the core module to a Maven repository.
+## Développement du plugin
+- Build local : `./gradlew :state-modeler-gradle-plugin:build`
+- Publier le core localement si besoin : `./gradlew :state-modeler-core:publishToMavenLocal`
 
-- To build the plugin during local development (uses dependency substitution if available):
-
-```bash
-./gradlew :state-modeler-gradle-plugin:build
-```
-
-- If you prefer to publish the `state-modeler-core` artifact to your local Maven repository instead of using dependency substitution:
-
-```bash
-./gradlew :state-modeler-core:publishToMavenLocal
-./gradlew :state-modeler-gradle-plugin:build
-```
-
-If you run into resolution problems, ensure your root settings include the `includeBuild("state-modeler-gradle-plugin")` and the substitution rule that maps `io.statemodeler:state-modeler-core` to `:state-modeler-core`.
+## Ressources
+- Sample Gradle : [`gradle-sample`](../gradle-sample) (utilise ce plugin + `common-sample`).
+- CI Maven/Gradle : voir badges dans le README racine et `.github/workflows/ci.yml`, `maven-ci.yml`.

@@ -22,8 +22,8 @@ class NonNullStateFieldsTest {
         // "optional_field" is explicitly nullable=true
         var optionalAttr = new AttributeDef("optional_field", "text", true, false, null, null);
 
-        var state =
-                new StateDef("draft", "doc_draft", true, (String) null, List.of(), Map.of("optional_field", optionalAttr));
+        var state = new StateDef(
+                "draft", "doc_draft", true, (String) null, List.of(), Map.of("optional_field", optionalAttr));
 
         var entity =
                 new EntityDef("document", "documents", idAttr, Map.of(), Map.of("draft", state), Map.of(), Map.of());

@@ -91,7 +91,8 @@ class PostgresDdlGeneratorCoverageTest {
         var idAttr = new AttributeDef("id", "serial", false, true, null, null);
         var refAttr = new AttributeDef("parent_id", "INTEGER", true, false, null, null);
 
-        var initialState = new StateDef("active", "test_active", true, (String) null, List.of(), Map.of("data", refAttr));
+        var initialState =
+                new StateDef("active", "test_active", true, (String) null, List.of(), Map.of("data", refAttr));
 
         var entity = new EntityDef(
                 "test", "test_table", idAttr, Map.of(), Map.of("active", initialState), Map.of(), Map.of());

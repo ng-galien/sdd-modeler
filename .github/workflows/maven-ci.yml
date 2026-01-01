@@ -1,0 +1,94 @@
+name: Maven CI
+
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  maven-build:
+    name: Maven Plugin & Sample
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sdd_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrs
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Publish core to local build/m2
+        env:
+          GRADLE_USER_HOME: ./build/gradle-home
+        run: ./gradlew :state-modeler-core:publishMavenJavaPublicationToBuildM2Repository --no-daemon
+
+      - name: Build Maven plugin
+        env:
+          POSTGRES_DB: sdd_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrs
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+        run: mvn -B -Dmaven.repo.local=build/m2 -DskipTests -pl maven-plugin -am clean install
+
+      - name: Verify Maven sample
+        env:
+          POSTGRES_DB: sdd_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrs
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+        run: mvn -B -Dmaven.repo.local=build/m2 -pl maven-sample -am verify
+
+      - name: Test Report (Maven)
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Maven Tests
+          path: '**/surefire-reports/TEST-*.xml'
+          reporter: java-junit

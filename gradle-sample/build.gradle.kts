@@ -4,7 +4,20 @@ plugins {
     alias(libs.plugins.sdd.codegen)
 }
 
+val commonSampleDir = project(":common-sample").projectDir
+
+sourceSets {
+    main {
+        resources.srcDir(commonSampleDir.resolve("src/main/resources"))
+    }
+    test {
+        java.srcDir(commonSampleDir.resolve("src/test/java"))
+        resources.srcDir(commonSampleDir.resolve("src/test/resources"))
+    }
+}
+
 dependencies {
+    implementation(project(":common-sample"))
     implementation(libs.state.modeler.core)
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -12,6 +25,7 @@ dependencies {
     implementation("org.liquibase:liquibase-core")
     
     implementation("org.postgresql:postgresql")
+    testImplementation(project(":common-sample"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:junit-jupiter")
@@ -27,7 +41,7 @@ val ddlOutDir = layout.buildDirectory.dir("generated/sdd/ddl")
 val resolvedOutputDir = layout.buildDirectory.dir(outDirProp ?: "generated/sdd")
 
 sddCodegen {
-    modelFile.set(file(modelFileProp ?: "src/main/resources/sdd.yaml"))
+    modelFile.set(file(modelFileProp ?: commonSampleDir.resolve("src/main/resources/sdd.yaml")))
     outputDir.set(layout.buildDirectory.dir(outDirProp ?: "generated/sdd"))
     language.set(languageProp ?: "java")
     addToSourceSet.set(addToSourceSetProp)
@@ -63,6 +77,9 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         val generated = resolvedOutputDir.get().asFile
         // Use a path relative to the project dir so Spotless targetExclude matches correctly
         val relativeGenerated = generated.toRelativeString(project.projectDir).replace(File.separatorChar, '/')
+        // Limit Spotless to files that live inside this project; shared sources are formatted in their own module.
+        target("src/main/java/**/*.java", "src/test/java/**/*.java", "$relativeGenerated/**/*.java")
+        targetExclude("../common-sample/**")
         targetExclude("$relativeGenerated/**")
     }
 }
@@ -70,7 +87,7 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 // Postgres connection defaults for integration tests in main test source set
 tasks.withType<Test>().configureEach {
     // Only add the properties when running tests in this module
-    if (project.name == "sample") {
+    if (project.name == "gradle-sample") {
         val pgHost = providers.gradleProperty("pgHost").orElse(providers.environmentVariable("POSTGRES_HOST")).orElse("localhost")
         val pgPort = providers.gradleProperty("pgPort").orElse(providers.environmentVariable("POSTGRES_PORT")).orElse("5432")
         val pgDb = providers.gradleProperty("pgDb").orElse(providers.environmentVariable("POSTGRES_DB")).orElse("sdd_test")

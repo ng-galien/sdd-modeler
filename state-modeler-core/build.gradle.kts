@@ -157,4 +157,11 @@ publishing {
             from(components["java"])
         }
     }
+    repositories {
+        maven {
+            name = "buildM2"
+            // Publish into the main build's isolated Maven repo (../build/m2 from project root)
+            url = rootDir.resolve("../build/m2").toURI()
+        }
+    }
 }

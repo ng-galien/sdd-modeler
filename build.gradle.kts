@@ -76,9 +76,9 @@ subprojects {
     }
 
     // Ensure an SLF4J provider is available for all subprojects to avoid per-module duplications
-    // Exclude sample project which gets Logback from Spring Boot
+    // Exclude sample projects which get Logback from Spring Boot
     afterEvaluate {
-        if (project.name != "sample") {
+        if (project.name != "gradle-sample" && project.name != "common-sample") {
             dependencies {
                 // Use the version catalog `libs` to add logback so the version is synchronized across the project
                 add("runtimeOnly", libs.logback.classic)

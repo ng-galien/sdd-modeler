@@ -51,8 +51,8 @@ class StateDefTest {
         var attributes = Map.of("cancel_reason", new AttributeDef("cancel_reason", "text", false, false, null, null));
 
         // When
-        var state =
-                new StateDef("cancelled", "order_cancelled", false, (String) null, List.of("pending", "paid"), attributes);
+        var state = new StateDef(
+                "cancelled", "order_cancelled", false, (String) null, List.of("pending", "paid"), attributes);
 
         // Then
         assertEquals("cancelled", state.name());
@@ -69,7 +69,8 @@ class StateDefTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new StateDef("finalized", "order_finalized", false, List.of("paid", "refunded"), List.of(), attributes));
+                () -> new StateDef(
+                        "finalized", "order_finalized", false, List.of("paid", "refunded"), List.of(), attributes));
     }
 
     @Test
@@ -99,7 +100,8 @@ class StateDefTest {
     @Test
     void shouldRejectNullFromAnyOf() {
         var ex = assertThrows(
-                IllegalArgumentException.class, () -> new StateDef("state", "table", false, (String) null, null, Map.of()));
+                IllegalArgumentException.class,
+                () -> new StateDef("state", "table", false, (String) null, null, Map.of()));
         assertTrue(ex.getMessage().contains("fromAnyOf cannot be null"));
     }
 
@@ -148,8 +150,7 @@ class StateDefTest {
         var mutableAttributes = Map.of("attr", new AttributeDef("attr", "text", false, false, null, null));
 
         // When
-        var state =
-                new StateDef("cancelled", "order_cancelled", false, "pending", mutableFromAnyOf, mutableAttributes);
+        var state = new StateDef("cancelled", "order_cancelled", false, "pending", mutableFromAnyOf, mutableAttributes);
 
         // Then - collections should be immutable copies
         assertInstanceOf(String.class, state.from());

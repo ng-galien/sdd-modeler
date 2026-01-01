@@ -1,6 +1,7 @@
 # sdd-modeler
 
 [![CI](https://github.com/ng-galien/sdd-modeler/actions/workflows/ci.yml/badge.svg)](https://github.com/ng-galien/sdd-modeler/actions/workflows/ci.yml)
+[![Maven CI](https://github.com/ng-galien/sdd-modeler/actions/workflows/maven-ci.yml/badge.svg)](https://github.com/ng-galien/sdd-modeler/actions/workflows/maven-ci.yml)
 [![codecov](https://codecov.io/gh/ng-galien/sdd-modeler/graph/badge.svg)](https://codecov.io/gh/ng-galien/sdd-modeler)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java Version](https://img.shields.io/badge/Java-21%2B-blue.svg)](https://openjdk.java.net/)
@@ -49,11 +50,31 @@ Integrate SDD generation into your Gradle build.
 - **Key Features**: Automatic code generation during build, seamless integration with Java projects.
 - **Go here if**: You want to use SDD Modeler in your Gradle project.
 
-### 🧪 [Sample Project](sample/README.md)
+### 🧪 Samples
 
-A working example demonstrating the full stack.
+- **Shared fixtures**: [`common-sample`](common-sample) (model, resources, tests reused by both variants).
+- **Gradle variant**: [`gradle-sample`](gradle-sample) uses the Gradle plugin. Run with `./gradlew :gradle-sample:test` (PostgreSQL env vars supported; defaults host=localhost, user=test, pass=test).
+- **Maven variant**: [`maven/maven-sample`](maven/maven-sample) uses the Maven plugin. Run with `mvn -B -Dmaven.repo.local=build/m2 -pl maven-sample -am verify` after publishing the core to the isolated repo (see below).
 
-- **Go here if**: You want to see a running application using SDD Modeler.
+### 🧩 Maven plugin usage (monorepo-friendly)
+
+Because the Maven plugin lives beside the Gradle build, we keep all Maven resolution inside an isolated repo `build/m2` to avoid polluting `~/.m2`:
+
+1) Publier le core dans le repo local isolé (depuis la racine) :
+```
+GRADLE_USER_HOME=./build/gradle-home ./gradlew :state-modeler-core:publishMavenJavaPublicationToBuildM2Repository --no-daemon
+```
+2) Construire le plugin Maven :
+```
+cd maven
+mvn -B -Dmaven.repo.local=../build/m2 -DskipTests -pl maven-plugin -am clean install
+```
+3) Vérifier le sample Maven :
+```
+mvn -B -Dmaven.repo.local=../build/m2 -pl maven-sample -am verify
+```
+
+PostgreSQL par défaut pour les tests sample (Gradle ou Maven) : host=localhost, port=5432, db=`sdd_test`, user=`postgres`, pass=`postgrs` (modifiable via variables d’env POSTGRES_*).
 
 ## 🤝 Contributing
 

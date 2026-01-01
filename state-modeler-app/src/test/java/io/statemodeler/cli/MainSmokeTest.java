@@ -1,7 +1,7 @@
 package io.statemodeler.cli;
 
-import picocli.CommandLine;
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 class MainSmokeTest {
 

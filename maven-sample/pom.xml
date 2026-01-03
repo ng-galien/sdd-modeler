@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.statemodeler</groupId>
+  <artifactId>maven-sample</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <sdd.version>0.1.0-SNAPSHOT</sdd.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.statemodeler</groupId>
+        <artifactId>sdd-maven-plugin</artifactId>
+        <version>${sdd.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-sdd-code</goal>
+              <goal>generate-sdd-ddl</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <modelFile>${project.basedir}/src/main/resources/sdd.yaml</modelFile>
+          <addToSource>true</addToSource>
+          <generateController>true</generateController>
+          <generateRepository>true</generateRepository>
+          <generateMcp>false</generateMcp>
+          <liquibase>false</liquibase>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,5 +1,6 @@
 package io.statemodeler.dsl;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
@@ -33,6 +34,7 @@ public final class YamlModelLoader implements ModelLoader {
 
         // Configure mapper for strict parsing
         mapper.findAndRegisterModules();
+        mapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
     }
 
     @Override

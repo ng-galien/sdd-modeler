@@ -34,3 +34,5 @@ Thumbs.db
 *.iml
 
 tmp/
+
+maven-sample/target/

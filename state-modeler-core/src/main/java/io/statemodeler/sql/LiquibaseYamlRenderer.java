@@ -31,8 +31,12 @@ public final class LiquibaseYamlRenderer {
         changeSet.put("author", "sdd-modeler");
         changeSet.put("changes", List.of(change));
 
+        // Liquibase YAML expects each entry to be a map with a single changeSet key
+        Map<String, Object> changeSetWrapper = new LinkedHashMap<>();
+        changeSetWrapper.put("changeSet", changeSet);
+
         Map<String, Object> root = new LinkedHashMap<>();
-        root.put("databaseChangeLog", List.of(changeSet));
+        root.put("databaseChangeLog", List.of(changeSetWrapper));
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);

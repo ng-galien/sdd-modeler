@@ -38,7 +38,9 @@ public final class LiquibaseYamlRenderer {
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setPrettyFlow(true);
         options.setIndent(2);
-        options.setIndicatorIndent(2);
+        // Snakeyaml requires indicator indent to be strictly smaller than the block indent;
+        // using 1 keeps the emitted YAML compact and avoids "Indicator indent must be smaller then indent" errors.
+        options.setIndicatorIndent(1);
         options.setWidth(120);
 
         return new Yaml(options).dump(root);

@@ -49,6 +49,13 @@ Integrate SDD generation into your Gradle build.
 - **Key Features**: Automatic code generation during build, seamless integration with Java projects.
 - **Go here if**: You want to use SDD Modeler in your Gradle project.
 
+### 🧰 [Maven Plugin](state-modeler-maven-plugin/README.md)
+
+Use SDD generation from Maven with the same defaults and toggles as the Gradle plugin.
+
+- **Key Features**: Code + DDL/Liquibase generation goals, add-to-source support, parity with Gradle plugin.
+- **Go here if**: You need SDD Modeler in a Maven build.
+
 ### 🧪 [Sample Project](sample/README.md)
 
 A working example demonstrating the full stack.

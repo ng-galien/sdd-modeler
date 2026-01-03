@@ -11,6 +11,7 @@ public class JavaCodeFormatter {
     private final Formatter formatter;
 
     public JavaCodeFormatter() {
+        openJavacModules();
         this.formatter = Formatter.create();
     }
 
@@ -22,6 +23,9 @@ public class JavaCodeFormatter {
      *         fails.
      */
     public String format(String source) {
+        if (Boolean.getBoolean("sdd.disableFormatter")) {
+            return source;
+        }
         try {
             return formatter.formatSource(source);
         } catch (FormatterException e) {
@@ -44,6 +48,29 @@ public class JavaCodeFormatter {
             System.err.println("Unexpected error during Java formatting: " + e.getMessage());
             e.printStackTrace();
             return source;
+        }
+    }
+
+    private void openJavacModules() {
+        try {
+            Class<?> javacClass = Class.forName("com.sun.tools.javac.util.Context");
+            Module compilerModule = javacClass.getModule();
+            Module targetModule = JavaCodeFormatter.class.getModule();
+            var addOpens = Module.class.getDeclaredMethod("addOpens", String.class, Module.class);
+            addOpens.setAccessible(true);
+            String[] packages = {
+                "com.sun.tools.javac.api",
+                "com.sun.tools.javac.code",
+                "com.sun.tools.javac.file",
+                "com.sun.tools.javac.parser",
+                "com.sun.tools.javac.tree",
+                "com.sun.tools.javac.util"
+            };
+            for (String pkg : packages) {
+                addOpens.invoke(compilerModule, pkg, targetModule);
+            }
+        } catch (Throwable t) {
+            System.err.println("Warning: unable to open javac modules for formatter: " + t.getMessage());
         }
     }
 }

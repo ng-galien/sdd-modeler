@@ -30,6 +30,8 @@ sdd-version = "0.1.0-SNAPSHOT"
 spring-boot = "3.5.9"
 spring-dependency-management = "1.1.6"
 spring-ai = "1.1.2"
+maven = "3.9.6"
+maven-plugin-annotations = "3.13.0"
 
 [libraries]
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
@@ -66,6 +68,9 @@ sql-formatter = { module = "com.github.vertical-blank:sql-formatter", version.re
 java-semver = { module = "com.github.zafarkhaja:java-semver", version.ref = "java-semver" }
 state-modeler-core = { module = "io.statemodeler:state-modeler-core", version.ref = "sdd-version" }
 spring-ai-starter-mcp-server-webmvc = { module = "org.springframework.ai:spring-ai-starter-mcp-server-webmvc", version.ref = "spring-ai" }
+maven-plugin-api = { module = "org.apache.maven:maven-plugin-api", version.ref = "maven" }
+maven-core = { module = "org.apache.maven:maven-core", version.ref = "maven" }
+maven-plugin-annotations = { module = "org.apache.maven.plugin-tools:maven-plugin-annotations", version.ref = "maven-plugin-annotations" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

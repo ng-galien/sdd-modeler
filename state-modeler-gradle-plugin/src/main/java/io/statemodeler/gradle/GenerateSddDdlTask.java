@@ -2,6 +2,7 @@ package io.statemodeler.gradle;
 
 import io.statemodeler.dsl.ModelLoader;
 import io.statemodeler.sql.DdlGenerators;
+import io.statemodeler.sql.LiquibaseYamlRenderer;
 import io.statemodeler.validation.ModelValidators;
 import java.io.IOException;
 import java.nio.file.Files;

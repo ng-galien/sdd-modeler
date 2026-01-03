@@ -1,0 +1,144 @@
+<plugin>
+  <name>SDD Modeler Maven Plugin</name>
+  <description>Generate SDD code and DDL from model files</description>
+  <groupId>io.statemodeler</groupId>
+  <artifactId>sdd-maven-plugin</artifactId>
+  <version>@projectVersion@</version>
+  <goalPrefix>sdd</goalPrefix>
+  <isolatedRealm>false</isolatedRealm>
+  <inheritedByDefault>true</inheritedByDefault>
+  <mojos>
+    <mojo>
+      <goal>generate-sdd-code</goal>
+      <description>Generate sources from an SDD model file</description>
+      <implementation>io.statemodeler.maven.GenerateSddCodeMojo</implementation>
+      <language>java</language>
+      <phase>generate-sources</phase>
+      <instantiationStrategy>per-lookup</instantiationStrategy>
+      <executionStrategy>once-per-session</executionStrategy>
+      <threadSafe>true</threadSafe>
+      <parameters>
+        <parameter>
+          <name>project</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>false</required>
+          <editable>false</editable>
+          <description>Injected Maven project</description>
+          <defaultValue>${project}</defaultValue>
+          <expression>${project}</expression>
+        </parameter>
+        <parameter>
+          <name>modelFile</name>
+          <type>java.io.File</type>
+          <required>true</required>
+          <editable>true</editable>
+          <description>Path to the SDD model file (YAML or JSON)</description>
+          <defaultValue>${basedir}/src/main/resources/sdd.yaml</defaultValue>
+          <expression>${sdd.modelFile}</expression>
+        </parameter>
+        <parameter>
+          <name>outputDir</name>
+          <type>java.io.File</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Directory for generated sources</description>
+          <defaultValue>${project.build.directory}/generated-sources/sdd</defaultValue>
+          <expression>${sdd.outputDir}</expression>
+        </parameter>
+        <parameter>
+          <name>language</name>
+          <type>java.lang.String</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Target language for generation</description>
+          <defaultValue>java</defaultValue>
+          <expression>${sdd.language}</expression>
+        </parameter>
+        <parameter>
+          <name>generateController</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Toggle controller generation</description>
+          <defaultValue>true</defaultValue>
+          <expression>${sdd.generateController}</expression>
+        </parameter>
+        <parameter>
+          <name>generateRepository</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Toggle repository/service generation</description>
+          <defaultValue>true</defaultValue>
+          <expression>${sdd.generateRepository}</expression>
+        </parameter>
+        <parameter>
+          <name>generateMcp</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Toggle MCP server generation</description>
+          <defaultValue>true</defaultValue>
+          <expression>${sdd.generateMcp}</expression>
+        </parameter>
+        <parameter>
+          <name>addToSource</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Add generated sources to the main compile source root</description>
+          <defaultValue>true</defaultValue>
+          <expression>${sdd.addToSource}</expression>
+        </parameter>
+        <parameter>
+          <name>disableFormatter</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Disable Java formatting (Palantir) during code generation</description>
+          <defaultValue>false</defaultValue>
+          <expression>${sdd.disableFormatter}</expression>
+        </parameter>
+      </parameters>
+    </mojo>
+    <mojo>
+      <goal>generate-sdd-ddl</goal>
+      <description>Generate DDL from an SDD model file</description>
+      <implementation>io.statemodeler.maven.GenerateSddDdlMojo</implementation>
+      <language>java</language>
+      <phase>generate-sources</phase>
+      <instantiationStrategy>per-lookup</instantiationStrategy>
+      <executionStrategy>once-per-session</executionStrategy>
+      <threadSafe>true</threadSafe>
+      <parameters>
+        <parameter>
+          <name>modelFile</name>
+          <type>java.io.File</type>
+          <required>true</required>
+          <editable>true</editable>
+          <description>Path to the SDD model file (YAML or JSON)</description>
+          <defaultValue>${basedir}/src/main/resources/sdd.yaml</defaultValue>
+          <expression>${sdd.modelFile}</expression>
+        </parameter>
+        <parameter>
+          <name>ddlOutputDir</name>
+          <type>java.io.File</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Directory for generated DDL output</description>
+          <defaultValue>${project.build.directory}/generated-sources/sdd/ddl</defaultValue>
+          <expression>${sdd.ddlOutputDir}</expression>
+        </parameter>
+        <parameter>
+          <name>liquibase</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Emit Liquibase changelog instead of schema.sql</description>
+          <defaultValue>false</defaultValue>
+          <expression>${sdd.liquibase}</expression>
+        </parameter>
+      </parameters>
+    </mojo>
+  </mojos>
+</plugin>

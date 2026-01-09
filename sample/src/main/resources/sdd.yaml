@@ -1,5 +1,5 @@
 version: "1.0.0"
-name: "lead-crm"
+name: "ecommerce-platform"
 database:
   dialect: "postgres"
   schema: "public"
@@ -9,7 +9,9 @@ database:
     generateMcp: "true"
     mcpProtocol: "SSE"
     mcpServerType: "SYNC"
+
 entities:
+  # Lead entity - required for existing tests
   Lead:
     table: "leads"
     id:
@@ -58,3 +60,102 @@ entities:
             type: "DECIMAL"
           salesRepId:
             type: "TEXT"
+
+  # Customer lifecycle with from_any_of
+  Customer:
+    table: "customers"
+    id:
+      name: "id"
+      type: "uuid"
+    attributes:
+      email:
+        type: "TEXT"
+        nullable: false
+      created_at:
+        type: "TIMESTAMPTZ"
+        default: "now()"
+
+    states:
+      prospect:
+        table: "customers_prospect"
+        initial: true
+        attributes:
+          signup_source:
+            type: "TEXT"
+
+      active:
+        table: "customers_active"
+        from: "prospect"
+        attributes:
+          activated_at:
+            type: "TIMESTAMPTZ"
+
+      churned:
+        table: "customers_churned"
+        from_any_of: ["prospect", "active"]
+        attributes:
+          churned_at:
+            type: "TIMESTAMPTZ"
+          churn_reason:
+            type: "TEXT"
+
+    projections:
+      state_intervals:
+        kind: "intervals"
+        name: "customer_state_intervals"
+      current_state:
+        kind: "current_state"
+        name: "current_customer_states"
+
+  # Order with from_any_of for cancelled
+  Order:
+    table: "orders"
+    id:
+      name: "id"
+      type: "uuid"
+    attributes:
+      customer_id:
+        type: "UUID"
+        nullable: false
+      total_amount:
+        type: "NUMERIC(14,2)"
+        nullable: false
+
+    states:
+      pending:
+        table: "orders_pending"
+        initial: true
+        attributes:
+          expires_at:
+            type: "TIMESTAMPTZ"
+
+      paid:
+        table: "orders_paid"
+        from: "pending"
+        attributes:
+          paid_at:
+            type: "TIMESTAMPTZ"
+
+      shipped:
+        table: "orders_shipped"
+        from: "paid"
+        attributes:
+          shipped_at:
+            type: "TIMESTAMPTZ"
+
+      cancelled:
+        table: "orders_cancelled"
+        from_any_of: ["pending", "paid"]
+        attributes:
+          cancelled_at:
+            type: "TIMESTAMPTZ"
+          reason:
+            type: "TEXT"
+
+    projections:
+      state_intervals:
+        kind: "intervals"
+        name: "order_state_intervals"
+      current_state:
+        kind: "current_state"
+        name: "current_order_states"

@@ -19,7 +19,7 @@ public class PebbleCodeGenerator implements CodeGenerator {
     private final JavaCodeFormatter javaFormatter;
 
     public PebbleCodeGenerator(String language) {
-        this.engine = new PebbleEngine.Builder().build();
+        this.engine = new PebbleEngine.Builder().autoEscaping(false).build();
         this.language = language;
         this.javaContextBuilder = new JavaContextBuilder();
         this.javaFormatter = new JavaCodeFormatter();

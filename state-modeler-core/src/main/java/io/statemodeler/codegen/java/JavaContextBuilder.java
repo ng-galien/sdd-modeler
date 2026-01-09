@@ -141,6 +141,14 @@ public class JavaContextBuilder {
             fromCtx.put("propertyName", toCamel(from));
             fromStates.add(fromCtx);
         }
+        // Also handle from_any_of transitions
+        for (String from : state.fromAnyOf()) {
+            Map<String, String> fromCtx = new HashMap<>();
+            fromCtx.put("name", from);
+            fromCtx.put("className", toPascal(from));
+            fromCtx.put("propertyName", toCamel(from));
+            fromStates.add(fromCtx);
+        }
         ctx.put("from", fromStates);
 
         return ctx;

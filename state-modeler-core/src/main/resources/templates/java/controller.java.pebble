@@ -39,9 +39,9 @@ public class {{ entity.className }}Controller implements {{ entity.className }}A
     public ResponseEntity<{{ entity.className }}Dto> get{{ stateRepo.className }}({{ entity.id.className }} id) {
         return {{ stateRepo.propertyName }}Repository.findById(id)
             .map(entity -> ResponseEntity.ok(new {{ entity.className }}Dto(entity.{{ stateRepo.entityIdPropertyName }}()
-                {%- for attr in entity.attributes -%}
-                , entity.{{ attr.propertyName }}()
-                {%- endfor -%}
+                {% for attr in entity.attributes %}
+                , null
+                {% endfor %}
             )))
             .orElse(ResponseEntity.notFound().build());
     }

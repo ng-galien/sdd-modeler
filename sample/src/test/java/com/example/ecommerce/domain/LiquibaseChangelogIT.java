@@ -1,4 +1,4 @@
-package com.example.leadcrm.domain;
+package com.example.ecommerce.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,7 +37,7 @@ class LiquibaseChangelogIT {
         registry.add("spring.sql.init.mode", () -> "never");
     }
 
-    @SpringBootApplication(scanBasePackages = "com.example.leadcrm")
+    @SpringBootApplication(scanBasePackages = "com.example.ecommerce")
     static class TestApp {}
 
     @Autowired

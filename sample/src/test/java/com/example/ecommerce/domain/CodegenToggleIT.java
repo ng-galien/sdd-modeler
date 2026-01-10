@@ -1,4 +1,4 @@
-package com.example.leadcrm.domain;
+package com.example.ecommerce.domain;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

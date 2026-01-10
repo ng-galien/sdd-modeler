@@ -10,6 +10,9 @@ public class Default{{ entity.className }}Service implements {{ entity.className
 
     {% for state in entity.states %}
     private final {{ state.className }}Repository {{ state.propertyName }}Repository;
+    {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
+    private final {{ state.sourceTableRepositoryName }} {{ state.sourceTablePropertyName }}Repository;
+    {% endif %}
     {% endfor %}
     private final {{ entity.className }}DomainStateRepository domainStateRepository;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
@@ -17,12 +20,18 @@ public class Default{{ entity.className }}Service implements {{ entity.className
     public Default{{ entity.className }}Service(
         {% for state in entity.states %}
         {{ state.className }}Repository {{ state.propertyName }}Repository,
+        {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
+        {{ state.sourceTableRepositoryName }} {{ state.sourceTablePropertyName }}Repository,
+        {% endif %}
         {% endfor %}
         {{ entity.className }}DomainStateRepository domainStateRepository,
         com.fasterxml.jackson.databind.ObjectMapper objectMapper
     ) {
         {% for state in entity.states %}
         this.{{ state.propertyName }}Repository = {{ state.propertyName }}Repository;
+        {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
+        this.{{ state.sourceTablePropertyName }}Repository = {{ state.sourceTablePropertyName }}Repository;
+        {% endif %}
         {% endfor %}
         this.domainStateRepository = domainStateRepository;
         this.objectMapper = objectMapper;
@@ -54,19 +63,44 @@ public class Default{{ entity.className }}Service implements {{ entity.className
     @Override
     @Transactional
     public {{ entity.className }}Dto transitionTo{{ state.className }}({{ entity.id.className }} id, TransitionTo{{ state.className }}Command command) {
-        // Find current state and capture previous state id
-        Integer previousStateId = null;
         {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
-        // TODO: from_any_of transitions require source table handling - not yet implemented
-        // For now, try each possible source state
+        // from_any_of transition: verify current state via domain state, then create source record
+        var domainState = domainStateRepository.findById(id)
+            .orElseThrow(() -> new IllegalStateException("Entity " + id + " not found"));
+        java.util.Set<String> validSources = java.util.Set.of({% for source in state.from %}"{{ source.name | upper }}"{% if not loop.last %}, {% endif %}{% endfor %});
+        if (!validSources.contains(domainState.stateType())) {
+            throw new IllegalStateException("Entity " + id + " is in state " + domainState.stateType() + " which cannot transition to {{ state.name }}");
+        }
+
+        // Find source state record based on current state
+        {{ state.sourceTableClassName }} sourceRecord = null;
         {% for source in state.from %}
-        Optional<{{ entity.className }}State.{{ source.className }}> source{{ loop.index }} = {{ source.propertyName }}Repository.findById(id);
-        if (source{{ loop.index }}.isPresent()) {
-            previousStateId = source{{ loop.index }}.get().id();
-            {{ source.propertyName }}Repository.delete(source{{ loop.index }}.get());
+        if ("{{ source.name | upper }}".equals(domainState.stateType())) {
+            Optional<{{ entity.className }}State.{{ source.className }}> source{{ loop.index }} = {{ source.propertyName }}Repository.findById(id);
+            if (source{{ loop.index }}.isPresent()) {
+                Integer sourceStateId = source{{ loop.index }}.get().id();
+                sourceRecord = {{ state.sourceTableClassName }}.from{{ source.className }}(id, sourceStateId);
+            }
         }
         {% endfor %}
+        if (sourceRecord == null) {
+            throw new IllegalStateException("Entity " + id + " source state record not found");
+        }
+
+        // Save source record (source state is preserved for referential integrity)
+        var savedSource = {{ state.sourceTablePropertyName }}Repository.save(sourceRecord);
+        Integer previousSourceId = savedSource.id();
+
+        // Create new state with reference to source record
+        var newState = new {{ entity.className }}State.{{ state.className }}(
+            null, id, previousSourceId
+            {% for attr in state.attributes %}
+            , command.{{ attr.propertyName }}()
+            {% endfor %}
+        );
         {% else %}
+        // Simple transition: capture previous state id directly
+        Integer previousStateId = null;
         {% for source in state.from %}
         Optional<{{ entity.className }}State.{{ source.className }}> source{{ loop.index }} = {{ source.propertyName }}Repository.findById(id);
         if (source{{ loop.index }}.isPresent()) {
@@ -74,7 +108,6 @@ public class Default{{ entity.className }}Service implements {{ entity.className
             {{ source.propertyName }}Repository.delete(source{{ loop.index }}.get());
         }
         {% endfor %}
-        {% endif %}
         if (previousStateId == null) {
             throw new IllegalStateException("Entity " + id + " is not in a valid state to transition to {{ state.name }}");
         }
@@ -86,6 +119,7 @@ public class Default{{ entity.className }}Service implements {{ entity.className
             , command.{{ attr.propertyName }}()
             {% endfor %}
         );
+        {% endif %}
         {{ state.propertyName }}Repository.save(newState);
 
         // Return DTO (entity attributes are not available from state record)

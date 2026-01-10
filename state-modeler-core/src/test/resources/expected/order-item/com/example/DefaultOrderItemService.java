@@ -48,7 +48,7 @@ public class DefaultOrderItemService implements OrderItemService {
   @Transactional
   public OrderItemDto transitionToPendingPayment(
       OrderItemId id, TransitionToPendingPaymentCommand command) {
-    // Find current state and capture previous state id
+    // Simple transition: capture previous state id directly
     Integer previousStateId = null;
     Optional<OrderItemState.Created> source0 = createdRepository.findById(id);
     if (source0.isPresent()) {

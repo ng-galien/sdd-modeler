@@ -156,10 +156,48 @@ class OrderControllerIT {
                 .andExpect(jsonPath("$.id").value(orderId.toString()));
     }
 
-    // Note: shouldCancelOrderFromPaid test removed - requires from_any_of source table support
+    @Test
+    void shouldCancelOrderFromPaid() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID orderId = createOrderInPendingState(customerId, new BigDecimal("150.00"));
+        transitionToPaidDirectly(orderId);
 
-    // Note: shouldNotCancelShippedOrder and shouldNotCancelAlreadyCancelledOrder tests removed
-    // - They depend on state persistence which requires previous_*_id column support in generated code
+        String command = """
+            {
+                "cancelledAt": "2024-01-21T11:30:00Z",
+                "reason": "Refund requested"
+            }
+            """;
+
+        // from_any_of: can transition to cancelled from paid state
+        mockMvc.perform(post("/api/orders/{id}/transitions/toCancelled", orderId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(command))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(orderId.toString()));
+    }
+
+    @Test
+    void shouldNotCancelShippedOrder() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID orderId = createOrderInPendingState(customerId, new BigDecimal("200.00"));
+        transitionToPaidDirectly(orderId);
+        transitionToShippedDirectly(orderId);
+
+        String command = """
+            {
+                "cancelledAt": "2024-01-23T10:00:00Z",
+                "reason": "Too late"
+            }
+            """;
+
+        // Should fail - shipped orders cannot be cancelled (not a valid from_any_of source)
+        org.junit.jupiter.api.Assertions.assertThrows(
+                jakarta.servlet.ServletException.class,
+                () -> mockMvc.perform(post("/api/orders/{id}/transitions/toCancelled", orderId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(command)));
+    }
 
     // ========== Helper Methods ==========
 

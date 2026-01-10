@@ -26,8 +26,7 @@ public class OrderItemController implements OrderItemApi {
   public ResponseEntity<OrderItemDto> getCreated(OrderItemId id) {
     return createdRepository
         .findById(id)
-        .map(
-            entity -> ResponseEntity.ok(new OrderItemDto(entity.orderItemId(), entity.createdAt())))
+        .map(entity -> ResponseEntity.ok(new OrderItemDto(entity.orderItemId(), null)))
         .orElse(ResponseEntity.notFound().build());
   }
 

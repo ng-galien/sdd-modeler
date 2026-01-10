@@ -35,6 +35,7 @@ public sealed interface OrderItemState {
       @Id @Column("order_item_id") @JsonProperty("order_item_id")
       OrderItemId orderItemId,
 
+      @Column("previous_created_id") Integer previousCreatedId,
       @Column("paid_amount") @JsonProperty("paid_amount") BigDecimal paidAmount,
 
       @Column("payment_method") @JsonProperty("payment_method")
@@ -42,6 +43,7 @@ public sealed interface OrderItemState {
       implements OrderItemState {
     public PendingPayment {
       java.util.Objects.requireNonNull(orderItemId, "orderItemId must not be null");
+      java.util.Objects.requireNonNull(previousCreatedId, "previousCreatedId must not be null");
       java.util.Objects.requireNonNull(paidAmount, "paidAmount must not be null");
       java.util.Objects.requireNonNull(paymentMethod, "paymentMethod must not be null");
     }

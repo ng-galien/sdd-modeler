@@ -48,24 +48,24 @@ public class DefaultOrderItemService implements OrderItemService {
   @Transactional
   public OrderItemDto transitionToPendingPayment(
       OrderItemId id, TransitionToPendingPaymentCommand command) {
-    // Find current state
+    // Find current state and capture previous state id
+    Integer previousStateId = null;
     Optional<OrderItemState.Created> source0 = createdRepository.findById(id);
     if (source0.isPresent()) {
+      previousStateId = source0.get().id();
       createdRepository.delete(source0.get());
-    } else {
+    }
+    if (previousStateId == null) {
       throw new IllegalStateException(
           "Entity " + id + " is not in a valid state to transition to pending_payment");
     }
 
-    // Create new state
-    var newState =
-        new OrderItemState.PendingPayment(null, id, command.paidAmount(), command.paymentMethod());
+    // Create new state with reference to previous state
+    var newState = new OrderItemState.PendingPayment(
+        null, id, previousStateId, command.paidAmount(), command.paymentMethod());
     pendingPaymentRepository.save(newState);
 
-    // Return DTO (Note: Stable attributes are not available in State record, passing
-    // nulls/defaults)
-    return new OrderItemDto(
-        id, null // TODO: Fetch stable attribute created_at
-        );
+    // Return DTO (entity attributes are not available from state record)
+    return new OrderItemDto(id, null);
   }
 }

@@ -139,8 +139,16 @@ public class JavaContextBuilder {
             fromCtx.put("name", from);
             fromCtx.put("className", toPascal(from));
             fromCtx.put("propertyName", toCamel(from));
+            // Add previous_*_id column info for simple transitions
+            fromCtx.put(
+                    "previousIdColumnName",
+                    "previous_" + normalizeCaseInput(from).toLowerCase() + "_id");
+            fromCtx.put("previousIdPropertyName", "previous" + toPascal(from) + "Id");
             fromStates.add(fromCtx);
         }
+        // Track if this is a from_any_of transition (uses source table instead of direct previous_*_id)
+        boolean isFromAnyOf = !state.fromAnyOf().isEmpty();
+        ctx.put("isFromAnyOf", isFromAnyOf);
         // Also handle from_any_of transitions
         for (String from : state.fromAnyOf()) {
             Map<String, String> fromCtx = new HashMap<>();
@@ -148,6 +156,12 @@ public class JavaContextBuilder {
             fromCtx.put("className", toPascal(from));
             fromCtx.put("propertyName", toCamel(from));
             fromStates.add(fromCtx);
+        }
+        // For from_any_of, add source table info
+        if (isFromAnyOf) {
+            ctx.put("sourceTableName", normalizeCaseInput(state.name()).toLowerCase() + "_source");
+            ctx.put("previousSourceIdColumnName", "previous_source_id");
+            ctx.put("previousSourceIdPropertyName", "previousSourceId");
         }
         ctx.put("from", fromStates);
 

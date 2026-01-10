@@ -37,7 +37,10 @@ public record SddModel(String version, String name, DatabaseConfig database, Map
         opts.put("generateRepository", Boolean.toString(generateRepository));
         opts.put("generateMcp", Boolean.toString(generateMcp));
         return new SddModel(
-                version, name, new DatabaseConfig(database.dialect(), database.schema(), database.stateSchema(), opts), entities);
+                version,
+                name,
+                new DatabaseConfig(database.dialect(), database.schema(), database.stateSchema(), opts),
+                entities);
     }
 
     private static Version parseSemver(String version) {

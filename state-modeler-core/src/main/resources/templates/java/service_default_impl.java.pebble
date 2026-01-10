@@ -54,22 +54,34 @@ public class Default{{ entity.className }}Service implements {{ entity.className
     @Override
     @Transactional
     public {{ entity.className }}Dto transitionTo{{ state.className }}({{ entity.id.className }} id, TransitionTo{{ state.className }}Command command) {
-        // Find and delete current state
-        boolean found = false;
+        // Find current state and capture previous state id
+        Integer previousStateId = null;
+        {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
+        // TODO: from_any_of transitions require source table handling - not yet implemented
+        // For now, try each possible source state
         {% for source in state.from %}
         Optional<{{ entity.className }}State.{{ source.className }}> source{{ loop.index }} = {{ source.propertyName }}Repository.findById(id);
         if (source{{ loop.index }}.isPresent()) {
+            previousStateId = source{{ loop.index }}.get().id();
             {{ source.propertyName }}Repository.delete(source{{ loop.index }}.get());
-            found = true;
         }
         {% endfor %}
-        if (!found) {
+        {% else %}
+        {% for source in state.from %}
+        Optional<{{ entity.className }}State.{{ source.className }}> source{{ loop.index }} = {{ source.propertyName }}Repository.findById(id);
+        if (source{{ loop.index }}.isPresent()) {
+            previousStateId = source{{ loop.index }}.get().id();
+            {{ source.propertyName }}Repository.delete(source{{ loop.index }}.get());
+        }
+        {% endfor %}
+        {% endif %}
+        if (previousStateId == null) {
             throw new IllegalStateException("Entity " + id + " is not in a valid state to transition to {{ state.name }}");
         }
 
-        // Create new state
+        // Create new state with reference to previous state
         var newState = new {{ entity.className }}State.{{ state.className }}(
-            null, id
+            null, id, previousStateId
             {% for attr in state.attributes %}
             , command.{{ attr.propertyName }}()
             {% endfor %}

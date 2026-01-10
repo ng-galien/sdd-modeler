@@ -174,7 +174,8 @@ public final class DefaultModelValidator {
         }
 
         // Initial state should not have incoming transitions
-        if (state.initial() && (state.hasSimpleTransitions() || !state.fromAnyOf().isEmpty())) {
+        if (state.initial()
+                && (state.hasSimpleTransitions() || !state.fromAnyOf().isEmpty())) {
             errors.add(ValidationError.state(
                     "STATE_INITIAL_WITH_TRANSITIONS",
                     "Initial state cannot have incoming transitions (from/from_any_of)",

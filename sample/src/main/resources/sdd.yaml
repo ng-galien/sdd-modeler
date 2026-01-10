@@ -4,7 +4,7 @@ database:
   dialect: "postgres"
   schema: "public"
   generator_options:
-    packageName: "com.example.leadcrm.domain"
+    packageName: "com.example.ecommerce.domain"
     generateController: "true"
     generateMcp: "true"
     mcpProtocol: "SSE"

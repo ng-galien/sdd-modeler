@@ -1,0 +1,25 @@
+package {{ options.packageName | default('com.example') }};
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.relational.core.mapping.Column;
+
+/**
+ * Generated source table record for {{ state.className }} from_any_of transition.
+ * Tracks which source state the entity transitioned from.
+ */
+@Table("{{ state.sourceTableName }}")
+public record {{ state.sourceTableClassName }}(
+    @Id @Column("id") Integer id,
+    @Column("{{ entity.idColumnName }}") {{ entity.className }}Id {{ entity.propertyName }}Id{% for source in state.from %},
+    @Column("{{ source.sourceStateIdColumnName }}") Integer {{ source.sourceStateIdPropertyName }}{% endfor %}
+) {
+    /**
+     * Create a source record from {{ source.className }} state.
+     */
+    {% for source in state.from %}
+    public static {{ state.sourceTableClassName }} from{{ source.className }}({{ entity.className }}Id entityId, Integer {{ source.propertyName }}StateId) {
+        return new {{ state.sourceTableClassName }}(null, entityId{% for s in state.from %}{% if s.name == source.name %}, {{ source.propertyName }}StateId{% else %}, null{% endif %}{% endfor %});
+    }
+    {% endfor %}
+}

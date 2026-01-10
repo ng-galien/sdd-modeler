@@ -26,6 +26,14 @@ public class JavaRepositoryGenerator extends JavaGeneratorBase {
                 String content = generateRepository(entity, state, model);
                 String filename = resolveFilename(model, contextBuilder.toPascal(state.name()) + "Repository");
                 generatedFiles.put(filename, content);
+
+                // Generate source table repository for from_any_of transitions
+                if (!state.fromAnyOf().isEmpty()) {
+                    String sourceRepoContent = generateSourceTableRepository(entity, state, model);
+                    String sourceRepoFilename =
+                            resolveFilename(model, contextBuilder.toPascal(state.name()) + "SourceRepository");
+                    generatedFiles.put(sourceRepoFilename, sourceRepoContent);
+                }
             }
 
             String domainContent = generateFile(entity, model, "templates/java/domain_state_repository.java.pebble");
@@ -59,6 +67,24 @@ public class JavaRepositoryGenerator extends JavaGeneratorBase {
             return writer.toString();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate repository for " + state.name(), e);
+        }
+    }
+
+    private String generateSourceTableRepository(EntityDef entity, StateDef state, SddModel model) {
+        PebbleTemplate template = engine.getTemplate("templates/java/source_table_repository.java.pebble");
+        Map<String, Object> context = new HashMap<>();
+        Map<String, Object> entityCtx = contextBuilder.buildEntityContext(entity);
+        context.put("entity", entityCtx);
+        context.put("state", contextBuilder.buildStateContext(state, entityCtx));
+        context.put("imports", new HashSet<String>());
+        context.put("options", model.database() != null ? model.database().generatorOptions() : Map.of());
+
+        Writer writer = new StringWriter();
+        try {
+            template.evaluate(writer, context);
+            return writer.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate source table repository for " + state.name(), e);
         }
     }
 }

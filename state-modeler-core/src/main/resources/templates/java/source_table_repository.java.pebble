@@ -1,0 +1,10 @@
+package {{ options.packageName | default('com.example') }};
+
+import org.springframework.data.repository.CrudRepository;
+
+/**
+ * Generated Repository for {{ state.sourceTableClassName }} source table.
+ * Uses Integer as ID type since source tables have auto-generated serial primary keys.
+ */
+public interface {{ state.sourceTableRepositoryName }} extends CrudRepository<{{ state.sourceTableClassName }}, Integer> {
+}

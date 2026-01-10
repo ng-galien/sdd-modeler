@@ -15,6 +15,9 @@ public class {{ entity.className }}ServiceAutoConfiguration {
     public {{ entity.className }}Service {{ entity.propertyName }}Service(
         {% for state in entity.states %}
         {{ state.className }}Repository {{ state.propertyName }}Repository,
+        {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
+        {{ state.sourceTableRepositoryName }} {{ state.sourceTablePropertyName }}Repository,
+        {% endif %}
         {% endfor %}
         {{ entity.className }}DomainStateRepository domainStateRepository,
         com.fasterxml.jackson.databind.ObjectMapper objectMapper
@@ -22,6 +25,9 @@ public class {{ entity.className }}ServiceAutoConfiguration {
         return new Default{{ entity.className }}Service(
             {% for state in entity.states %}
             {{ state.propertyName }}Repository,
+            {% if state.isFromAnyOf is defined and state.isFromAnyOf %}
+            {{ state.sourceTablePropertyName }}Repository,
+            {% endif %}
             {% endfor %}
             domainStateRepository,
             objectMapper

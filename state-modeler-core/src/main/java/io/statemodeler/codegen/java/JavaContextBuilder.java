@@ -155,11 +155,18 @@ public class JavaContextBuilder {
             fromCtx.put("name", from);
             fromCtx.put("className", toPascal(from));
             fromCtx.put("propertyName", toCamel(from));
+            // Add source table column info for this source state (e.g., prospect_state_id)
+            fromCtx.put("sourceStateIdColumnName", normalizeCaseInput(from).toLowerCase() + "_state_id");
+            fromCtx.put("sourceStateIdPropertyName", toCamel(from) + "StateId");
             fromStates.add(fromCtx);
         }
         // For from_any_of, add source table info
         if (isFromAnyOf) {
-            ctx.put("sourceTableName", normalizeCaseInput(state.name()).toLowerCase() + "_source");
+            String sourceTableName = normalizeCaseInput(state.name()).toLowerCase() + "_source";
+            ctx.put("sourceTableName", sourceTableName);
+            ctx.put("sourceTableClassName", toPascal(state.name()) + "Source");
+            ctx.put("sourceTablePropertyName", toCamel(state.name()) + "Source");
+            ctx.put("sourceTableRepositoryName", toPascal(state.name()) + "SourceRepository");
             ctx.put("previousSourceIdColumnName", "previous_source_id");
             ctx.put("previousSourceIdPropertyName", "previousSourceId");
         }

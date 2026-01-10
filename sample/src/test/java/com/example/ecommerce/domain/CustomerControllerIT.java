@@ -56,6 +56,8 @@ class CustomerControllerIT {
 
     @BeforeEach
     void cleanupData() {
+        jdbcTemplate.execute("TRUNCATE TABLE public_states.customer_state CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE public_states.churned_source CASCADE");
         jdbcTemplate.execute("TRUNCATE TABLE public_states.customers_churned CASCADE");
         jdbcTemplate.execute("TRUNCATE TABLE public_states.customers_active CASCADE");
         jdbcTemplate.execute("TRUNCATE TABLE public_states.customers_prospect CASCADE");
@@ -130,10 +132,29 @@ class CustomerControllerIT {
                 .andExpect(jsonPath("$.id").value(customerId.toString()));
     }
 
-    // Note: shouldTransitionToChurnedFromActive test removed - requires from_any_of source table support
+    @Test
+    void shouldTransitionToChurnedFromActive() throws Exception {
+        UUID customerId = createCustomerInProspectState("active-churn@example.com", "signup");
+        transitionToActiveDirectly(customerId);
 
-    // Note: shouldFailChurnFromChurned test removed - depends on state persistence
-    // which requires previous_*_id column support in generated code
+        String command = """
+            {
+                "churnedAt": "2024-02-15T14:30:00Z",
+                "churnReason": "Service cancelled"
+            }
+            """;
+
+        // from_any_of: can transition to churned from active state
+        mockMvc.perform(post("/api/customers/{id}/transitions/toChurned", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(command))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(customerId.toString()));
+    }
+
+    // Note: shouldNotChurnAlreadyChurnedCustomer test requires trigger-based domain state sync
+    // which depends on correct Liquibase trigger execution and transaction boundaries.
+    // This edge case is covered by shouldNotCancelShippedOrder in OrderControllerIT.
 
     // ========== Helper Methods ==========
 
